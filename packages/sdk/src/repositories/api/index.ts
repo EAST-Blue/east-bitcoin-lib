@@ -1,4 +1,4 @@
-import { Network } from "../types";
+import { Network } from "../../types";
 import { BitcoinAPIAbstract } from "./bitcoin";
 import { OrdAPI } from "./ord";
 

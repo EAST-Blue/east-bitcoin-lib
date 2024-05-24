@@ -1,5 +1,5 @@
 import { OP_RETURN, P2PKH, P2TR, P2WPKH } from "../addresses/types";
-import { API } from "../repositories";
+import { API } from "../repositories/api";
 
 export type AutoAdjustment = {
   api: API;
