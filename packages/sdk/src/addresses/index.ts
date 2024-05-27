@@ -1,8 +1,3 @@
-export * from "./types";
-export * from "./p2pkh";
-export * from "./p2tr";
-export * from "./p2wpkh";
-
 export type AddressUtxoArgs = {
   txid: string;
   vout: number;
@@ -28,3 +23,8 @@ export class AddressOutput {
     this.address = address;
   }
 }
+
+export * from "./types";
+export * from "./p2pkh";
+export * from "./p2tr";
+export * from "./p2wpkh";

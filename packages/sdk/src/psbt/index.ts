@@ -34,11 +34,11 @@ export class PSBT {
 
   private psbt: Psbt;
 
-  constructor(params: PSBTBuilderArgs) {
-    this.network = params.network;
-    this.inputs = params.inputs;
-    this.outputs = params.outputs;
-    this.autoAdjustment = params.autoAdjustment;
+  constructor({ network, inputs, outputs, autoAdjustment }: PSBTBuilderArgs) {
+    this.network = network;
+    this.inputs = inputs;
+    this.outputs = outputs;
+    this.autoAdjustment = autoAdjustment;
 
     this.psbt = new Psbt({
       network: bitcoinJsNetwork(this.network),
@@ -104,6 +104,18 @@ export class PSBT {
     for (const output of this.outputs) {
       this.addOutput(output);
     }
+  }
+
+  toPSBT() {
+    return this.psbt;
+  }
+
+  toHex() {
+    return this.psbt.toHex();
+  }
+
+  toBase64() {
+    return this.psbt.toBase64();
   }
 }
 
