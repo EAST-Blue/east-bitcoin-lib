@@ -1,23 +1,22 @@
-export type P2wpkhUtxoArgs = {
-  txid: string;
-  vout: number;
+import { AddressOutput, AddressUtxo, AddressUtxoArgs } from ".";
+
+export type P2wpkhUtxoArgs = AddressUtxoArgs & {
   witness: {
     script: Buffer;
     value: number;
   };
 };
 
-export class P2wpkhUtxo {
-  txid: string;
-  vout: number;
+export class P2wpkhUtxo extends AddressUtxo {
   witness: {
     script: Buffer;
     value: number;
   };
 
   constructor({ txid, vout, witness }: P2wpkhUtxoArgs) {
-    this.txid = txid;
-    this.vout = vout;
+    super({ txid, vout });
     this.witness = witness;
   }
 }
+
+export class P2wpkhOutput extends AddressOutput {}
