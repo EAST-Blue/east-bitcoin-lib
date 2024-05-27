@@ -13,6 +13,7 @@ import { PSBTInput } from "./input";
 import { PSBTOutput } from "./output";
 import { bitcoinJsNetwork } from "../utils";
 import { OpReturnOutput } from "../addresses/opReturn";
+import { PSBTFeeCalculator } from "./fee-calculator";
 
 export type PSBTBuilderArgs = {
   network: Network;
@@ -26,18 +27,16 @@ export type PSBTBuilderArgs = {
 // - merge another with PSBT
 // - change address
 // - calculate fee
-export class PSBT {
+export class PSBT extends PSBTFeeCalculator {
   network: Network;
-  private inputs: PSBTInput[];
-  private outputs: PSBTOutput[];
   private autoAdjustment?: AutoAdjustment;
 
   private psbt: Psbt;
 
   constructor({ network, inputs, outputs, autoAdjustment }: PSBTBuilderArgs) {
+    super({ inputs, outputs });
+
     this.network = network;
-    this.inputs = inputs;
-    this.outputs = outputs;
     this.autoAdjustment = autoAdjustment;
 
     this.psbt = new Psbt({
