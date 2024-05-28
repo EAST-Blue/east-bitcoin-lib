@@ -9,6 +9,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "bitcoin-address-validation": "^2.2.3",
     "bitcoinjs-lib": "^6.1.5",
     "tiny-secp256k1": "^2.2.3"
   },

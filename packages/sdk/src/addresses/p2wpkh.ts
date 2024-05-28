@@ -1,4 +1,5 @@
 import { Address, AddressUtxo, AddressUtxoArgs } from ".";
+import { BitcoinUTXO } from "../repositories/bitcoin/types";
 
 export type P2wpkhUtxoArgs = AddressUtxoArgs & {
   witness: {
@@ -17,6 +18,17 @@ export class P2wpkhUtxo extends AddressUtxo {
     super({ txid, vout });
     this.witness = witness;
   }
+
+  static async fromBitcoinUTXO(bitcoinUTXO: BitcoinUTXO) {
+    return new P2wpkhUtxo({
+      txid: bitcoinUTXO.txid,
+      vout: bitcoinUTXO.vout,
+      witness: {
+        script: Buffer.from(bitcoinUTXO.script_hash, "hex"),
+        value: bitcoinUTXO.value,
+      },
+    });
+  }
 }
 
-export class P2wpkhAddress extends Address {}
+export class P2wpkhAddress extends Address { }

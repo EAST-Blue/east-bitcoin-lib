@@ -1,3 +1,6 @@
+import { getAddressType } from "../utils";
+import { P2pkhAddress } from "./p2pkh";
+
 export type AddressUtxoArgs = {
   txid: string;
   vout: number;
@@ -21,6 +24,12 @@ export class Address {
   address: string;
   constructor({ address }: Address) {
     this.address = address;
+  }
+
+  static fromString(address: string) {
+    const addressType = getAddressType(address);
+
+    return new P2pkhAddress({ address });
   }
 }
 
