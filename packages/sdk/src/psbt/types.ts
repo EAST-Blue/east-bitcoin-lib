@@ -1,8 +1,8 @@
 import { API } from "../repositories";
-import { PSBTAddressOutput } from "./output";
+import { AddressOutput } from "./output";
 
 export type AutoAdjustment = {
   api: API;
   feeRate: number;
-  changeOutput?: PSBTAddressOutput;
+  changeOutput?: AddressOutput;
 };

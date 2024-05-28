@@ -13,13 +13,13 @@ export class AddressUtxo {
   }
 }
 
-export type AddressOutputArgs = {
+export type AddressArgs = {
   address: string;
 };
 
-export class AddressOutput {
+export class Address {
   address: string;
-  constructor({ address }: AddressOutput) {
+  constructor({ address }: Address) {
     this.address = address;
   }
 }

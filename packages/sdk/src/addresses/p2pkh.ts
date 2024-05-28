@@ -1,4 +1,4 @@
-import { AddressOutput, AddressUtxo, AddressUtxoArgs } from ".";
+import { Address, AddressUtxo, AddressUtxoArgs } from ".";
 
 export type P2pkhUtxoArgs = AddressUtxoArgs & {
   transaction: Buffer;
@@ -13,4 +13,4 @@ export class P2pkhUtxo extends AddressUtxo {
   }
 }
 
-export class P2pkhOutput extends AddressOutput {}
+export class P2pkhAddress extends Address {}

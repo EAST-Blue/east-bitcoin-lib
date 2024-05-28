@@ -1,50 +1,39 @@
 import { Psbt } from "bitcoinjs-lib";
-import { Network } from "../types";
-import { AutoAdjustment } from "./types";
 import {
-  P2pkhOutput,
+  P2pkhAddress,
   P2pkhUtxo,
-  P2trOutput,
+  P2trAddress,
   P2trUtxo,
-  P2wpkhOutput,
+  P2wpkhAddress,
   P2wpkhUtxo,
 } from "../addresses";
-import { PSBTInput } from "./input";
-import { PSBTOutput } from "./output";
 import { bitcoinJsNetwork } from "../utils";
 import { OpReturnOutput } from "../addresses/opReturn";
-import { PSBTFeeCalculator } from "./fee-calculator";
+import { CoinSelect, CoinSelectArgs } from "./coin-select";
+import { Input } from "./input";
+import { Output } from "./output";
 
-export type PSBTBuilderArgs = {
-  network: Network;
-  inputs: PSBTInput[];
-  outputs: PSBTOutput[];
-  autoAdjustment?: AutoAdjustment;
-};
+export type PSBTArgs = CoinSelectArgs & {};
 
-// TODO:
-// - preinputs
-// - merge another with PSBT
-// - change address
-// - calculate fee
-export class PSBT extends PSBTFeeCalculator {
-  network: Network;
-  private autoAdjustment?: AutoAdjustment;
-
+export class PSBT extends CoinSelect {
   private psbt: Psbt;
 
-  constructor({ network, inputs, outputs, autoAdjustment }: PSBTBuilderArgs) {
-    super({ inputs, outputs });
-
-    this.network = network;
-    this.autoAdjustment = autoAdjustment;
+  constructor({
+    network,
+    inputs,
+    outputs,
+    feeRate,
+    changeOutput,
+    utxoSelect,
+  }: PSBTArgs) {
+    super({ network, inputs, outputs, feeRate, changeOutput, utxoSelect });
 
     this.psbt = new Psbt({
       network: bitcoinJsNetwork(this.network),
     });
   }
 
-  private addInput(input: PSBTInput) {
+  private addInput(input: Input) {
     switch (true) {
       case input.utxo instanceof P2pkhUtxo:
         this.psbt.addInput({
@@ -75,11 +64,11 @@ export class PSBT extends PSBTFeeCalculator {
     }
   }
 
-  private addOutput(output: PSBTOutput) {
+  private addOutput(output: Output) {
     switch (true) {
-      case output.output instanceof P2pkhOutput ||
-        output.output instanceof P2wpkhOutput ||
-        output.output instanceof P2trOutput:
+      case output.output instanceof P2pkhAddress ||
+        output.output instanceof P2wpkhAddress ||
+        output.output instanceof P2trAddress:
         this.psbt.addOutput({
           address: output.output.address,
           value: output.value,

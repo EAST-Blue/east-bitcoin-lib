@@ -1,14 +1,15 @@
 import {
-  P2pkhOutput,
+  P2pkhAddress,
   P2pkhUtxo,
-  P2trOutput,
+  P2trAddress,
   P2trUtxo,
-  P2wpkhOutput,
+  P2wpkhAddress,
   P2wpkhUtxo,
 } from "../../addresses";
 import { OpReturnOutput } from "../../addresses/opReturn";
-import { PSBTAddressInput } from "../input";
-import { PSBTAddressOutput } from "../output";
+import { Network } from "../../types";
+import { Input, UtxoInput } from "../input";
+import { Output, AddressOutput } from "../output";
 import {
   FEE_TX_EMPTY_SIZE,
   FEE_TX_INPUT_BASE,
@@ -21,31 +22,38 @@ import {
   FEE_TX_OUTPUT_TAPROOT,
 } from "./const";
 
-import { PSBTInput } from "../input";
-import { PSBTOutput } from "../output";
+import { UtxoSelect } from "./types";
 
-export type PSBTFeeCalculatorArgs = {
-  inputs: PSBTInput[];
-  outputs: PSBTOutput[];
+export type CoinSelectArgs = {
+  network: Network;
+  inputs: Input[];
+  outputs: Output[];
   feeRate: number;
-  changeOutput: PSBTAddressOutput;
+  changeOutput?: AddressOutput;
+  utxoSelect?: UtxoSelect;
 };
-export class PSBTFeeCalculator {
-  inputs: PSBTInput[];
-  outputs: PSBTOutput[];
+export class CoinSelect {
+  network: Network;
+  inputs: Input[];
+  outputs: Output[];
   feeRate: number;
-  changeOutput: PSBTAddressOutput;
+  changeOutput?: AddressOutput;
+  utxoSelect?: UtxoSelect;
 
   constructor({
+    network,
     inputs,
     outputs,
     feeRate,
     changeOutput,
-  }: PSBTFeeCalculatorArgs) {
+    utxoSelect,
+  }: CoinSelectArgs) {
+    this.network = network;
     this.inputs = inputs;
     this.outputs = outputs;
     this.feeRate = feeRate;
     this.changeOutput = changeOutput;
+    this.utxoSelect = utxoSelect;
   }
 
   get dustThreshold() {
@@ -69,17 +77,17 @@ export class PSBTFeeCalculator {
     return this.transactionBytes() * this.feeRate;
   }
 
-  private inputBytes(psbtAddressInput: PSBTAddressInput) {
+  private inputBytes(utxoInput: UtxoInput) {
     let bytes = FEE_TX_INPUT_BASE;
 
     switch (true) {
-      case psbtAddressInput instanceof P2pkhUtxo:
+      case utxoInput instanceof P2pkhUtxo:
         bytes += FEE_TX_INPUT_PUBKEYHASH;
         break;
-      case psbtAddressInput instanceof P2wpkhUtxo:
+      case utxoInput instanceof P2wpkhUtxo:
         bytes += FEE_TX_INPUT_SEGWIT;
         break;
-      case psbtAddressInput instanceof P2trUtxo:
+      case utxoInput instanceof P2trUtxo:
         bytes += FEE_TX_INPUT_TAPROOT;
         break;
       default:
@@ -89,20 +97,20 @@ export class PSBTFeeCalculator {
     return bytes;
   }
 
-  private outputBytes(psbtAddressOutput: PSBTAddressOutput) {
+  private outputBytes(addressOutput: AddressOutput) {
     let bytes = FEE_TX_OUTPUT_BASE;
 
     switch (true) {
-      case psbtAddressOutput instanceof P2pkhOutput:
+      case addressOutput instanceof P2pkhAddress:
         bytes += FEE_TX_OUTPUT_PUBKEYHASH;
         break;
-      case psbtAddressOutput instanceof P2wpkhOutput:
+      case addressOutput instanceof P2wpkhAddress:
         bytes += FEE_TX_OUTPUT_SEGWIT;
         break;
-      case psbtAddressOutput instanceof P2trOutput:
+      case addressOutput instanceof P2trAddress:
         bytes += FEE_TX_OUTPUT_TAPROOT;
         break;
-      case psbtAddressOutput instanceof OpReturnOutput:
+      case addressOutput instanceof OpReturnOutput:
         break;
 
       default:
@@ -112,7 +120,7 @@ export class PSBTFeeCalculator {
     return bytes;
   }
 
-  protected transactionBytes() {
+  private transactionBytes() {
     return (
       FEE_TX_EMPTY_SIZE +
       this.inputs.reduce(
@@ -126,10 +134,18 @@ export class PSBTFeeCalculator {
     );
   }
 
+  private processUtxo() {
+    if (!this.utxoSelect) return;
+  }
+
   // This will calculate all input and output fees,
   // and also add a change output if it's worth it.
-  finalizeFee() {
-    const changeFee = this.outputBytes(this.changeOutput);
+  private finalizeFee() {
+    // set the default change fee with pubkeyhash bytes (worst case)
+    let changeFee = FEE_TX_OUTPUT_BASE + FEE_TX_OUTPUT_PUBKEYHASH;
+    if (this.changeOutput) {
+      changeFee = this.outputBytes(this.changeOutput);
+    }
 
     const bytesAccum = this.transactionBytes();
     const feeAfterExtraOutput = this.feeRate * (bytesAccum + changeFee);
@@ -137,11 +153,16 @@ export class PSBTFeeCalculator {
       this.totalInputValue - this.totalOutputValue + feeAfterExtraOutput;
 
     // is it worth a change output?
-    if (remainderAfterExtraOutput > this.dustThreshold) {
+    if (remainderAfterExtraOutput > this.dustThreshold && this.changeOutput) {
       this.outputs.push({
         output: this.changeOutput,
         value: remainderAfterExtraOutput,
       });
     }
+  }
+
+  calculateFee() {
+    this.processUtxo();
+    this.finalizeFee();
   }
 }

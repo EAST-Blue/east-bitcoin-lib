@@ -1,4 +1,4 @@
-import { AddressOutput, AddressUtxo, AddressUtxoArgs } from ".";
+import { Address, AddressUtxo, AddressUtxoArgs } from ".";
 
 export type TapLeafScript = {
   controlBlock: Buffer;
@@ -37,4 +37,4 @@ export class P2trUtxo extends AddressUtxo {
   }
 }
 
-export class P2trOutput extends AddressOutput {}
+export class P2trAddress extends Address {}

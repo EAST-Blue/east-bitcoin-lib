@@ -1,3 +1,3 @@
 import { PSBT } from "../../..";
 
-export class InscribeBuilder extends PSBT { }
+export class InscribeBuilder extends PSBT {}

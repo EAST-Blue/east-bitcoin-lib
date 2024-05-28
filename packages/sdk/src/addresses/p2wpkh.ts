@@ -1,4 +1,4 @@
-import { AddressOutput, AddressUtxo, AddressUtxoArgs } from ".";
+import { Address, AddressUtxo, AddressUtxoArgs } from ".";
 
 export type P2wpkhUtxoArgs = AddressUtxoArgs & {
   witness: {
@@ -19,4 +19,4 @@ export class P2wpkhUtxo extends AddressUtxo {
   }
 }
 
-export class P2wpkhOutput extends AddressOutput {}
+export class P2wpkhAddress extends Address {}
