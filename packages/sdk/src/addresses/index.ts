@@ -26,9 +26,13 @@ export class Address {
   address: string;
   type: AddressType;
 
-  constructor({ address }: Address) {
+  constructor({ address }: AddressArgs) {
     this.address = address;
     this.type = getAddressType(address);
+  }
+
+  static fromString(address: string) {
+    return new Address({ address });
   }
 }
 

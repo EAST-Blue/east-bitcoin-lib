@@ -214,7 +214,13 @@ export class CoinSelect {
     const transactionBytes = this.transactionBytes();
     const feeAfterExtraOutput = this.feeRate * (transactionBytes + changeFee);
     const remainderAfterExtraOutput =
-      this.totalInputValue - this.totalOutputValue + feeAfterExtraOutput;
+      this.totalInputValue - (this.totalOutputValue + feeAfterExtraOutput);
+
+    console.log({
+      totalinput: this.totalInputValue,
+      totaloutput: this.totalOutputValue,
+      remainderAfterExtraOutput,
+    });
 
     // is it worth a change output?
     if (remainderAfterExtraOutput > this.dustThreshold && this.changeOutput) {
