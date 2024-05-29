@@ -87,7 +87,7 @@ export default function Page(): JSX.Element {
       </main>
 
       <InputModal
-        isOpen={true}
+        isOpen={openInputModal}
         setIsOpen={setOpenInputModal}
         title="Input Modal"
       />
