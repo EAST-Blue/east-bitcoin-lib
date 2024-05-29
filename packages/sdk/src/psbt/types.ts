@@ -1,4 +1,10 @@
-import { P2pkhUtxo, P2trUtxo, P2wpkhUtxo } from "../addresses";
+import {
+  AddressType,
+  OpReturnType,
+  P2pkhUtxo,
+  P2trUtxo,
+  P2wpkhUtxo,
+} from "../addresses";
 import { Address } from "../addresses";
 import { OpReturn } from "../addresses/opReturn";
 
@@ -14,3 +20,7 @@ export type Output = {
   output: Address | OpReturn;
   value: number;
 };
+
+export type InputType = AddressType;
+
+export type OutputType = AddressType | OpReturnType;

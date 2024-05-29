@@ -1,4 +1,4 @@
-import { Address, AddressType, AddressUtxo, AddressUtxoArgs } from ".";
+import { AddressType, AddressUtxo, AddressUtxoArgs } from ".";
 import { BitcoinAPIAbstract } from "../repositories";
 import { BitcoinUTXO } from "../repositories/bitcoin/types";
 

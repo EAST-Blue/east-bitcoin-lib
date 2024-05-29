@@ -1,7 +1,7 @@
-import { AddressType, P2pkhUtxo, P2trUtxo, P2wpkhUtxo } from "../../addresses";
+import { P2pkhUtxo, P2trUtxo, P2wpkhUtxo } from "../../addresses";
 import { BitcoinUTXO } from "../../repositories/bitcoin/types";
 import { Network } from "../../types";
-import { Input, Output, OutputOutput } from "../types";
+import { Input, InputType, Output, OutputOutput, OutputType } from "../types";
 
 import { UtxoSelect } from "./types";
 
@@ -77,10 +77,10 @@ export class CoinSelect {
     return this.transactionBytes() * this.feeRate;
   }
 
-  private inputBytes(addressType: AddressType) {
+  private inputBytes(inputType: InputType) {
     let bytes = FEE_TX_INPUT_BASE;
 
-    switch (addressType) {
+    switch (inputType) {
       case "p2pkh":
         bytes += FEE_TX_INPUT_PUBKEYHASH;
         break;
@@ -97,10 +97,10 @@ export class CoinSelect {
     return bytes;
   }
 
-  private outputBytes(addressType: AddressType) {
+  private outputBytes(outputType: OutputType) {
     let bytes = FEE_TX_OUTPUT_BASE;
 
-    switch (addressType) {
+    switch (outputType) {
       case "p2pkh":
         bytes += FEE_TX_OUTPUT_PUBKEYHASH;
         break;
