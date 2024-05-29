@@ -11,8 +11,6 @@ const InputModal = ({
   setIsOpen: any;
   title: string;
 }) => {
-  const [isShowUtxo, setIsShowUtxo] = useState(false);
-
   return (
     <div
       onClick={() => setIsOpen(false)}
@@ -26,12 +24,10 @@ const InputModal = ({
             onClick={(e) => e.stopPropagation()}
             className="relative max-w-md mx-auto bg-[#0F111B] rounded-lg text-gray-200 overflow-hidden border border-gray-800"
           >
-            <div className="p-4 flex items-center justify-between gap-x-52 bg-[#0F111B]">
-              <div>
-                <p className="text-title text-xl font-bold tracking-wide">
-                  {title}
-                </p>
-              </div>
+            <div className="w-full p-4 flex items-center justify-between gap-x-[300px] bg-[#0F111B]">
+              <p className="text-title text-xl font-bold tracking-wide">
+                {title}
+              </p>
               <div
                 className="w-5 cursor-pointer hover:text-primary"
                 onClick={() => setIsOpen(false)}
@@ -52,57 +48,57 @@ const InputModal = ({
             </div>
             <div className="flex flex-col p-4">
               <div className="flex flex-row">
-                <div className="w-full border-b border-gray-900/10 pb-12">
+                <div className="w-full  my-2">
                   <label className="block text-sm font-medium leading-6 text-gray-200">
                     Choose UTXO :
                   </label>
-
-                  <button className="w-full flex flex-row justify-end items-end rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm p-2">
-                    <svg
-                      className="-mr-1 h-5 w-5 text-gray-400"
-                      viewBox="0 0 20 20"
-                      fill="currentColor"
-                      aria-hidden="true"
-                    >
-                      <path
-                        fill-rule="evenodd"
-                        d="M5.23 7.21a.75.75 0 011.06.02L10 11.168l3.71-3.938a.75.75 0 111.08 1.04l-4.25 4.5a.75.75 0 01-1.08 0l-4.25-4.5a.75.75 0 01.02-1.06z"
-                        clip-rule="evenodd"
-                      />
-                    </svg>
-                  </button>
+                  <select className="w-11/12 bg-[#0F111B] hover:bg-[#0F171B] rounded-md text-sm hover:cursor-pointer">
+                    <option>UTXO123456789123456789</option>
+                    <option>UTXO123456789123456789</option>
+                    <option>UTXO123456789123456789</option>
+                    <option>UTXO123456789123456789</option>
+                    <option>UTXO123456789123456789</option>
+                    <option>UTXO123456789123456789</option>
+                    <option>UTXO123456789123456789</option>
+                  </select>
                 </div>
               </div>
-              <div className="absolute bottom-50 z-10 mt-2 w-5/6 origin-top-right rounded-md bg-[#222842] shadow-lg border border-gray-700">
-                <div className="py-1" role="none">
-                  <p className="text-gray-200 block px-4 py-2 text-sm">
-                    Account settings
-                  </p>
+              <div className="flex flex-row">
+                <div className="w-full my-2">
+                  <label className="block text-sm font-medium leading-6 text-gray-200">
+                    vout:
+                  </label>
+                  <input
+                    disabled
+                    className="bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
+                  />
                 </div>
-                <div className="py-1" role="none">
-                  <p className="text-gray-200 block px-4 py-2 text-sm">
-                    Account settings
-                  </p>
+              </div>
+              <div className="flex flex-row">
+                <div className="w-full  my-2">
+                  <label className="block text-sm font-medium leading-6 text-gray-200">
+                    unlocking script:
+                  </label>
+                  <textarea
+                    disabled
+                    className="w-11/12 bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
+                    rows={5}
+                  />
                 </div>
-                <div className="py-1" role="none">
-                  <p className="text-gray-200 block px-4 py-2 text-sm">
-                    Account settings
-                  </p>
-                </div>
-                <div className="py-1" role="none">
-                  <p className="text-gray-200 block px-4 py-2 text-sm">
-                    Account settings
-                  </p>
-                </div>
-                <div className="py-1" role="none">
-                  <p className="text-gray-200 block px-4 py-2 text-sm">
-                    Account settings
-                  </p>
-                </div>
-                <div className="py-1" role="none">
-                  <p className="text-gray-200 block px-4 py-2 text-sm">
-                    Account settings
-                  </p>
+              </div>
+              <div className="flex flex-row">
+                <div className="w-full  my-2">
+                  <label className="block text-sm font-medium leading-6 text-gray-200">
+                    witness{" "}
+                    <span className="text-xs text-gray-400">
+                      (for segwit address)
+                    </span>
+                  </label>
+                  <textarea
+                    disabled
+                    className="w-11/12 bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
+                    rows={5}
+                  />
                 </div>
               </div>
             </div>
