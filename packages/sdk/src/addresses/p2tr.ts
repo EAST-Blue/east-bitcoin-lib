@@ -1,4 +1,4 @@
-import { Address, AddressUtxo, AddressUtxoArgs } from ".";
+import { AddressType, AddressUtxo, AddressUtxoArgs } from ".";
 import { BitcoinUTXO } from "../repositories/bitcoin/types";
 
 export type TapLeafScript = {
@@ -17,6 +17,7 @@ export type P2trUtxoArgs = AddressUtxoArgs & {
 };
 
 export class P2trUtxo extends AddressUtxo {
+  type: AddressType = "p2tr";
   witness: {
     script: Buffer;
     value: number;
@@ -48,5 +49,3 @@ export class P2trUtxo extends AddressUtxo {
     });
   }
 }
-
-export class P2trAddress extends Address { }

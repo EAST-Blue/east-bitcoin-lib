@@ -1,8 +1,16 @@
-import { API } from "../repositories";
-import { AddressOutput } from "./output";
+import { P2pkhUtxo, P2trUtxo, P2wpkhUtxo } from "../addresses";
+import { Address } from "../addresses";
+import { OpReturn } from "../addresses/opReturn";
 
-export type AutoAdjustment = {
-  api: API;
-  feeRate: number;
-  changeOutput?: AddressOutput;
+export type UtxoInput = P2pkhUtxo | P2wpkhUtxo | P2trUtxo;
+
+export type Input = {
+  utxo: UtxoInput;
+  value: number;
+};
+export type OutputOutput = Address | OpReturn;
+
+export type Output = {
+  output: Address | OpReturn;
+  value: number;
 };

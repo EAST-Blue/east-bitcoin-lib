@@ -1,5 +1,5 @@
 import fetch from "cross-fetch";
-import bitcoinjs from "bitcoinjs-lib";
+import * as bitcoinjs from "bitcoinjs-lib";
 import { BitcoinAPIAbstract } from ".";
 import { Network } from "../../types";
 import { APIUrl, BitcoinUTXO } from "./types";
@@ -49,7 +49,7 @@ export class BElectrsAPI extends BitcoinAPIAbstract {
   }
 
   async getTransactionHex(txid: string): Promise<string> {
-    const res = await fetch(`${this.url}/tx/${txid}/hash`);
+    const res = await fetch(`${this.url}/tx/${txid}/hex`);
     return await res.text();
   }
 

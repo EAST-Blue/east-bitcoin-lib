@@ -1,17 +1,9 @@
 import { Psbt } from "bitcoinjs-lib";
-import {
-  P2pkhAddress,
-  P2pkhUtxo,
-  P2trAddress,
-  P2trUtxo,
-  P2wpkhAddress,
-  P2wpkhUtxo,
-} from "../addresses";
+import { Address, P2pkhUtxo, P2trUtxo, P2wpkhUtxo } from "../addresses";
 import { bitcoinJsNetwork } from "../utils";
-import { OpReturnOutput } from "../addresses/opReturn";
 import { CoinSelect, CoinSelectArgs } from "./coin-select";
-import { Input } from "./input";
-import { Output } from "./output";
+import { Input, Output } from "./types";
+import { OpReturn } from "../addresses/opReturn";
 
 export type PSBTArgs = CoinSelectArgs & {};
 
@@ -66,15 +58,13 @@ export class PSBT extends CoinSelect {
 
   private addOutput(output: Output) {
     switch (true) {
-      case output.output instanceof P2pkhAddress ||
-        output.output instanceof P2wpkhAddress ||
-        output.output instanceof P2trAddress:
+      case output.output instanceof Address:
         this.psbt.addOutput({
           address: output.output.address,
           value: output.value,
         });
         break;
-      case output.output instanceof OpReturnOutput:
+      case output.output instanceof OpReturn:
         this.psbt.addOutput({
           script: output.output.script,
           value: output.value,
@@ -85,7 +75,8 @@ export class PSBT extends CoinSelect {
     }
   }
 
-  build() {
+  async build() {
+    await this.coinSelection();
     for (const input of this.inputs) {
       this.addInput(input);
     }

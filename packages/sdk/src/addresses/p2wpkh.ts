@@ -1,4 +1,4 @@
-import { Address, AddressUtxo, AddressUtxoArgs } from ".";
+import { AddressType, AddressUtxo, AddressUtxoArgs } from ".";
 import { BitcoinUTXO } from "../repositories/bitcoin/types";
 
 export type P2wpkhUtxoArgs = AddressUtxoArgs & {
@@ -9,6 +9,8 @@ export type P2wpkhUtxoArgs = AddressUtxoArgs & {
 };
 
 export class P2wpkhUtxo extends AddressUtxo {
+  type: AddressType = "p2wpkh";
+
   witness: {
     script: Buffer;
     value: number;
@@ -30,5 +32,3 @@ export class P2wpkhUtxo extends AddressUtxo {
     });
   }
 }
-
-export class P2wpkhAddress extends Address { }

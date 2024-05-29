@@ -1,12 +1,14 @@
 import { getAddressType } from "../utils";
-import { P2pkhAddress } from "./p2pkh";
+import { AddressType } from "./types";
 
 export type AddressUtxoArgs = {
   txid: string;
   vout: number;
 };
 
-export class AddressUtxo {
+export abstract class AddressUtxo {
+  abstract type: AddressType;
+
   txid: string;
   vout: number;
 
@@ -22,14 +24,11 @@ export type AddressArgs = {
 
 export class Address {
   address: string;
+  type: AddressType;
+
   constructor({ address }: Address) {
     this.address = address;
-  }
-
-  static fromString(address: string) {
-    const addressType = getAddressType(address);
-
-    return new P2pkhAddress({ address });
+    this.type = getAddressType(address);
   }
 }
 

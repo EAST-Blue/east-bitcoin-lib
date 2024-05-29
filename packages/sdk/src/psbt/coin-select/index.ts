@@ -1,44 +1,44 @@
-import {
-  P2pkhAddress,
-  P2pkhUtxo,
-  P2trAddress,
-  P2trUtxo,
-  P2wpkhAddress,
-  P2wpkhUtxo,
-} from "../../addresses";
-import { OpReturnOutput } from "../../addresses/opReturn";
+import { AddressType, P2pkhUtxo, P2trUtxo, P2wpkhUtxo } from "../../addresses";
+import { BitcoinUTXO } from "../../repositories/bitcoin/types";
 import { Network } from "../../types";
-import { Input, UtxoInput } from "../input";
-import { Output, AddressOutput } from "../output";
-import {
-  FEE_TX_EMPTY_SIZE,
-  FEE_TX_INPUT_BASE,
-  FEE_TX_INPUT_PUBKEYHASH,
-  FEE_TX_INPUT_SEGWIT,
-  FEE_TX_INPUT_TAPROOT,
-  FEE_TX_OUTPUT_BASE,
-  FEE_TX_OUTPUT_PUBKEYHASH,
-  FEE_TX_OUTPUT_SEGWIT,
-  FEE_TX_OUTPUT_TAPROOT,
-} from "./const";
+import { Input, Output, OutputOutput } from "../types";
 
 import { UtxoSelect } from "./types";
+
+// Refer to this page: https://bitcoinops.org/en/tools/calc-size/
+// export const FEE_TX_OUTPUT_SCRIPTHASH = 23;
+// export const FEE_TX_OUTPUT_SEGWIT_SCRIPTHASH = 34;
+export const FEE_TX_EMPTY_SIZE = 4 + 1 + 1 + 4;
+
+export const FEE_TX_INPUT_BASE = 32 + 4 + 1 + 4;
+export const FEE_TX_INPUT_PUBKEYHASH = 107;
+export const FEE_TX_INPUT_SEGWIT = 27 + 1;
+export const FEE_TX_INPUT_TAPROOT = 17 + 1;
+
+export const FEE_TX_OUTPUT_BASE = 8 + 1;
+export const FEE_TX_OUTPUT_PUBKEYHASH = 25;
+export const FEE_TX_OUTPUT_SEGWIT = 22;
+export const FEE_TX_OUTPUT_TAPROOT = 34;
 
 export type CoinSelectArgs = {
   network: Network;
   inputs: Input[];
   outputs: Output[];
   feeRate: number;
-  changeOutput?: AddressOutput;
+  changeOutput?: OutputOutput;
   utxoSelect?: UtxoSelect;
 };
+
+// highly inspired by https://github.com/bitcoinjs/coinselect & https://github.com/joundy/bitcoin-utxo-select
 export class CoinSelect {
   network: Network;
   inputs: Input[];
   outputs: Output[];
   feeRate: number;
-  changeOutput?: AddressOutput;
+  changeOutput?: OutputOutput;
   utxoSelect?: UtxoSelect;
+
+  private utxoCandidates: BitcoinUTXO[] = [];
 
   constructor({
     network,
@@ -77,17 +77,17 @@ export class CoinSelect {
     return this.transactionBytes() * this.feeRate;
   }
 
-  private inputBytes(utxoInput: UtxoInput) {
+  private inputBytes(addressType: AddressType) {
     let bytes = FEE_TX_INPUT_BASE;
 
-    switch (true) {
-      case utxoInput instanceof P2pkhUtxo:
+    switch (addressType) {
+      case "p2pkh":
         bytes += FEE_TX_INPUT_PUBKEYHASH;
         break;
-      case utxoInput instanceof P2wpkhUtxo:
+      case "p2wpkh":
         bytes += FEE_TX_INPUT_SEGWIT;
         break;
-      case utxoInput instanceof P2trUtxo:
+      case "p2tr":
         bytes += FEE_TX_INPUT_TAPROOT;
         break;
       default:
@@ -97,21 +97,21 @@ export class CoinSelect {
     return bytes;
   }
 
-  private outputBytes(addressOutput: AddressOutput) {
+  private outputBytes(addressType: AddressType) {
     let bytes = FEE_TX_OUTPUT_BASE;
 
-    switch (true) {
-      case addressOutput instanceof P2pkhAddress:
+    switch (addressType) {
+      case "p2pkh":
         bytes += FEE_TX_OUTPUT_PUBKEYHASH;
         break;
-      case addressOutput instanceof P2wpkhAddress:
+      case "p2wpkh":
         bytes += FEE_TX_OUTPUT_SEGWIT;
         break;
-      case addressOutput instanceof P2trAddress:
+      case "p2tr":
         bytes += FEE_TX_OUTPUT_TAPROOT;
         break;
-      case addressOutput instanceof OpReturnOutput:
-        break;
+      case "op_return":
+        throw new Error("errors.fee output op_return is not implemented yet");
 
       default:
         throw new Error("errors.fee output is not implemented yet");
@@ -124,31 +124,95 @@ export class CoinSelect {
     return (
       FEE_TX_EMPTY_SIZE +
       this.inputs.reduce(
-        (prev, input) => prev + this.inputBytes(input.utxo),
+        (prev, input) => prev + this.inputBytes(input.utxo.type),
         0,
       ) +
       this.outputs.reduce(
-        (prev, output) => prev + this.outputBytes(output.output),
+        (prev, output) => prev + this.outputBytes(output.output.type),
         0,
       )
     );
   }
 
-  private processUtxo() {
+  private async selectUtxoCandidates() {
     if (!this.utxoSelect) return;
-  }
 
-  // This will calculate all input and output fees,
-  // and also add a change output if it's worth it.
-  private finalizeFee() {
-    // set the default change fee with pubkeyhash bytes (worst case)
-    let changeFee = FEE_TX_OUTPUT_BASE + FEE_TX_OUTPUT_PUBKEYHASH;
-    if (this.changeOutput) {
-      changeFee = this.outputBytes(this.changeOutput);
+    let transactionBytes = this.transactionBytes();
+    let totalInputValue = this.totalInputValue;
+    const totalOutputValue = this.totalOutputValue;
+
+    const fee = this.feeRate * transactionBytes;
+    if (totalInputValue > totalOutputValue + fee) {
+      // no need to add more UTXOs since the inputs already cover the transaction fee and total output value
+      return;
     }
 
-    const bytesAccum = this.transactionBytes();
-    const feeAfterExtraOutput = this.feeRate * (bytesAccum + changeFee);
+    const utxos = await this.utxoSelect.api.bitcoin.getUTXOs(
+      this.utxoSelect.address.address,
+    );
+
+    for (const utxo of utxos) {
+      const utxoBytes = this.inputBytes(this.utxoSelect.address.type);
+      const utxoFee = this.feeRate * utxoBytes;
+      const utxoValue = utxo.value;
+
+      // find another UTXO candidate because the value is less than the fee, considered as dust.
+      if (utxoFee > utxoValue) continue;
+
+      transactionBytes += utxoBytes;
+      totalInputValue += utxoValue;
+      this.utxoCandidates.push(utxo);
+
+      // let's add other UTXOs if the inputs still not cover the fee and total output value.
+      if (totalInputValue < totalOutputValue + fee) continue;
+
+      return;
+    }
+  }
+
+  private async prepareUtxoCandidates() {
+    if (!this.utxoSelect) return;
+
+    for (const utxo of this.utxoCandidates) {
+      switch (this.utxoSelect.address.type) {
+        case "p2pkh":
+          this.inputs.push({
+            utxo: await P2pkhUtxo.fromBitcoinUTXO(
+              this.utxoSelect.api.bitcoin,
+              utxo,
+            ),
+            value: utxo.value,
+          });
+          break;
+        case "p2wpkh":
+          this.inputs.push({
+            utxo: await P2trUtxo.fromBitcoinUTXO(utxo),
+            value: utxo.value,
+          });
+          break;
+        case "p2tr":
+          this.inputs.push({
+            utxo: await P2wpkhUtxo.fromBitcoinUTXO(utxo),
+            value: utxo.value,
+          });
+          break;
+        default:
+          throw new Error("errors.utxo candidate is not implemented yet");
+      }
+    }
+  }
+
+  // this will calculate the final inputs and outputs fees,
+  // and also add a change output if it's worth it.
+  private finalize() {
+    // set the default change fee with pubkeyhash bytes (worst case)
+    let changeFee = this.outputBytes("p2pkh");
+    if (this.changeOutput) {
+      changeFee = this.outputBytes(this.changeOutput.type);
+    }
+
+    const transactionBytes = this.transactionBytes();
+    const feeAfterExtraOutput = this.feeRate * (transactionBytes + changeFee);
     const remainderAfterExtraOutput =
       this.totalInputValue - this.totalOutputValue + feeAfterExtraOutput;
 
@@ -161,8 +225,9 @@ export class CoinSelect {
     }
   }
 
-  calculateFee() {
-    this.processUtxo();
-    this.finalizeFee();
+  async coinSelection() {
+    await this.selectUtxoCandidates();
+    await this.prepareUtxoCandidates();
+    this.finalize();
   }
 }
