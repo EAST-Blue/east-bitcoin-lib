@@ -3,9 +3,15 @@
 import { useState } from "react";
 import InputModal from "../components/InputModal";
 import Sidebar from "../components/Sidebar";
+import { usePsbtContext } from "../contexts/PsbtContext";
+import { useKeyContext } from "../contexts/KeyContext";
+import ImportWifModal from "../components/ImportWifModal";
 
 export default function Page(): JSX.Element {
   const [openInputModal, setOpenInputModal] = useState(false);
+  const [openImportWif, setOpenImportWif] = useState(false);
+  const { utxos, output, clear } = usePsbtContext() as any;
+  const { key, setKey } = useKeyContext() as any;
 
   return (
     <>
@@ -23,6 +29,39 @@ export default function Page(): JSX.Element {
           </div>
 
           <div className="flex flex-col col-span-2">
+            {/* Key  */}
+            <label className="block text-sm font-medium leading-6 text-gray-200">
+              Choose your key
+            </label>
+            <div className="flex flex-row gap-x-4 ">
+              <div className="border-b border-gray-900/10 pb-12">
+                <div className="mt-2">
+                  <button className="rounded-sm shadow-sm bg-[#874642] hover:bg-[#873642] text-gray-200 text-sm py-2 px-4">
+                    Alice Key
+                  </button>
+                </div>
+              </div>
+              <div className="border-b border-gray-900/10 pb-12">
+                <div className="mt-2">
+                  <button className="rounded-sm shadow-sm bg-[#874642] hover:bg-[#873642] text-gray-200 text-sm py-2 px-4">
+                    Bob Key
+                  </button>
+                </div>
+              </div>
+              <div className="border-b border-gray-900/10 pb-12">
+                <div className="mt-2">
+                  <button
+                    onClick={() => {
+                      setOpenImportWif(true);
+                    }}
+                    className="rounded-sm shadow-sm bg-[#874642] hover:bg-[#873642] text-gray-200 text-sm py-2 px-4"
+                  >
+                    Import WIF Text
+                  </button>
+                </div>
+              </div>
+            </div>
+
             <div className="flex flex-row">
               <div className="border-b border-gray-900/10 pb-12">
                 <label className="block text-sm font-medium leading-6 text-gray-200">
@@ -33,16 +72,19 @@ export default function Page(): JSX.Element {
                     onClick={() => {
                       setOpenInputModal(true);
                     }}
-                    className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40"
+                    className={`${key === null && "cursor-not-allowed opacity-30"} rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40`}
+                    disabled={key === null}
                   >
                     Add Input +
                   </button>
                 </div>
-                <div className="mt-2 text-right">
-                  <button className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-20">
-                    Input 1
-                  </button>
-                </div>
+                {utxos.map((utxo: any, i: number) => (
+                  <div className="mt-2 text-right">
+                    <button className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-20">
+                      Input {i + 1}
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
             <div className="flex flex-row">
@@ -51,15 +93,20 @@ export default function Page(): JSX.Element {
                   Output
                 </label>
                 <div className="mt-2">
-                  <button className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40">
+                  <button
+                    className={`${key === null && "cursor-not-allowed opacity-30"} rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40`}
+                    disabled={key === null}
+                  >
                     Add Output +
                   </button>
                 </div>
-                <div className="mt-2 text-right">
-                  <button className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-20">
-                    Output 1
-                  </button>
-                </div>
+                {output.map((utxo: any, i: number) => (
+                  <div className="mt-2 text-right">
+                    <button className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-20">
+                      Output {i + 1}
+                    </button>
+                  </div>
+                ))}
               </div>
             </div>
             <div className="flex flex-row">
@@ -67,10 +114,11 @@ export default function Page(): JSX.Element {
                 <label className="block text-sm font-medium leading-6 text-gray-200">
                   Locktime
                 </label>
-                <div className="flex rounded-md shadow-sm ring-1 ring-inset ring-gray-300 ">
+                <div className="flex rounded-md shadow-sm">
                   <input
                     type="number"
-                    className="block flex-1 border-0 bg-transparent py-1.5 pl-1 text-gray-200 placeholder:text-gray-400 sm:text-sm sm:leading-6"
+                    className={`${key === null && "cursor-not-allowed opacity-30"} border border-gray-300 block flex-1 bg-transparent py-1.5 pl-1 text-gray-200 placeholder:text-gray-400 sm:text-sm sm:leading-6`}
+                    disabled={key === null}
                   />
                 </div>
               </div>
@@ -78,7 +126,10 @@ export default function Page(): JSX.Element {
             <div className="flex flex-row">
               <div className="border-b border-gray-900/10 pb-12">
                 <div className="mt-2">
-                  <button className="rounded-sm shadow-sm bg-[#224242] hover:bg-[#225242] text-gray-200 text-sm py-2 px-40">
+                  <button
+                    className={`${key === null && "cursor-not-allowed opacity-30"}  rounded-sm shadow-sm bg-[#224242] hover:bg-[#225242] text-gray-200 text-sm py-2 px-40`}
+                    disabled={key === null}
+                  >
                     Sign & Generate
                   </button>
                 </div>
@@ -88,6 +139,12 @@ export default function Page(): JSX.Element {
         </div>
       </main>
 
+      <ImportWifModal
+        isOpen={openImportWif}
+        setIsOpen={setOpenImportWif}
+        setKey={setKey}
+        title="Import WIF"
+      />
       <InputModal
         isOpen={openInputModal}
         setIsOpen={setOpenInputModal}
