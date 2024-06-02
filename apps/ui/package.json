@@ -10,10 +10,13 @@
   },
   "dependencies": {
     "@tailwindcss/forms": "^0.5.7",
+    "bitcoinjs-lib": "^6.1.5",
     "ecpair": "^2.1.0",
     "next": "^14.1.1",
+    "prism-code-editor": "^3.3.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "tiny-secp256k1": "^2.2.3"
   },
   "devDependencies": {
     "@east-bitcoin-lib/eslint-config": "*",

@@ -1,16 +1,19 @@
 "use client";
 
 import { useState } from "react";
+import { KeyOptionEnum } from "../enums/KeyOptionEnum";
 
 const ImportWifModal = ({
   isOpen,
   setIsOpen,
   setKey,
+  setKeyOption,
   title = "",
 }: {
   isOpen: any;
   setIsOpen: any;
   setKey: any;
+  setKeyOption: any;
   title: string;
 }) => {
   const [wif, setWif] = useState("");
@@ -57,8 +60,7 @@ const ImportWifModal = ({
                     WIF text
                   </label>
                   <textarea
-                    disabled
-                    className="w-11/12 bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
+                    className="w-11/12 bg-transparent rounded-md text-sm border-gray-700"
                     rows={5}
                     onChange={(e) => {
                       setWif(e.target.value);
@@ -67,12 +69,15 @@ const ImportWifModal = ({
                 </div>
               </div>
               <div className="flex flex-row">
-                <div className="w-full  my-2">
+                <div className="w-full my-2">
                   <button
                     onClick={() => {
-                      setKey(true);
+                      setKey(wif);
+                      setKeyOption(KeyOptionEnum.WIF);
+                      setIsOpen(false);
                     }}
                     className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40"
+                    disabled={wif === ""}
                   >
                     Import
                   </button>
