@@ -1,5 +1,12 @@
 import { ECPairFactory } from "ecpair";
-import { API, Address, BElectrsAPI, OrdAPI, PSBT } from "@east-bitcoin-lib/sdk";
+import {
+  API,
+  Address,
+  BElectrsAPI,
+  OrdAPI,
+  PSBT,
+  Wallet,
+} from "@east-bitcoin-lib/sdk";
 import * as bitcoinjs from "bitcoinjs-lib";
 
 const ECpair = ECPairFactory(require("tiny-secp256k1"));
@@ -11,7 +18,7 @@ const payment = bitcoinjs.payments.p2pkh({
   network: bitcoinjs.networks.regtest,
 });
 
-async function main() {
+async function psbtBuilder() {
   const bitcoinaApi = new BElectrsAPI({
     network: "regtest",
     apiUrl: {
@@ -49,6 +56,30 @@ async function main() {
   const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
 
   console.log({ hex });
+}
+
+async function wallet() {
+  const wallet = new Wallet({
+    mnemonic:
+      "final chat okay post increase install picnic library modify legend soap cube",
+    network: "mainnet",
+  });
+  const index = 0;
+
+  const p2pkh = wallet.p2pkh(index);
+  const p2wpkh = wallet.p2wpkh(index);
+  const p2tr = wallet.p2tr(index);
+
+  console.log({
+    p2pkh,
+    p2wpkh,
+    p2tr,
+  });
+}
+
+async function main() {
+  // psbtBuilder()
+  wallet();
 }
 
 main();

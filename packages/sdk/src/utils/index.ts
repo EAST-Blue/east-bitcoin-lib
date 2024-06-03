@@ -11,3 +11,7 @@ export function getAddressType(address: string): AddressType {
   const adddresInfo = getAddressInfo(address);
   return adddresInfo.type;
 }
+
+export function pubkeyXOnly(pubkey: Buffer) {
+  return pubkey.subarray(1, 33);
+}

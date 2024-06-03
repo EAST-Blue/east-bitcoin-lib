@@ -6,3 +6,4 @@ export * from "./addresses";
 export * from "./repositories";
 export * from "./psbt";
 export * from "./utils";
+export * from "./wallet";
