@@ -1,4 +1,3 @@
-import { ECPairFactory } from "ecpair";
 import {
   API,
   Address,
@@ -7,18 +6,31 @@ import {
   PSBT,
   Wallet,
 } from "@east-bitcoin-lib/sdk";
-import * as bitcoinjs from "bitcoinjs-lib";
 
-const ECpair = ECPairFactory(require("tiny-secp256k1"));
-const keypair = ECpair.fromWIF(
-  "Kym6MbkzqMpvKTeTEreBLYk4UeHTEnwBDG5NnGd96aAm6G23Gcms",
-);
-const payment = bitcoinjs.payments.p2pkh({
-  pubkey: keypair.publicKey,
-  network: bitcoinjs.networks.regtest,
-});
+function newWallet() {
+  const wallet = new Wallet({
+    mnemonic:
+      "final chat okay post increase install picnic library modify legend soap cube",
+    network: "regtest",
+  });
+  const index = 0;
+
+  const p2pkh = wallet.p2pkh(index);
+  const p2wpkh = wallet.p2wpkh(index);
+  const p2tr = wallet.p2tr(index);
+
+  return {
+    p2pkh,
+    p2wpkh,
+    p2tr,
+  };
+}
 
 async function psbtBuilder() {
+  const wallet = newWallet();
+  const p2pkh = wallet.p2pkh;
+  const p2tr = wallet.p2tr;
+
   const bitcoinaApi = new BElectrsAPI({
     network: "regtest",
     apiUrl: {
@@ -37,49 +49,29 @@ async function psbtBuilder() {
     inputs: [],
     outputs: [
       {
-        output: Address.fromString(payment.address!),
+        output: Address.fromString(p2tr.address),
         value: 1000,
       },
     ],
     feeRate: 1,
-    changeOutput: Address.fromString(payment.address!),
+    changeOutput: Address.fromString(p2pkh.address),
     utxoSelect: {
       api,
-      address: Address.fromString(payment.address!),
+      address: Address.fromString(p2pkh.address),
     },
   });
 
   await p.build();
   const psbt = p.toPSBT();
 
-  psbt.signInput(0, keypair);
+  psbt.signInput(0, p2pkh.keypair);
   const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
 
   console.log({ hex });
 }
 
-async function wallet() {
-  const wallet = new Wallet({
-    mnemonic:
-      "final chat okay post increase install picnic library modify legend soap cube",
-    network: "mainnet",
-  });
-  const index = 0;
-
-  const p2pkh = wallet.p2pkh(index);
-  const p2wpkh = wallet.p2wpkh(index);
-  const p2tr = wallet.p2tr(index);
-
-  console.log({
-    p2pkh,
-    p2wpkh,
-    p2tr,
-  });
-}
-
 async function main() {
-  // psbtBuilder()
-  wallet();
+  psbtBuilder();
 }
 
 main();
