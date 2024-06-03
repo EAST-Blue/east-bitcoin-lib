@@ -47,7 +47,11 @@ export class PSBT extends CoinSelect {
           index: input.utxo.vout,
           witnessUtxo: input.utxo.witness,
           tapInternalKey: input.utxo.tapInternalKey,
-          tapLeafScript: input.utxo.tapLeafScript,
+          ...(input.utxo.tapLeafScript
+            ? {
+              tapLeafScript: input.utxo.tapLeafScript,
+            }
+            : {}),
         });
         break;
 

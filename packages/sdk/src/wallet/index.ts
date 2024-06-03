@@ -1,7 +1,7 @@
 import { BIP32Factory, BIP32Interface } from "bip32";
 import * as bip39 from "bip39";
 import { ECPairFactory } from "ecpair";
-import { payments } from "bitcoinjs-lib";
+import { payments, crypto } from "bitcoinjs-lib";
 import { Network } from "../types";
 import { bitcoinJsNetwork, pubkeyXOnly } from "../utils";
 import { DeriveAddress } from "./types";
@@ -101,15 +101,18 @@ export class Wallet {
       Wallet.getPath({ type: "taproot", network: this.network, index }),
     );
     const keypair = ecpair.fromPrivateKey(childNode.privateKey!);
+    const xOnly = pubkeyXOnly(keypair.publicKey);
 
     const p2tr = payments.p2tr({
       network: bitcoinJsNetwork(this.network),
-      pubkey: pubkeyXOnly(keypair.publicKey),
+      internalPubkey: xOnly,
     });
+
+    const tweakedKeyPair = keypair.tweak(crypto.taggedHash("TapTweak", xOnly));
 
     return {
       address: p2tr.address!,
-      keypair,
+      keypair: tweakedKeyPair,
     };
   }
 }

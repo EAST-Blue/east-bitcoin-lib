@@ -186,13 +186,18 @@ export class CoinSelect {
           break;
         case "p2wpkh":
           this.inputs.push({
-            utxo: await P2trUtxo.fromBitcoinUTXO(utxo),
+            utxo: await P2wpkhUtxo.fromBitcoinUTXO(utxo),
             value: utxo.value,
           });
           break;
         case "p2tr":
+          if (!this.utxoSelect.pubkey) {
+            throw new Error(
+              "errors.pubkey is required when using taproot/p2tr address",
+            );
+          }
           this.inputs.push({
-            utxo: await P2wpkhUtxo.fromBitcoinUTXO(utxo),
+            utxo: await P2trUtxo.fromBitcoinUTXO(utxo, this.utxoSelect.pubkey),
             value: utxo.value,
           });
           break;
@@ -215,12 +220,6 @@ export class CoinSelect {
     const feeAfterExtraOutput = this.feeRate * (transactionBytes + changeFee);
     const remainderAfterExtraOutput =
       this.totalInputValue - (this.totalOutputValue + feeAfterExtraOutput);
-
-    console.log({
-      totalinput: this.totalInputValue,
-      totaloutput: this.totalOutputValue,
-      remainderAfterExtraOutput,
-    });
 
     // is it worth a change output?
     if (remainderAfterExtraOutput > this.dustThreshold && this.changeOutput) {

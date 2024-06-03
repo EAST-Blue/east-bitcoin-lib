@@ -50,21 +50,22 @@ async function psbtBuilder() {
     outputs: [
       {
         output: Address.fromString(p2tr.address),
-        value: 1000,
+        value: 0.5 * 10 ** 8,
       },
     ],
     feeRate: 1,
     changeOutput: Address.fromString(p2pkh.address),
     utxoSelect: {
       api,
-      address: Address.fromString(p2pkh.address),
+      address: Address.fromString(p2tr.address),
+      pubkey: p2tr.keypair.publicKey,
     },
   });
 
   await p.build();
   const psbt = p.toPSBT();
 
-  psbt.signInput(0, p2pkh.keypair);
+  psbt.signInput(0, p2tr.keypair);
   const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
 
   console.log({ hex });
