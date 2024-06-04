@@ -15,3 +15,6 @@ export function getAddressType(address: string): AddressType {
 export function pubkeyXOnly(pubkey: Buffer) {
   return pubkey.subarray(1, 33);
 }
+
+export * from "./bip32";
+export * from "./ecpair";
