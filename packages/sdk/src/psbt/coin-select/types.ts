@@ -5,4 +5,5 @@ export type UtxoSelect = {
   api: API;
   address: Address;
   pubkey?: Buffer;
+  redeemScript?: Buffer;
 };

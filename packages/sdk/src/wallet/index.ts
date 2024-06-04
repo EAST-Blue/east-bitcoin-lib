@@ -1,10 +1,11 @@
 import { BIP32Factory, BIP32Interface } from "bip32";
 import * as bip39 from "bip39";
 import { ECPairFactory } from "ecpair";
-import { payments, crypto } from "bitcoinjs-lib";
+import { payments, crypto, script } from "bitcoinjs-lib";
 import { Network } from "../types";
 import { bitcoinJsNetwork, pubkeyXOnly } from "../utils";
-import { DeriveAddress } from "./types";
+import { DeriveP2pkh, DeriveP2sh, DeriveP2tr, DeriveP2wpkh } from "./types";
+import { StackScripts } from "../script";
 
 const bip32 = BIP32Factory(require("tiny-secp256k1"));
 const ecpair = ECPairFactory(require("tiny-secp256k1"));
@@ -62,7 +63,7 @@ export class Wallet {
     }
   }
 
-  p2pkh(index: number): DeriveAddress {
+  p2pkh(index: number): DeriveP2pkh {
     const childNode = this.masterNode.derivePath(
       Wallet.getPath({ type: "legacy", network: this.network, index }),
     );
@@ -79,7 +80,23 @@ export class Wallet {
     };
   }
 
-  p2wpkh(index: number): DeriveAddress {
+  p2sh(scripts: StackScripts): DeriveP2sh {
+    const redeemScript = script.compile(scripts);
+    const p2sh = payments.p2sh({
+      redeem: {
+        output: redeemScript,
+        network: bitcoinJsNetwork(this.network),
+      },
+      network: bitcoinJsNetwork(this.network),
+    });
+
+    return {
+      address: p2sh.address!,
+      redeemScript,
+    };
+  }
+
+  p2wpkh(index: number): DeriveP2wpkh {
     const childNode = this.masterNode.derivePath(
       Wallet.getPath({ type: "segwit", network: this.network, index }),
     );
@@ -96,7 +113,7 @@ export class Wallet {
     };
   }
 
-  p2tr(index: number): DeriveAddress {
+  p2tr(index: number): DeriveP2tr {
     const childNode = this.masterNode.derivePath(
       Wallet.getPath({ type: "taproot", network: this.network, index }),
     );
