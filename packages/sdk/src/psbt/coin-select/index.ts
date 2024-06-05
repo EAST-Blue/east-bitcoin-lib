@@ -1,4 +1,5 @@
 import { P2pkhUtxo, P2trUtxo, P2wpkhUtxo } from "../../addresses";
+import { P2shUtxo } from "../../addresses/p2sh";
 import { BitcoinUTXO } from "../../repositories/bitcoin/types";
 import { Network } from "../../types";
 import { Input, InputType, Output, OutputOutput, OutputType } from "../types";
@@ -6,18 +7,20 @@ import { Input, InputType, Output, OutputOutput, OutputType } from "../types";
 import { UtxoSelect } from "./types";
 
 // Refer to this page: https://bitcoinops.org/en/tools/calc-size/
-// export const FEE_TX_OUTPUT_SCRIPTHASH = 23;
-// export const FEE_TX_OUTPUT_SEGWIT_SCRIPTHASH = 34;
 export const FEE_TX_EMPTY_SIZE = 4 + 1 + 1 + 4;
 
 export const FEE_TX_INPUT_BASE = 32 + 4 + 1 + 4;
 export const FEE_TX_INPUT_PUBKEYHASH = 107;
+export const FEE_TX_INPUT_SCRIPTHASH = 10; // calculate based on script length
 export const FEE_TX_INPUT_SEGWIT = 27 + 1;
+export const FEE_TX_INPUT_SEGWIT_SCRIPTHASH = 0; // calculate based on script length
 export const FEE_TX_INPUT_TAPROOT = 17 + 1;
 
 export const FEE_TX_OUTPUT_BASE = 8 + 1;
 export const FEE_TX_OUTPUT_PUBKEYHASH = 25;
+export const FEE_TX_OUTPUT_SCRIPTHASH = 23;
 export const FEE_TX_OUTPUT_SEGWIT = 22;
+export const FEE_TX_OUTPUT_SEGWIT_SCRIPTHASH = 34;
 export const FEE_TX_OUTPUT_TAPROOT = 34;
 
 export type CoinSelectArgs = {
@@ -77,12 +80,20 @@ export class CoinSelect {
     return this.transactionBytes() * this.feeRate;
   }
 
-  private inputBytes(inputType: InputType) {
+  private inputBytes(inputType: InputType, redeemScript?: Buffer) {
     let bytes = FEE_TX_INPUT_BASE;
 
     switch (inputType) {
       case "p2pkh":
         bytes += FEE_TX_INPUT_PUBKEYHASH;
+        break;
+      case "p2sh":
+        if (!redeemScript) {
+          throw new Error(
+            "errors.redeemScript is required when calculating p2sh input",
+          );
+        }
+        bytes += FEE_TX_INPUT_SCRIPTHASH + Buffer.byteLength(redeemScript);
         break;
       case "p2wpkh":
         bytes += FEE_TX_INPUT_SEGWIT;
@@ -104,6 +115,9 @@ export class CoinSelect {
       case "p2pkh":
         bytes += FEE_TX_OUTPUT_PUBKEYHASH;
         break;
+      case "p2sh":
+        bytes += FEE_TX_OUTPUT_SCRIPTHASH;
+        break;
       case "p2wpkh":
         bytes += FEE_TX_OUTPUT_SEGWIT;
         break;
@@ -123,10 +137,13 @@ export class CoinSelect {
   private transactionBytes() {
     return (
       FEE_TX_EMPTY_SIZE +
-      this.inputs.reduce(
-        (prev, input) => prev + this.inputBytes(input.utxo.type),
-        0,
-      ) +
+      this.inputs.reduce((prev, input) => {
+        let redeemScript;
+        if (input.utxo instanceof P2shUtxo) {
+          redeemScript = input.utxo.redeemScript;
+        }
+        return prev + this.inputBytes(input.utxo.type, redeemScript);
+      }, 0) +
       this.outputs.reduce(
         (prev, output) => prev + this.outputBytes(output.output.type),
         0,
@@ -152,7 +169,10 @@ export class CoinSelect {
     );
 
     for (const utxo of utxos) {
-      const utxoBytes = this.inputBytes(this.utxoSelect.address.type);
+      const utxoBytes = this.inputBytes(
+        this.utxoSelect.address.type,
+        this.utxoSelect.redeemScript,
+      );
       const utxoFee = this.feeRate * utxoBytes;
       const utxoValue = utxo.value;
 
@@ -179,6 +199,21 @@ export class CoinSelect {
           this.inputs.push({
             utxo: await P2pkhUtxo.fromBitcoinUTXO(
               this.utxoSelect.api.bitcoin,
+              utxo,
+            ),
+            value: utxo.value,
+          });
+          break;
+        case "p2sh":
+          if (!this.utxoSelect.redeemScript) {
+            throw new Error(
+              "errors.redeem script is required when using p2sh address",
+            );
+          }
+          this.inputs.push({
+            utxo: await P2shUtxo.fromBitcoinUTXO(
+              this.utxoSelect.api.bitcoin,
+              this.utxoSelect.redeemScript,
               utxo,
             ),
             value: utxo.value,
@@ -217,6 +252,7 @@ export class CoinSelect {
     }
 
     const transactionBytes = this.transactionBytes();
+
     const feeAfterExtraOutput = this.feeRate * (transactionBytes + changeFee);
     const remainderAfterExtraOutput =
       this.totalInputValue - (this.totalOutputValue + feeAfterExtraOutput);

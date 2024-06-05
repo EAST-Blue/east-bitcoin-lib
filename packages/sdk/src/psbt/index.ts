@@ -1,9 +1,11 @@
-import { Psbt } from "bitcoinjs-lib";
+import { Psbt, payments, script } from "bitcoinjs-lib";
 import { Address, P2pkhUtxo, P2trUtxo, P2wpkhUtxo } from "../addresses";
 import { bitcoinJsNetwork } from "../utils";
 import { CoinSelect, CoinSelectArgs } from "./coin-select";
 import { Input, Output } from "./types";
 import { OpReturn } from "../addresses/opReturn";
+import { P2shUtxo } from "../addresses/p2sh";
+import { StackScripts } from "../script";
 
 export type PSBTArgs = CoinSelectArgs & {};
 
@@ -32,6 +34,14 @@ export class PSBT extends CoinSelect {
           hash: input.utxo.txid,
           index: input.utxo.vout,
           nonWitnessUtxo: input.utxo.transaction,
+        });
+        break;
+      case input.utxo instanceof P2shUtxo:
+        this.psbt.addInput({
+          hash: input.utxo.txid,
+          index: input.utxo.vout,
+          nonWitnessUtxo: input.utxo.transaction,
+          redeemScript: input.utxo.redeemScript,
         });
         break;
       case input.utxo instanceof P2wpkhUtxo:
@@ -99,6 +109,22 @@ export class PSBT extends CoinSelect {
 
   toBase64() {
     return this.psbt.toBase64();
+  }
+
+  static finalScript(unlockScripts: StackScripts) {
+    return ({ } = {}, { } = {}, redeemScript: Buffer) => {
+      const payment = payments.p2sh({
+        redeem: {
+          output: redeemScript,
+          input: script.compile(unlockScripts),
+        },
+      });
+
+      return {
+        finalScriptSig: payment.input,
+        finalScriptWitness: undefined,
+      };
+    };
   }
 }
 
