@@ -4,6 +4,7 @@ import "../global.css";
 import { PsbtContextProvider } from "../contexts/PsbtContext";
 import Footer from "../components/Footer";
 import { KeyContextProvider } from "../contexts/KeyContext";
+import { NetworkContextProvider } from "../contexts/NetworkContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -20,9 +21,11 @@ export default function RootLayout({
   return (
     <html className="bg-[#0F111B]" lang="en">
       <body className={inter.className}>
-        <KeyContextProvider>
-          <PsbtContextProvider>{children}</PsbtContextProvider>
-        </KeyContextProvider>
+        <NetworkContextProvider>
+          <KeyContextProvider>
+            <PsbtContextProvider>{children}</PsbtContextProvider>
+          </KeyContextProvider>
+        </NetworkContextProvider>
       </body>
     </html>
   );

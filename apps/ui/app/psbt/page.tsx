@@ -11,23 +11,29 @@ import OutputModal from "../components/OutputModal";
 import { KeyOptionEnum } from "../enums/KeyOptionEnum";
 import ECPairFactory from "ecpair";
 import * as bitcoinjs from "bitcoinjs-lib";
+import { PSBT, Wallet } from "@east-bitcoin-lib/sdk";
+import { useNetworkContext } from "../contexts/NetworkContext";
+import RegtestModal from "../components/RegtestModal";
+import { NetworkEnum } from "../enums/NetworkEnum";
 
 export default function Page(): JSX.Element {
+  const { utxos, output, clear } = usePsbtContext() as any;
+  const { key, keyOption, setKey, setKeyOption } = useKeyContext() as any;
+  const { network, networkOption, setNetwork, setNetworkOption } =
+    useNetworkContext() as any;
+
   const [openInputModal, setOpenInputModal] = useState(false);
   const [openOutputModal, setOpenOutputModal] = useState(false);
   const [openImportWif, setOpenImportWif] = useState(false);
-  const { utxos, output, clear } = usePsbtContext() as any;
-  const { key, keyOption, setKey, setKeyOption } = useKeyContext() as any;
+  const [openRegtestModal, setOpenRegtestModal] = useState(false);
 
   const sign = async () => {
+    if (network === null) return;
     if (key === null) return;
 
-    const ECpair = ECPairFactory(require("tiny-secp256k1"));
-    const keypair = ECpair.fromWIF(key);
-
-    const payment = bitcoinjs.payments.p2pkh({
-      pubkey: keypair.publicKey,
-      network: bitcoinjs.networks.regtest,
+    const wallet = new Wallet({
+      network,
+      mnemonic: key,
     });
   };
 
@@ -47,21 +53,65 @@ export default function Page(): JSX.Element {
           </div>
 
           <div className="flex flex-col col-span-2">
+            {/* Network  */}
+            <label className="block text-sm font-medium leading-6 text-gray-200">
+              Choose Network{" "}
+              {networkOption !== null &&
+                `: ${networkOption} ${network !== null && `(${network})`}`}
+            </label>
+            <div className="flex flex-row gap-x-4 ">
+              <div className="border-b border-gray-900/10 pb-12">
+                <div className="mt-2">
+                  <button
+                    className={`rounded-sm shadow-sm bg-[#814142] opacity-30 cursor-not-allowed text-gray-200 text-sm py-2 px-4`}
+                    disabled
+                  >
+                    Mainnet
+                  </button>
+                </div>
+              </div>
+              <div className="border-b border-gray-900/10 pb-12">
+                <div className="mt-2">
+                  <button
+                    className={`rounded-sm shadow-sm bg-[#814142] opacity-30 cursor-not-allowed text-gray-200 text-sm py-2 px-4`}
+                    disabled
+                  >
+                    Testnet
+                  </button>
+                </div>
+              </div>
+              <div className="border-b border-gray-900/10 pb-12">
+                <div className="flex flex-row gap-x-2 mt-2">
+                  <button
+                    onClick={() => {
+                      setOpenRegtestModal(true);
+                    }}
+                    className={`${networkOption === NetworkEnum.REGTEST && "border-2 border-gray-300"} rounded-sm shadow-sm bg-[#874642] hover:bg-[#873642] text-gray-200 text-sm py-2 px-4`}
+                  >
+                    Regtest
+                  </button>
+                </div>
+              </div>
+            </div>
+
             {/* Key  */}
             <label className="block text-sm font-medium leading-6 text-gray-200">
               Choose your key
             </label>
-            <div className="flex flex-row gap-x-4 ">
+            <div
+              className={`${network === null && "opacity-30"} flex flex-row gap-x-4`}
+            >
               <div className="border-b border-gray-900/10 pb-12">
                 <div className="mt-2">
                   <button
                     className={`${keyOption === KeyOptionEnum.ALICE && "border-2 border-gray-300"} rounded-sm shadow-sm bg-[#874642] hover:bg-[#873642] text-gray-200 text-sm py-2 px-4`}
                     onClick={() => {
                       setKey(
-                        "Kym6MbkzqMpvKTeTEreBLYk4UeHTEnwBDG5NnGd96aAm6G23Gcms"
+                        "final chat okay post increase install picnic library modify legend soap cube"
                       );
                       setKeyOption(KeyOptionEnum.ALICE);
                     }}
+                    disabled={network === null}
                   >
                     Alice Key
                   </button>
@@ -73,10 +123,11 @@ export default function Page(): JSX.Element {
                     className={`${keyOption === KeyOptionEnum.BOB && "border-2 border-gray-300"} rounded-sm shadow-sm bg-[#874642] hover:bg-[#873642] text-gray-200 text-sm py-2 px-4`}
                     onClick={() => {
                       setKey(
-                        "Kym6MbkzqMpvKTeTEreBLYk4UeHTEnwBDG5NnGd96aAm6G23Gcms"
+                        "argue liar sauce arrange worry bulb festival alien concert target pen speak"
                       );
                       setKeyOption(KeyOptionEnum.BOB);
                     }}
+                    disabled={network === null}
                   >
                     Bob Key
                   </button>
@@ -89,8 +140,9 @@ export default function Page(): JSX.Element {
                       setOpenImportWif(true);
                     }}
                     className={`${keyOption === KeyOptionEnum.WIF && "border-2 border-gray-300"} rounded-sm shadow-sm bg-[#874642] hover:bg-[#873642] text-gray-200 text-sm py-2 px-4`}
+                    disabled={network === null}
                   >
-                    Import WIF Text
+                    Import Mnemonic
                   </button>
                 </div>
               </div>
@@ -192,7 +244,7 @@ export default function Page(): JSX.Element {
         setIsOpen={setOpenImportWif}
         setKey={setKey}
         setKeyOption={setKeyOption}
-        title="Import WIF"
+        title="Mnemonic"
       />
       <InputModal
         isOpen={openInputModal}
@@ -203,6 +255,13 @@ export default function Page(): JSX.Element {
         isOpen={openOutputModal}
         setIsOpen={setOpenOutputModal}
         title="Output Modal"
+      />
+      <RegtestModal
+        isOpen={openRegtestModal}
+        setIsOpen={setOpenRegtestModal}
+        title="Regtest IP"
+        setNetwork={setNetwork}
+        setNetworkOption={setNetworkOption}
       />
     </>
   );

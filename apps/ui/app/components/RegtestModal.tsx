@@ -2,21 +2,22 @@
 
 import { useState } from "react";
 import { KeyOptionEnum } from "../enums/KeyOptionEnum";
+import { NetworkEnum } from "../enums/NetworkEnum";
 
-const ImportWifModal = ({
+const RegtestModal = ({
   isOpen,
   setIsOpen,
-  setKey,
-  setKeyOption,
+  setNetwork,
+  setNetworkOption,
   title = "",
 }: {
   isOpen: any;
   setIsOpen: any;
-  setKey: any;
-  setKeyOption: any;
+  setNetwork: any;
+  setNetworkOption: any;
   title: string;
 }) => {
-  const [wif, setWif] = useState("");
+  const [host, setHost] = useState("");
 
   return (
     <div
@@ -57,13 +58,12 @@ const ImportWifModal = ({
               <div className="flex flex-row">
                 <div className="w-full  my-2">
                   <label className="block text-sm font-medium leading-6 text-gray-200">
-                    Mnemonic (12 Phrase)
+                    Regtest IP
                   </label>
-                  <textarea
-                    className="w-11/12 bg-transparent rounded-md text-sm border-gray-700"
-                    rows={5}
+                  <input
+                    className="w-1/2 bg-transparent rounded-md text-sm border-gray-700"
                     onChange={(e) => {
-                      setWif(e.target.value);
+                      setHost(e.target.value);
                     }}
                   />
                 </div>
@@ -72,14 +72,14 @@ const ImportWifModal = ({
                 <div className="w-full my-2">
                   <button
                     onClick={() => {
-                      setKey(wif);
-                      setKeyOption(KeyOptionEnum.WIF);
+                      setNetwork(host);
+                      setNetworkOption(NetworkEnum.REGTEST);
                       setIsOpen(false);
                     }}
                     className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40"
-                    disabled={wif === ""}
+                    disabled={host === ""}
                   >
-                    Import
+                    Save
                   </button>
                 </div>
               </div>
@@ -91,4 +91,4 @@ const ImportWifModal = ({
   );
 };
 
-export default ImportWifModal;
+export default RegtestModal;
