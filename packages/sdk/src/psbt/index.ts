@@ -18,9 +18,16 @@ export class PSBT extends CoinSelect {
     outputs,
     feeRate,
     changeOutput,
-    utxoSelect,
+    autoUtxo: utxoSelect,
   }: PSBTArgs) {
-    super({ network, inputs, outputs, feeRate, changeOutput, utxoSelect });
+    super({
+      network,
+      inputs,
+      outputs,
+      feeRate,
+      changeOutput,
+      autoUtxo: utxoSelect,
+    });
 
     this.psbt = new Psbt({
       network: bitcoinJsNetwork(this.network),
@@ -59,8 +66,8 @@ export class PSBT extends CoinSelect {
           tapInternalKey: input.utxo.tapInternalKey,
           ...(input.utxo.tapLeafScript
             ? {
-              tapLeafScript: input.utxo.tapLeafScript,
-            }
+                tapLeafScript: input.utxo.tapLeafScript,
+              }
             : {}),
         });
         break;
@@ -112,7 +119,7 @@ export class PSBT extends CoinSelect {
   }
 
   static finalScript(unlockScripts: StackScripts) {
-    return ({ } = {}, { } = {}, redeemScript: Buffer) => {
+    return ({} = {}, {} = {}, redeemScript: Buffer) => {
       const payment = payments.p2sh({
         redeem: {
           output: redeemScript,

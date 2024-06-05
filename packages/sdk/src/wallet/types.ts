@@ -14,6 +14,7 @@ export type DeriveP2wpkh = DeriveAddress & {
 
 export type DeriveP2tr = DeriveAddress & {
   keypair: ECPairInterface;
+  tapInternalKey: Buffer;
 };
 
 export type DeriveP2sh = DeriveAddress & {

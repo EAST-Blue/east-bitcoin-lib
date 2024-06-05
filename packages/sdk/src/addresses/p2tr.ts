@@ -1,6 +1,11 @@
-import { AddressType, AddressUtxo, AddressUtxoArgs } from ".";
+import {
+  AddressAutoUtxo,
+  AddressAutoUtxoArgs,
+  AddressType,
+  AddressUtxo,
+  AddressUtxoArgs,
+} from ".";
 import { BitcoinUTXO } from "../repositories/bitcoin/types";
-import { pubkeyXOnly } from "../utils";
 
 export type TapLeafScript = {
   controlBlock: Buffer;
@@ -39,7 +44,10 @@ export class P2trUtxo extends AddressUtxo {
     this.tapLeafScript = tapLeafScript;
   }
 
-  static async fromBitcoinUTXO(bitcoinUTXO: BitcoinUTXO, pubkey: Buffer) {
+  static async fromBitcoinUTXO(
+    bitcoinUTXO: BitcoinUTXO,
+    tapInternalKey: Buffer,
+  ) {
     return new P2trUtxo({
       txid: bitcoinUTXO.txid,
       vout: bitcoinUTXO.vout,
@@ -47,7 +55,19 @@ export class P2trUtxo extends AddressUtxo {
         script: Buffer.from(bitcoinUTXO.script_hash, "hex"),
         value: bitcoinUTXO.value,
       },
-      tapInternalKey: pubkeyXOnly(pubkey),
+      tapInternalKey,
     });
+  }
+}
+
+export type P2trAutoUtxoArgs = AddressAutoUtxoArgs & {
+  tapInternalKey: Buffer;
+};
+
+export class P2trAutoUtxo extends AddressAutoUtxo {
+  tapInternalKey: Buffer;
+  constructor({ address, tapInternalKey }: P2trAutoUtxoArgs) {
+    super({ address });
+    this.tapInternalKey = tapInternalKey;
   }
 }

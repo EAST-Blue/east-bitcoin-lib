@@ -3,6 +3,8 @@ import {
   Address,
   BElectrsAPI,
   OrdAPI,
+  P2shAutoUtxo,
+  P2trAutoUtxo,
   PSBT,
   Script,
   Wallet,
@@ -20,29 +22,13 @@ const api = new API({
   ord: new OrdAPI({ network: "regtest" }), // this still dummy
 });
 
-function newWallet() {
+async function psbtBuilderP2tr() {
   const wallet = new Wallet({
     mnemonic:
       "final chat okay post increase install picnic library modify legend soap cube",
     network: "regtest",
   });
-  const index = 0;
-
-  const p2pkh = wallet.p2pkh(index);
-  const p2wpkh = wallet.p2wpkh(index);
-  const p2tr = wallet.p2tr(index);
-
-  return {
-    p2pkh,
-    p2wpkh,
-    p2tr,
-  };
-}
-
-async function psbtBuilderP2tr() {
-  const wallet = newWallet();
-  const p2pkh = wallet.p2pkh;
-  const p2tr = wallet.p2tr;
+  const p2tr = wallet.p2tr(0);
 
   // TODO: add minimum input and output value
   const p = new PSBT({
@@ -50,16 +36,15 @@ async function psbtBuilderP2tr() {
     inputs: [],
     outputs: [
       {
-        output: Address.fromString(p2tr.address),
+        output: Address.fromString("2N8ruoh7CGSycEnSx1nhi9C2UVYdUf89T7C"),
         value: 0.5 * 10 ** 8,
       },
     ],
     feeRate: 1,
-    changeOutput: Address.fromString(p2pkh.address),
-    utxoSelect: {
+    changeOutput: Address.fromString("2N8ruoh7CGSycEnSx1nhi9C2UVYdUf89T7C"),
+    autoUtxo: {
       api,
-      address: Address.fromString(p2tr.address),
-      pubkey: p2tr.keypair.publicKey,
+      from: new P2trAutoUtxo(p2tr),
     },
   });
 
@@ -73,39 +58,37 @@ async function psbtBuilderP2tr() {
 
 async function psbtBuilderP2sh() {
   const wallet = new Wallet({
-    mnemonic:
-      "final chat okay post increase install picnic library modify legend soap cube",
     network: "regtest",
   });
 
-  const p2pkh = wallet.p2pkh(0);
-  const p2pkhAddress = p2pkh.address;
-
   const lockScripts = [
+    Script.encodeNumber(1000),
     Script.OP_ADD,
     Script.encodeNumber(2000),
     Script.OP_EQUAL,
   ];
-  const unlockScripts = [Script.encodeNumber(1000), Script.encodeNumber(1000)];
+  const unlockScripts = [Script.encodeNumber(1000)];
 
   const p2sh = wallet.p2sh(lockScripts);
-  const p2shAddress = p2sh.address;
 
   const p = new PSBT({
     network: "regtest",
     inputs: [],
     outputs: [
       {
-        output: Address.fromString(p2pkhAddress),
-        value: 0.5 * 10 ** 8,
+        output: Address.fromString(p2sh.address),
+        value: 0.1 * 10 ** 8,
       },
     ],
     feeRate: 1,
-    changeOutput: Address.fromString(p2pkh.address),
-    utxoSelect: {
+    changeOutput: Address.fromString(p2sh.address),
+    autoUtxo: {
       api,
-      address: Address.fromString(p2shAddress),
-      redeemScript: p2sh.redeemScript,
+      from: new P2shAutoUtxo({
+        address: p2sh.address,
+        redeemScript: p2sh.redeemScript,
+        unlockScript: Script.compile(unlockScripts),
+      }),
     },
   });
 
@@ -120,6 +103,7 @@ async function psbtBuilderP2sh() {
 }
 
 async function main() {
+  // psbtBuilderP2tr();
   psbtBuilderP2sh();
 }
 
