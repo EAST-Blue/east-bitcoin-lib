@@ -9,23 +9,25 @@ import ImportWifModal from "../components/ImportWifModal";
 
 import OutputModal from "../components/OutputModal";
 import { KeyOptionEnum } from "../enums/KeyOptionEnum";
-import ECPairFactory from "ecpair";
-import * as bitcoinjs from "bitcoinjs-lib";
 import { PSBT, Wallet } from "@east-bitcoin-lib/sdk";
 import { useNetworkContext } from "../contexts/NetworkContext";
 import RegtestModal from "../components/RegtestModal";
 import { NetworkEnum } from "../enums/NetworkEnum";
+import { useInputContext } from "../contexts/InputContext";
+import InputViewModal from "../components/InputViewModal";
 
 export default function Page(): JSX.Element {
-  const { utxos, output, clear } = usePsbtContext() as any;
+  // const { utxos, output, clear } = usePsbtContext() as any;
   const { key, keyOption, setKey, setKeyOption } = useKeyContext() as any;
   const { network, networkOption, setNetwork, setNetworkOption } =
     useNetworkContext() as any;
+  const { utxos, setUtxos } = useInputContext() as any;
 
   const [openInputModal, setOpenInputModal] = useState(false);
   const [openOutputModal, setOpenOutputModal] = useState(false);
   const [openImportWif, setOpenImportWif] = useState(false);
   const [openRegtestModal, setOpenRegtestModal] = useState(false);
+  const [openInputViewModal, setOpenInputViewModal] = useState(null);
 
   const sign = async () => {
     if (network === null) return;
@@ -35,7 +37,16 @@ export default function Page(): JSX.Element {
       network,
       mnemonic: key,
     });
+    const index = 0;
+
+    const p2pkh = wallet.p2pkh(index);
+    const p2wpkh = wallet.p2wpkh(index);
+    const p2tr = wallet.p2tr(index);
+
+    console.log(p2pkh, p2wpkh, p2tr);
   };
+
+  console.log(utxos);
 
   return (
     <>
@@ -164,9 +175,14 @@ export default function Page(): JSX.Element {
                     Add Input +
                   </button>
                 </div>
-                {utxos.map((utxo: any, i: number) => (
+                {utxos?.map((utxo: any, i: number) => (
                   <div className="mt-2 text-right">
-                    <button className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-20">
+                    <button
+                      onClick={() => {
+                        setOpenInputViewModal(utxo);
+                      }}
+                      className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-20"
+                    >
                       Input {i + 1}
                     </button>
                   </div>
@@ -189,13 +205,13 @@ export default function Page(): JSX.Element {
                     Add Output +
                   </button>
                 </div>
-                {output.map((utxo: any, i: number) => (
+                {/* {output.map((utxo: any, i: number) => (
                   <div className="mt-2 text-right">
                     <button className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-20">
                       Output {i + 1}
                     </button>
                   </div>
-                ))}
+                ))} */}
               </div>
             </div>
             <div className="flex flex-row">
@@ -250,6 +266,8 @@ export default function Page(): JSX.Element {
         isOpen={openInputModal}
         setIsOpen={setOpenInputModal}
         title="Input Modal"
+        utxos={utxos}
+        setUtxos={setUtxos}
       />
       <OutputModal
         isOpen={openOutputModal}
@@ -262,6 +280,12 @@ export default function Page(): JSX.Element {
         title="Regtest IP"
         setNetwork={setNetwork}
         setNetworkOption={setNetworkOption}
+      />
+      <InputViewModal
+        isOpen={openInputModal !== null}
+        setIsOpen={setOpenInputViewModal}
+        title="Input View Modal"
+        utxo={openInputViewModal}
       />
     </>
   );

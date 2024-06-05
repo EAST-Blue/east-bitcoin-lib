@@ -2,36 +2,26 @@
 
 import { useEffect, useState } from "react";
 
-const InputModal = ({
+const InputViewModal = ({
   isOpen,
   setIsOpen,
   title = "",
-  utxos,
-  setUtxos,
+  utxo,
 }: {
   isOpen: any;
   setIsOpen: any;
   title: string;
-  utxos: string[] | null;
-  setUtxos: any;
+  utxo: string | null;
 }) => {
-  const [input, setInput] = useState("");
-
-  const onSave = () => {
-    const newUtxos = utxos ? [...utxos, input] : [input];
-    setUtxos(newUtxos);
-
-    setInput("");
-    setIsOpen(false);
-  };
-
   useEffect(() => {
-    //TODO fetch utxo detail every change input
-  }, [input]);
+    //TODO fetch UTXO detail
+  }, [utxo]);
+
+  if (!utxo) return;
 
   return (
     <div
-      onClick={() => setIsOpen(false)}
+      onClick={() => setIsOpen(null)}
       className={`fixed inset-0 ${isOpen ? "z-50" : "delay-500 -z-10"}`}
     >
       <div
@@ -48,7 +38,7 @@ const InputModal = ({
               </p>
               <div
                 className="w-5 cursor-pointer hover:text-primary"
-                onClick={() => setIsOpen(false)}
+                onClick={() => setIsOpen(null)}
               >
                 <svg
                   width="100%"
@@ -66,24 +56,15 @@ const InputModal = ({
             </div>
             <div className="flex flex-col p-4">
               <div className="flex flex-row">
-                <div className="w-full  my-2">
+                <div className="w-full my-2">
                   <label className="block text-sm font-medium leading-6 text-gray-200">
-                    Choose UTXO :
+                    Selected UTXO :
                   </label>
-                  <select
-                    onChange={(e) => setInput(e.target.value)}
-                    className="w-11/12 bg-[#0F111B] hover:bg-[#0F171B] rounded-md text-sm hover:cursor-pointer"
-                    defaultValue={""}
-                  >
-                    <option></option>
-                    <option>UTXO1234567891234567891</option>
-                    <option>UTXO1234567891234567892</option>
-                    <option>UTXO1234567891234567893</option>
-                    <option>UTXO1234567891234567894</option>
-                    <option>UTXO1234567891234567895</option>
-                    <option>UTXO1234567891234567896</option>
-                    <option>UTXO1234567891234567897</option>
-                  </select>
+                  <input
+                    disabled
+                    value={utxo}
+                    className="w-full bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
+                  />
                 </div>
               </div>
               <div className="flex flex-row">
@@ -124,15 +105,6 @@ const InputModal = ({
                   />
                 </div>
               </div>
-              <div className="flex flex-row">
-                <button
-                  className="w-full rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40"
-                  disabled={input === ""}
-                  onClick={onSave}
-                >
-                  Save
-                </button>
-              </div>
             </div>
           </div>
         </div>
@@ -141,4 +113,4 @@ const InputModal = ({
   );
 };
 
-export default InputModal;
+export default InputViewModal;
