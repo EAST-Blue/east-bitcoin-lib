@@ -9,7 +9,14 @@ import ImportWifModal from "../components/ImportWifModal";
 
 import OutputModal from "../components/OutputModal";
 import { KeyOptionEnum } from "../enums/KeyOptionEnum";
-import { PSBT, Wallet } from "@east-bitcoin-lib/sdk";
+import {
+  API,
+  Address,
+  BElectrsAPI,
+  OrdAPI,
+  PSBT,
+  Wallet,
+} from "@east-bitcoin-lib/sdk";
 import { useNetworkContext } from "../contexts/NetworkContext";
 import RegtestModal from "../components/RegtestModal";
 import { NetworkEnum } from "../enums/NetworkEnum";
@@ -33,8 +40,20 @@ export default function Page(): JSX.Element {
     if (network === null) return;
     if (key === null) return;
 
+    const bitcoinApi = new BElectrsAPI({
+      network: "regtest",
+      apiUrl: {
+        regtest: network,
+      },
+    });
+    const api = new API({
+      network: "regtest",
+      bitcoin: bitcoinApi,
+      ord: new OrdAPI({ network: "regtest" }),
+    });
+
     const wallet = new Wallet({
-      network,
+      network: networkOption,
       mnemonic: key,
     });
     const index = 0;
@@ -43,10 +62,30 @@ export default function Page(): JSX.Element {
     const p2wpkh = wallet.p2wpkh(index);
     const p2tr = wallet.p2tr(index);
 
-    console.log(p2pkh, p2wpkh, p2tr);
-  };
+    const p = new PSBT({
+      network: "regtest",
+      inputs: [],
+      outputs: [
+        {
+          output: Address.fromString(p2tr.address),
+          value: 0.5 * 10 ** 8,
+        },
+      ],
+      feeRate: 1,
+      changeOutput: Address.fromString(p2pkh.address),
+      utxoSelect: {
+        api,
+        address: Address.fromString(p2tr.address),
+        pubkey: p2tr.keypair.publicKey,
+      },
+    });
 
-  console.log(utxos);
+    await p.build();
+    const psbt = p.toPSBT();
+    psbt.signAllInputs(p2tr.keypair);
+    const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
+    console.log({ hex });
+  };
 
   return (
     <>

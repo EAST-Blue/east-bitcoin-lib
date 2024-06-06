@@ -76,13 +76,18 @@ const InputModal = ({
                     defaultValue={""}
                   >
                     <option></option>
-                    <option>UTXO1234567891234567891</option>
-                    <option>UTXO1234567891234567892</option>
-                    <option>UTXO1234567891234567893</option>
-                    <option>UTXO1234567891234567894</option>
-                    <option>UTXO1234567891234567895</option>
-                    <option>UTXO1234567891234567896</option>
-                    <option>UTXO1234567891234567897</option>
+                    <option value={"UTXO1234567891234567891"}>
+                      UTXO1234567891234567891
+                    </option>
+                    <option value={"UTXO1234567891234567892"}>
+                      UTXO1234567891234567892
+                    </option>
+                    <option value={"UTXO1234567891234567893"}>
+                      UTXO1234567891234567893
+                    </option>
+                    <option value={"UTXO1234567891234567894"}>
+                      UTXO1234567891234567894
+                    </option>
                   </select>
                 </div>
               </div>
