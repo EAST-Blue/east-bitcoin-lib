@@ -1,5 +1,5 @@
 {
-  "name": "@east-bitcoin-lib/sdk",
+  "name": "@east-bitcoin-lib/cli-tests",
   "version": "0.0.1",
   "private": true,
   "main": "./dist/index.js",
@@ -9,12 +9,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@bitcoinerlab/secp256k1": "^1.1.1",
-    "bip32": "^4.0.0",
-    "bip39": "^3.1.0",
-    "bitcoin-address-validation": "^2.2.3",
+    "@east-bitcoin-lib/sdk": "*",
     "bitcoinjs-lib": "^6.1.5",
-    "ecpair": "^2.1.0"
+    "ecpair": "^2.1.0",
+    "tiny-secp256k1": "^2.2.3"
   },
   "devDependencies": {
     "@east-bitcoin-lib/eslint-config": "*",
