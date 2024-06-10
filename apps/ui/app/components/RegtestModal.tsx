@@ -1,7 +1,6 @@
 "use client";
 
 import { useState } from "react";
-import { KeyOptionEnum } from "../enums/KeyOptionEnum";
 import { NetworkEnum } from "../enums/NetworkEnum";
 
 const RegtestModal = ({

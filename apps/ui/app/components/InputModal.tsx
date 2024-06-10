@@ -1,33 +1,108 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import { useNetworkContext } from "../contexts/NetworkContext";
+import { useKeyContext } from "../contexts/KeyContext";
+import { BElectrsAPI, Script, Wallet } from "@east-bitcoin-lib/sdk";
+import { useInputContext } from "../contexts/InputContext";
+import { BitcoinUTXO } from "@east-bitcoin-lib/sdk/dist/repositories/bitcoin/types";
+import { InputContextType } from "../types/InputContextType";
 
 const InputModal = ({
   isOpen,
   setIsOpen,
   title = "",
-  utxos,
-  setUtxos,
 }: {
   isOpen: any;
   setIsOpen: any;
   title: string;
-  utxos: string[] | null;
-  setUtxos: any;
 }) => {
-  const [input, setInput] = useState("");
+  const { utxos, saveUtxos } = useInputContext() as InputContextType;
+  const { key } = useKeyContext() as any;
+  const { network, networkOption } = useNetworkContext() as any;
+
+  const [selectedInput, setSelectedInput] = useState<BitcoinUTXO | null>(null);
+  const [inputs, setInputs] = useState<BitcoinUTXO[]>([]);
+  const [addressType, setAddressType] = useState<string>("");
 
   const onSave = () => {
-    const newUtxos = utxos ? [...utxos, input] : [input];
-    setUtxos(newUtxos);
+    if (!selectedInput) return;
+    saveUtxos([selectedInput]);
 
-    setInput("");
+    setSelectedInput(null);
+    setInputs([]);
     setIsOpen(false);
+    setAddressType("");
+  };
+
+  const getInputsByAddress = async () => {
+    if (addressType === "") return;
+    if (!network) return;
+
+    const wallet = new Wallet({
+      network: networkOption,
+      mnemonic: key,
+    });
+    const bitcoinApi = new BElectrsAPI({
+      network: networkOption,
+      apiUrl: {
+        [networkOption]: network,
+      },
+    });
+
+    let _inputs;
+    switch (addressType) {
+      case "p2pkh":
+        const p2pkh = wallet.p2pkh(0);
+        _inputs = await bitcoinApi.getUTXOs(p2pkh.address);
+        break;
+
+      case "p2wpkh":
+        const p2wpkh = wallet.p2wpkh(0);
+        _inputs = await bitcoinApi.getUTXOs(p2wpkh.address);
+        break;
+
+      case "p2sh":
+        // TODO change this
+        const lockScripts = [
+          Script.OP_ADD,
+          Script.encodeNumber(2000),
+          Script.OP_EQUAL,
+        ];
+        const p2sh = wallet.p2sh(lockScripts);
+        _inputs = await bitcoinApi.getUTXOs(p2sh.address);
+        break;
+
+      case "p2tr":
+        const p2tr = wallet.p2tr(0);
+        _inputs = await bitcoinApi.getUTXOs(p2tr.address);
+        break;
+
+      default:
+        break;
+    }
+
+    const filteredInputs =
+      _inputs?.filter((i) => i?.status?.confirmed === true) || [];
+
+    if (utxos.length > 0) {
+      const unusedInputs = filteredInputs.filter((i) => {
+        return !utxos.some((e) => e.txid === i.txid);
+      });
+      console.log(unusedInputs);
+      setInputs(unusedInputs);
+    } else {
+      setInputs(filteredInputs);
+    }
   };
 
   useEffect(() => {
-    //TODO fetch utxo detail every change input
-  }, [input]);
+    getInputsByAddress();
+  }, [addressType]);
+
+  useEffect(() => {
+    getInputsByAddress();
+  }, []);
 
   return (
     <div
@@ -68,41 +143,77 @@ const InputModal = ({
               <div className="flex flex-row">
                 <div className="w-full  my-2">
                   <label className="block text-sm font-medium leading-6 text-gray-200">
-                    Choose UTXO :
+                    Address Type:
                   </label>
                   <select
-                    onChange={(e) => setInput(e.target.value)}
+                    value={addressType}
+                    onChange={(e) => setAddressType(e.target.value)}
                     className="w-11/12 bg-[#0F111B] hover:bg-[#0F171B] rounded-md text-sm hover:cursor-pointer"
-                    defaultValue={""}
                   >
-                    <option></option>
-                    <option value={"UTXO1234567891234567891"}>
-                      UTXO1234567891234567891
+                    <option value={""} selected>
+                      --- Choose address type ---
                     </option>
-                    <option value={"UTXO1234567891234567892"}>
-                      UTXO1234567891234567892
+                    <option value={"p2pkh"}>
+                      P2PKH (Pay to Public Key Hash)
                     </option>
-                    <option value={"UTXO1234567891234567893"}>
-                      UTXO1234567891234567893
+                    <option value={"p2wpkh"}>
+                      P2WPKH (Pay to Witness Public Key Hash)
                     </option>
-                    <option value={"UTXO1234567891234567894"}>
-                      UTXO1234567891234567894
-                    </option>
+                    {/* <option value={"p2sh"}>P2SH (Pay to Script Hash)</option> */}
+                    <option value={"p2tr"}>P2TR (Pay to Taproot)</option>
                   </select>
                 </div>
               </div>
+
               <div className="flex flex-row">
-                <div className="w-full my-2">
+                <div className="w-full  my-2">
                   <label className="block text-sm font-medium leading-6 text-gray-200">
-                    vout:
+                    Choose UTXO :
                   </label>
-                  <input
-                    disabled
-                    className="bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
-                  />
+                  <select
+                    className="w-11/12 bg-[#0F111B] hover:bg-[#0F171B] rounded-md text-sm hover:cursor-pointer"
+                    onChange={(e) =>
+                      setSelectedInput(JSON.parse(e.target.value))
+                    }
+                  >
+                    <option selected>--- Choose your UTXO ---</option>
+                    {inputs.map((i) => (
+                      <option value={JSON.stringify(i)}>
+                        {i.txid} - {i.value} sats
+                      </option>
+                    ))}
+                  </select>
                 </div>
               </div>
-              <div className="flex flex-row">
+              {selectedInput && (
+                <div className="flex flex-row">
+                  <div className="w-full my-2">
+                    <label className="block text-sm font-medium leading-6 text-gray-200">
+                      vout:
+                    </label>
+                    <input
+                      disabled
+                      className="bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
+                      value={selectedInput.vout}
+                    />
+                  </div>
+                </div>
+              )}
+              {selectedInput && (
+                <div className="flex flex-row">
+                  <div className="w-full my-2">
+                    <label className="block text-sm font-medium leading-6 text-gray-200">
+                      value (sats):
+                    </label>
+                    <input
+                      disabled
+                      className="bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
+                      value={selectedInput.value}
+                    />
+                  </div>
+                </div>
+              )}
+              {/* <div className="flex flex-row">
                 <div className="w-full  my-2">
                   <label className="block text-sm font-medium leading-6 text-gray-200">
                     unlocking script:
@@ -128,11 +239,11 @@ const InputModal = ({
                     rows={5}
                   />
                 </div>
-              </div>
-              <div className="flex flex-row">
+              </div> */}
+              <div className="flex flex-row my-2">
                 <button
                   className="w-full rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40"
-                  disabled={input === ""}
+                  disabled={inputs.length === 0}
                   onClick={onSave}
                 >
                   Save

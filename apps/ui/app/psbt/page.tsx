@@ -1,9 +1,8 @@
 "use client";
 
-import { useEffect, useRef, useState } from "react";
+import { useState } from "react";
 import InputModal from "../components/InputModal";
 import Sidebar from "../components/Sidebar";
-import { usePsbtContext } from "../contexts/PsbtContext";
 import { useKeyContext } from "../contexts/KeyContext";
 import ImportWifModal from "../components/ImportWifModal";
 
@@ -14,6 +13,7 @@ import {
   Address,
   BElectrsAPI,
   OrdAPI,
+  P2wpkhUtxo,
   PSBT,
   Wallet,
 } from "@east-bitcoin-lib/sdk";
@@ -22,19 +22,20 @@ import RegtestModal from "../components/RegtestModal";
 import { NetworkEnum } from "../enums/NetworkEnum";
 import { useInputContext } from "../contexts/InputContext";
 import InputViewModal from "../components/InputViewModal";
+import { InputContextType } from "../types/InputContextType";
+import { BitcoinUTXO } from "@east-bitcoin-lib/sdk/dist/repositories/bitcoin/types";
 
 export default function Page(): JSX.Element {
-  // const { utxos, output, clear } = usePsbtContext() as any;
   const { key, keyOption, setKey, setKeyOption } = useKeyContext() as any;
   const { network, networkOption, setNetwork, setNetworkOption } =
     useNetworkContext() as any;
-  const { utxos, setUtxos } = useInputContext() as any;
+  const { utxos } = useInputContext() as InputContextType;
 
   const [openInputModal, setOpenInputModal] = useState(false);
   const [openOutputModal, setOpenOutputModal] = useState(false);
   const [openImportWif, setOpenImportWif] = useState(false);
   const [openRegtestModal, setOpenRegtestModal] = useState(false);
-  const [openInputViewModal, setOpenInputViewModal] = useState(null);
+  const [viewInput, setViewInput] = useState<BitcoinUTXO | null>(null);
 
   const sign = async () => {
     if (network === null) return;
@@ -218,7 +219,7 @@ export default function Page(): JSX.Element {
                   <div className="mt-2 text-right">
                     <button
                       onClick={() => {
-                        setOpenInputViewModal(utxo);
+                        setViewInput(utxo);
                       }}
                       className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-20"
                     >
@@ -305,8 +306,6 @@ export default function Page(): JSX.Element {
         isOpen={openInputModal}
         setIsOpen={setOpenInputModal}
         title="Input Modal"
-        utxos={utxos}
-        setUtxos={setUtxos}
       />
       <OutputModal
         isOpen={openOutputModal}
@@ -321,10 +320,10 @@ export default function Page(): JSX.Element {
         setNetworkOption={setNetworkOption}
       />
       <InputViewModal
-        isOpen={openInputModal !== null}
-        setIsOpen={setOpenInputViewModal}
+        isOpen={viewInput !== null}
+        setIsOpen={setViewInput}
         title="Input View Modal"
-        utxo={openInputViewModal}
+        utxo={viewInput!}
       />
     </>
   );

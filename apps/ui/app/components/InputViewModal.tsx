@@ -1,6 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect } from "react";
+import { useInputContext } from "../contexts/InputContext";
+import { BitcoinUTXO } from "@east-bitcoin-lib/sdk/dist/repositories/bitcoin/types";
+import { InputContextType } from "../types/InputContextType";
 
 const InputViewModal = ({
   isOpen,
@@ -11,8 +14,15 @@ const InputViewModal = ({
   isOpen: any;
   setIsOpen: any;
   title: string;
-  utxo: string | null;
+  utxo: BitcoinUTXO;
 }) => {
+  const { removeUtxoByTxid } = useInputContext() as InputContextType;
+
+  const onDelete = () => {
+    removeUtxoByTxid(utxo.txid);
+    setIsOpen(false);
+  };
+
   useEffect(() => {
     //TODO fetch UTXO detail
   }, [utxo]);
@@ -62,7 +72,7 @@ const InputViewModal = ({
                   </label>
                   <input
                     disabled
-                    value={utxo}
+                    value={utxo.txid}
                     className="w-full bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
                   />
                 </div>
@@ -74,11 +84,33 @@ const InputViewModal = ({
                   </label>
                   <input
                     disabled
+                    value={utxo.vout}
                     className="bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
                   />
                 </div>
               </div>
               <div className="flex flex-row">
+                <div className="w-full my-2">
+                  <label className="block text-sm font-medium leading-6 text-gray-200">
+                    value (sats):
+                  </label>
+                  <input
+                    disabled
+                    value={utxo.value}
+                    className="bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
+                  />
+                </div>
+              </div>
+              <div className="flex flex-row my-2">
+                <button
+                  onClick={onDelete}
+                  className="w-full rounded-sm shadow-sm bg-[#723232] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40"
+                >
+                  Delete
+                </button>
+              </div>
+
+              {/* <div className="flex flex-row">
                 <div className="w-full  my-2">
                   <label className="block text-sm font-medium leading-6 text-gray-200">
                     unlocking script:
@@ -104,7 +136,7 @@ const InputViewModal = ({
                     rows={5}
                   />
                 </div>
-              </div>
+              </div> */}
             </div>
           </div>
         </div>
