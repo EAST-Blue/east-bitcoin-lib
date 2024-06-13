@@ -24,18 +24,23 @@ import { useInputContext } from "../contexts/InputContext";
 import InputViewModal from "../components/InputViewModal";
 import { InputContextType } from "../types/InputContextType";
 import { BitcoinUTXO } from "@east-bitcoin-lib/sdk/dist/repositories/bitcoin/types";
+import { useOutputContext } from "../contexts/OutputContext";
+import { OutputContextType, PSBTOutput } from "../types/OutputContextType";
+import OutputViewModal from "../components/OutputViewModal";
 
 export default function Page(): JSX.Element {
   const { key, keyOption, setKey, setKeyOption } = useKeyContext() as any;
   const { network, networkOption, setNetwork, setNetworkOption } =
     useNetworkContext() as any;
   const { utxos } = useInputContext() as InputContextType;
+  const { outputs } = useOutputContext() as OutputContextType;
 
   const [openInputModal, setOpenInputModal] = useState(false);
   const [openOutputModal, setOpenOutputModal] = useState(false);
   const [openImportWif, setOpenImportWif] = useState(false);
   const [openRegtestModal, setOpenRegtestModal] = useState(false);
   const [viewInput, setViewInput] = useState<BitcoinUTXO | null>(null);
+  const [viewOutput, setViewOutput] = useState<PSBTOutput | null>(null);
 
   const sign = async () => {
     if (network === null) return;
@@ -87,6 +92,8 @@ export default function Page(): JSX.Element {
     const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
     console.log({ hex });
   };
+
+  console.log(outputs);
 
   return (
     <>
@@ -245,13 +252,18 @@ export default function Page(): JSX.Element {
                     Add Output +
                   </button>
                 </div>
-                {/* {output.map((utxo: any, i: number) => (
+                {outputs?.map((output: any, i: number) => (
                   <div className="mt-2 text-right">
-                    <button className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-20">
+                    <button
+                      onClick={() => {
+                        setViewOutput(output);
+                      }}
+                      className="rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-20"
+                    >
                       Output {i + 1}
                     </button>
                   </div>
-                ))} */}
+                ))}
               </div>
             </div>
             <div className="flex flex-row">
@@ -324,6 +336,12 @@ export default function Page(): JSX.Element {
         setIsOpen={setViewInput}
         title="Input View Modal"
         utxo={viewInput!}
+      />
+      <OutputViewModal
+        isOpen={viewOutput !== null}
+        setIsOpen={setViewOutput}
+        title="Output View Modal"
+        output={viewOutput!}
       />
     </>
   );

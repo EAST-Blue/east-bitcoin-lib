@@ -8,6 +8,8 @@ import "prism-code-editor/scrollbar.css";
 import "../prism-style.css";
 import "prism-code-editor/languages/asm";
 import { PrismEditor, createEditor } from "prism-code-editor";
+import { useOutputContext } from "../contexts/OutputContext";
+import { OutputContextType } from "../types/OutputContextType";
 
 const OutputModal = ({
   isOpen,
@@ -18,7 +20,11 @@ const OutputModal = ({
   setIsOpen: any;
   title: string;
 }) => {
-  const [type, setType] = useState("nonstandard");
+  const { saveOutputs } = useOutputContext() as OutputContextType;
+
+  const [addressType, setAddressType] = useState<string>("nonstandard");
+  const [pubkey, setPubkey] = useState<string>("");
+  const [value, setValue] = useState<number>(0);
 
   const divRef = useRef<HTMLDivElement>(null);
   const editorRef = useRef<PrismEditor>();
@@ -36,6 +42,17 @@ const OutputModal = ({
 
     return editor.remove;
   }, []);
+
+  const onSave = () => {
+    if (value <= 0) return;
+    if (pubkey === "") return;
+
+    saveOutputs([{ address: pubkey, value }]);
+
+    setValue(0);
+    setPubkey("");
+    setIsOpen(false);
+  };
 
   return (
     <div
@@ -79,14 +96,11 @@ const OutputModal = ({
                     Address Type:
                   </label>
                   <select
-                    value={type}
-                    onChange={(e) => setType(e.target.value)}
+                    value={addressType}
+                    onChange={(e) => setAddressType(e.target.value)}
                     className="w-11/12 bg-[#0F111B] hover:bg-[#0F171B] rounded-md text-sm hover:cursor-pointer"
                   >
                     <option value={"nonstandard"}>Nonstandard</option>
-                    <option value={"p2pkh"}>
-                      P2PKH (Pay to Public Key Hash)
-                    </option>
                     <option value={"p2wpkh"}>
                       P2WPKH (Pay to Witness Public Key Hash)
                     </option>
@@ -99,30 +113,39 @@ const OutputModal = ({
                   <label className="block text-sm font-medium leading-6 text-gray-200">
                     value (sats):
                   </label>
-                  <input className="bg-transparent rounded-md text-sm border-gray-700" />
+                  <input
+                    type="number"
+                    value={value}
+                    onChange={(e) => setValue(parseInt(e.target.value))}
+                    className="bg-transparent rounded-md text-sm border-gray-700"
+                  />
                 </div>
               </div>
-              {type === "p2pkh" && (
+              {addressType === "p2wpkh" && (
                 <div className="flex flex-row">
                   <div className="w-full my-2">
                     <label className="block text-sm font-medium leading-6 text-gray-200">
-                      public key (hex):
+                      address:
                     </label>
-                    <textarea className="w-full bg-transparent rounded-md text-sm border-gray-700" />
+                    <input
+                      type="text"
+                      value={pubkey}
+                      onChange={(e) => setPubkey(e.target.value)}
+                      className="w-full bg-transparent rounded-md text-sm border-gray-700"
+                    />
+                    <label className="block text-sm font-medium leading-6 text-gray-200 -mt-1">
+                      or send to{" "}
+                      <span className="underline hover:cursor-pointer">
+                        Alice
+                      </span>
+                      {", "}
+                      <span className="underline hover:cursor-pointer">
+                        Bob
+                      </span>
+                    </label>
                   </div>
                 </div>
               )}
-              {type === "p2wpkh" && (
-                <div className="flex flex-row">
-                  <div className="w-full my-2">
-                    <label className="block text-sm font-medium leading-6 text-gray-200">
-                      public key (hex):
-                    </label>
-                    <textarea className="w-full bg-transparent rounded-md text-sm border-gray-700" />
-                  </div>
-                </div>
-              )}
-
               <div className="flex flex-row">
                 <div className="w-full my-2">
                   <label className="block text-sm font-medium leading-6 text-gray-200">
@@ -133,6 +156,15 @@ const OutputModal = ({
                     className="rounded-sm border border-gray-700 overflow-auto break-words"
                   />
                 </div>
+              </div>
+
+              <div className="flex flex-row my-2">
+                <button
+                  className="w-full rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40"
+                  onClick={onSave}
+                >
+                  Save
+                </button>
               </div>
             </div>
           </div>

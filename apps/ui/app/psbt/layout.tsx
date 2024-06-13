@@ -6,6 +6,7 @@ import Footer from "../components/Footer";
 import { KeyContextProvider } from "../contexts/KeyContext";
 import { NetworkContextProvider } from "../contexts/NetworkContext";
 import { InputContextProvider } from "../contexts/InputContext";
+import { OutputContextProvider } from "../contexts/OutputContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -24,9 +25,11 @@ export default function RootLayout({
       <body className={inter.className}>
         <NetworkContextProvider>
           <KeyContextProvider>
-            <InputContextProvider>
-              <PsbtContextProvider>{children}</PsbtContextProvider>
-            </InputContextProvider>
+            <OutputContextProvider>
+              <InputContextProvider>
+                <PsbtContextProvider>{children}</PsbtContextProvider>
+              </InputContextProvider>
+            </OutputContextProvider>
           </KeyContextProvider>
         </NetworkContextProvider>
       </body>
