@@ -11,11 +11,15 @@ import { KeyOptionEnum } from "../enums/KeyOptionEnum";
 import {
   API,
   Address,
+  AddressType,
   BElectrsAPI,
   OrdAPI,
+  P2pkhUtxo,
+  P2trUtxo,
   P2wpkhUtxo,
   PSBT,
   Wallet,
+  getAddressType,
 } from "@east-bitcoin-lib/sdk";
 import { useNetworkContext } from "../contexts/NetworkContext";
 import RegtestModal from "../components/RegtestModal";
@@ -27,6 +31,9 @@ import { BitcoinUTXO } from "@east-bitcoin-lib/sdk/dist/repositories/bitcoin/typ
 import { useOutputContext } from "../contexts/OutputContext";
 import { OutputContextType, PSBTOutput } from "../types/OutputContextType";
 import OutputViewModal from "../components/OutputViewModal";
+import { CoinSelect } from "@east-bitcoin-lib/sdk/dist/psbt/coin-select";
+import { Input } from "@east-bitcoin-lib/sdk/dist/psbt/types";
+import { parseOutput } from "../utils/parseOutput";
 
 export default function Page(): JSX.Element {
   const { key, keyOption, setKey, setKeyOption } = useKeyContext() as any;
@@ -52,48 +59,62 @@ export default function Page(): JSX.Element {
         regtest: network,
       },
     });
-    const api = new API({
-      network: "regtest",
-      bitcoin: bitcoinApi,
-      ord: new OrdAPI({ network: "regtest" }),
-    });
+    // const api = new API({
+    //   network: "regtest",
+    //   bitcoin: bitcoinApi,
+    //   ord: new OrdAPI({ network: "regtest" }),
+    // });
 
     const wallet = new Wallet({
-      network: networkOption,
       mnemonic: key,
+      network: networkOption,
     });
-    const index = 0;
 
-    const p2pkh = wallet.p2pkh(index);
-    const p2wpkh = wallet.p2wpkh(index);
-    const p2tr = wallet.p2tr(index);
+    const inputs: Input[] = [];
+    for (const utxo of utxos) {
+      const addressType: AddressType = getAddressType(utxo.address);
+      switch (addressType) {
+        case "p2pkh":
+          const p2pkhUtxo = await P2pkhUtxo.fromBitcoinUTXO(bitcoinApi, utxo);
+          inputs.push({ utxo: p2pkhUtxo, value: utxo.value });
+          break;
+
+        case "p2wpkh":
+          const p2wpkhUtxo = await P2wpkhUtxo.fromBitcoinUTXO(utxo);
+          inputs.push({ utxo: p2wpkhUtxo, value: utxo.value });
+          break;
+
+        case "p2tr":
+          const p2tr = wallet.p2tr(0);
+          const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
+            utxo,
+            p2tr.keypair.publicKey
+          );
+          inputs.push({ utxo: p2trUtxo, value: utxo.value });
+          break;
+
+        default:
+          break;
+      }
+    }
 
     const p = new PSBT({
-      network: "regtest",
-      inputs: [],
-      outputs: [
-        {
-          output: Address.fromString(p2tr.address),
-          value: 0.5 * 10 ** 8,
-        },
-      ],
+      network: networkOption,
+      inputs: inputs,
+      outputs: parseOutput(outputs),
       feeRate: 1,
-      changeOutput: Address.fromString(p2pkh.address),
-      utxoSelect: {
-        api,
-        address: Address.fromString(p2tr.address),
-        pubkey: p2tr.keypair.publicKey,
-      },
+      changeOutput: Address.fromString(wallet.p2wpkh(0).address), // TODO dummy
     });
-
     await p.build();
+
     const psbt = p.toPSBT();
-    psbt.signAllInputs(p2tr.keypair);
+    psbt.signAllInputs(wallet.p2tr(0).keypair); // TODO sign every input utxo
+
     const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
     console.log({ hex });
-  };
 
-  console.log(outputs);
+    return;
+  };
 
   return (
     <>

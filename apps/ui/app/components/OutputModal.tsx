@@ -146,6 +146,31 @@ const OutputModal = ({
                   </div>
                 </div>
               )}
+              {addressType === "p2tr" && (
+                <div className="flex flex-row">
+                  <div className="w-full my-2">
+                    <label className="block text-sm font-medium leading-6 text-gray-200">
+                      address:
+                    </label>
+                    <input
+                      type="text"
+                      value={pubkey}
+                      onChange={(e) => setPubkey(e.target.value)}
+                      className="w-full bg-transparent rounded-md text-sm border-gray-700"
+                    />
+                    <label className="block text-sm font-medium leading-6 text-gray-200 -mt-1">
+                      or send to{" "}
+                      <span className="underline hover:cursor-pointer">
+                        Alice
+                      </span>
+                      {", "}
+                      <span className="underline hover:cursor-pointer">
+                        Bob
+                      </span>
+                    </label>
+                  </div>
+                </div>
+              )}
               <div className="flex flex-row">
                 <div className="w-full my-2">
                   <label className="block text-sm font-medium leading-6 text-gray-200">
