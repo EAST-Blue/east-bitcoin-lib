@@ -1,60 +1,40 @@
-import { BitcoinContainer } from "./containers";
+import { BitcoinContainer, ElectrsContainer } from "./containers";
+import { ExplorerContainer } from "./containers/explorer";
 import { sleep } from "./utils/utils";
 
-export * from "./containers";
-
 async function main() {
+  const socketPath = "/run/user/1000/podman/podman.sock";
+
   const bitcoinContainer = new BitcoinContainer({
-    socketPath: "/run/user/1000/podman/podman.sock",
+    socketPath,
     printLog: false,
   });
   await bitcoinContainer.start();
 
-  await sleep(2000);
+  const electrsContainer = new ElectrsContainer({
+    socketPath,
+    printLog: false,
+  });
+  await electrsContainer.start();
 
-  try {
-    await bitcoinContainer.execCommand([
-      "bitcoin-cli",
-      "-regtest",
-      "-rpcuser=east",
-      "-rpcpassword=east",
-      "createwallet",
-      "east",
-    ]);
-    await bitcoinContainer.execCommand([
-      "bitcoin-cli",
-      "-regtest",
-      "-rpcuser=east",
-      "-rpcpassword=east",
-      "-generate",
-      "1",
-    ]);
-    await bitcoinContainer.execCommand([
-      "bitcoin-cli",
-      "-regtest",
-      "-rpcuser=east",
-      "-rpcpassword=east",
-      "-generate",
-      "1000",
-    ]);
-    await bitcoinContainer.execCommand([
-      "bitcoin-cli",
-      "-regtest",
-      "-rpcuser=east",
-      "-rpcpassword=east",
-      "-generate",
-      "1",
-    ]);
-  } catch (error) {
-    console.log(error);
-  }
+  const explorerContainer = new ExplorerContainer({
+    socketPath,
+    printLog: false,
+  });
+  await explorerContainer.start();
 
-  await sleep(2000);
-
-  await bitcoinContainer.shutdown();
   process.on("SIGINT", async function () {
     await bitcoinContainer.shutdown();
+    await electrsContainer.shutdown();
+    await explorerContainer.shutdown();
   });
+
+  await sleep(100000);
+  await bitcoinContainer.shutdown();
+  await electrsContainer.shutdown();
+  await explorerContainer.shutdown();
 }
 
 main();
+
+export * from "./containers";

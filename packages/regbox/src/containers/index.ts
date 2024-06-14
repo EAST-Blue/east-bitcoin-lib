@@ -11,6 +11,7 @@ export type ContainerAbstractArgs = {
   name: string;
   image: string;
   cmd: string[];
+  env: string[];
   portMappings: PortMapping[];
   printLog: boolean;
 };
@@ -22,6 +23,7 @@ export abstract class ContainerAbstract {
   name: string;
   image: string;
   cmd: string[];
+  env: string[];
   portMappings: PortMapping[];
   printLog: boolean;
 
@@ -33,12 +35,14 @@ export abstract class ContainerAbstract {
     name,
     image,
     cmd,
+    env,
     portMappings,
     printLog,
   }: ContainerAbstractArgs) {
     this.name = name;
     this.image = image;
     this.cmd = cmd;
+    this.env = env;
     this.portMappings = portMappings;
     this.printLog = printLog;
 
@@ -107,6 +111,7 @@ export abstract class ContainerAbstract {
         HostConfig: {
           PortBindings: portBindings,
         },
+        Env: this.env,
       });
       await container.start();
       this.container = container;
@@ -132,15 +137,19 @@ export abstract class ContainerAbstract {
       );
     }
 
-    let result = "";
+    let successLog = "";
+    let errorLog = "";
 
-    console.log("execute command");
-
-    const logStream = createLogStream({
+    const successLogStream = createLogStream({
       printLog: false,
       onLog: (log: string) => {
-        console.log(log);
-        result += log;
+        successLog += log;
+      },
+    });
+    const errorLogStream = createLogStream({
+      printLog: false,
+      onLog: (log: string) => {
+        errorLog += log;
       },
     });
 
@@ -154,13 +163,16 @@ export abstract class ContainerAbstract {
       hijack: false,
       stdin: false,
     });
-    this.docker.modem.demuxStream(stream, logStream, logStream);
+    this.docker.modem.demuxStream(stream, successLogStream, errorLogStream);
 
-    return new Promise((resolve) => {
+    return new Promise((resolve, reject) => {
       stream.on("end", () => {
-        logStream.destroy();
+        successLogStream.destroy();
 
-        resolve(true);
+        if (errorLog) {
+          reject(errorLog);
+        }
+        resolve(successLog);
       });
     });
   }
