@@ -12,18 +12,19 @@ export type ContainerAbstractArgs = {
   image: string;
   cmd: string[];
   env: string[];
+  networkName: string;
   portMappings: PortMapping[];
   printLog: boolean;
 };
 
 // TODO:
 // 1. check image exist, if not then pull the image
-// 2. attach east_network into each container
 export abstract class ContainerAbstract {
   name: string;
   image: string;
   cmd: string[];
   env: string[];
+  networkName: string;
   portMappings: PortMapping[];
   printLog: boolean;
 
@@ -36,6 +37,7 @@ export abstract class ContainerAbstract {
     image,
     cmd,
     env,
+    networkName,
     portMappings,
     printLog,
   }: ContainerAbstractArgs) {
@@ -43,6 +45,7 @@ export abstract class ContainerAbstract {
     this.image = image;
     this.cmd = cmd;
     this.env = env;
+    this.networkName = networkName;
     this.portMappings = portMappings;
     this.printLog = printLog;
 
@@ -51,9 +54,7 @@ export abstract class ContainerAbstract {
 
   private async logs() {
     if (!this.container) {
-      throw new Error(
-        "errors.can't see the logs, the container is not running",
-      );
+      return;
     }
 
     const logStream = createLogStream({
@@ -72,6 +73,36 @@ export abstract class ContainerAbstract {
       logStream.end(`info.ended logs for ${this.name}`);
       logStream.destroy();
     });
+  }
+
+  private async connectNetwork() {
+    if (!this.container) {
+      return;
+    }
+
+    const networks = await this.docker.listNetworks();
+
+    let networkId = networks.find(
+      (network) => network.Name === this.networkName,
+    )?.Id;
+    let network;
+
+    if (networkId) {
+      console.info(`info.use exising network ${this.networkName}`);
+      network = this.docker.getNetwork(networkId);
+    } else {
+      console.info(`info.creating network ${this.networkName}`);
+      network = await this.docker.createNetwork({
+        Name: this.networkName,
+      });
+    }
+
+    console.info(`info.connecting network into ${this.name}`);
+    await network.connect({
+      Container: this.container.id,
+    });
+
+    return;
   }
 
   async shutdown() {
@@ -105,6 +136,7 @@ export abstract class ContainerAbstract {
       }, {});
 
       const container = await this.docker.createContainer({
+        name: this.name,
         Image: this.image,
         Cmd: this.cmd,
         ExposedPorts: exposedPortsObj,
@@ -112,9 +144,12 @@ export abstract class ContainerAbstract {
           PortBindings: portBindings,
         },
         Env: this.env,
+        NetworkingConfig: {},
       });
-      await container.start();
       this.container = container;
+      await this.connectNetwork();
+
+      await container.start();
 
       if (this.printLog) {
         await this.logs();
@@ -133,7 +168,7 @@ export abstract class ContainerAbstract {
   async execCommand(cmd: string[]) {
     if (!this.container) {
       throw new Error(
-        "errors.can't execute the command, the container is not running",
+        "errors.can't execute the command, the container is not ready",
       );
     }
 

@@ -27,6 +27,8 @@ async function main() {
     await bitcoinContainer.shutdown();
     await electrsContainer.shutdown();
     await explorerContainer.shutdown();
+
+    process.exit(1);
   });
 
   await sleep(100000);

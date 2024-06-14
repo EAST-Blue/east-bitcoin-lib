@@ -10,13 +10,13 @@ export type ElectrsContainerArgs = {
 export class ElectrsContainer extends ContainerAbstract {
   constructor({ socketPath, printLog }: ElectrsContainerArgs) {
     super({
-      name: "electrs electrum server",
+      name: configs.electrs.name,
       image: "haffjjj/blockstream-electrs:v1.0.0",
       cmd: [
         "-vvvv",
         "--jsonrpc-import",
         "--network=regtest",
-        "--daemon-rpc-addr=192.168.1.29:18443",
+        `--daemon-rpc-addr=${configs.bitcoin.name}:18443`,
         `--cookie=${configs.bitcoin.user}:${configs.bitcoin.password}`,
         "--lightmode=1",
         "--index-unspendables=1",
@@ -27,6 +27,7 @@ export class ElectrsContainer extends ContainerAbstract {
         "--cors=*",
       ],
       env: [],
+      networkName: configs.docker.network,
       portMappings: [
         {
           host: configs.electrs.restPort,

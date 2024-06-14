@@ -9,17 +9,18 @@ export type ExplorerContainerArgs = {
 export class ExplorerContainer extends ContainerAbstract {
   constructor({ socketPath, printLog }: ExplorerContainerArgs) {
     super({
-      name: "explorer server",
+      name: configs.explorer.name,
       image: "haffjjj/janoside-btc-rpc-explorer:v3.4.0",
       cmd: [],
       env: [
         "BTCEXP_HOST=0.0.0.0",
         "BTCEXP_PORT=3002",
-        `BTCEXP_BITCOIND_URI=bitcoin://${configs.bitcoin.user}:${configs.bitcoin.password}@192.168.1.29:18443?timeout=10000`,
+        `BTCEXP_BITCOIND_URI=bitcoin://${configs.bitcoin.user}:${configs.bitcoin.password}@${configs.bitcoin.name}:18443?timeout=10000`,
         "BTCEXP_ADDRESS_API=electrum",
-        "BTCEXP_ELECTRUM_SERVERS=tcp://192.168.1.29:60401",
+        `BTCEXP_ELECTRUM_SERVERS=tcp://${configs.electrs.name}:60401`,
         "BTCEXP_ELECTRUM_TXINDEX=true",
       ],
+      networkName: configs.docker.network,
       portMappings: [
         {
           host: configs.explorer.port,

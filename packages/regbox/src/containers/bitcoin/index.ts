@@ -10,7 +10,7 @@ export type BitcoinContainerArgs = {
 export class BitcoinContainer extends ContainerAbstract {
   constructor({ socketPath, printLog }: BitcoinContainerArgs) {
     super({
-      name: "bitcoin regtest node",
+      name: configs.bitcoin.name,
       image: "ruimarinho/bitcoin-core:24-alpine",
       cmd: [
         "-txindex=1",
@@ -22,6 +22,7 @@ export class BitcoinContainer extends ContainerAbstract {
         "-fallbackfee=0.00001",
       ],
       env: [],
+      networkName: configs.docker.network,
       portMappings: [
         {
           host: configs.bitcoin.port,
