@@ -11,7 +11,7 @@ export class ElectrsContainer extends ContainerAbstract {
   constructor({ socketPath, printLog }: ElectrsContainerArgs) {
     super({
       name: configs.electrs.name,
-      image: "haffjjj/blockstream-electrs:v1.0.0",
+      image: configs.electrs.image,
       cmd: [
         "-vvvv",
         "--jsonrpc-import",

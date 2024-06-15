@@ -10,7 +10,7 @@ export class ExplorerContainer extends ContainerAbstract {
   constructor({ socketPath, printLog }: ExplorerContainerArgs) {
     super({
       name: configs.explorer.name,
-      image: "haffjjj/janoside-btc-rpc-explorer:v3.4.0",
+      image: configs.explorer.image,
       cmd: [],
       env: [
         "BTCEXP_HOST=0.0.0.0",

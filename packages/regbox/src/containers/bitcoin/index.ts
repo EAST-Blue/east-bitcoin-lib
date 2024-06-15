@@ -11,7 +11,7 @@ export class BitcoinContainer extends ContainerAbstract {
   constructor({ socketPath, printLog }: BitcoinContainerArgs) {
     super({
       name: configs.bitcoin.name,
-      image: "ruimarinho/bitcoin-core:24-alpine",
+      image: configs.bitcoin.image,
       cmd: [
         "-txindex=1",
         "-regtest=1",

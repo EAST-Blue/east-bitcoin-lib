@@ -17,8 +17,6 @@ export type ContainerAbstractArgs = {
   printLog: boolean;
 };
 
-// TODO:
-// 1. check image exist, if not then pull the image
 export abstract class ContainerAbstract {
   name: string;
   image: string;
@@ -105,6 +103,43 @@ export abstract class ContainerAbstract {
     return;
   }
 
+  private async pullImage() {
+    console.info(`info.pulling image ${this.image}`);
+    const logStream = createLogStream({ printLog: this.printLog });
+    const stream = await this.docker.pull(this.image);
+    stream.pipe(logStream);
+
+    return new Promise(async (resolve) => {
+      stream.on("end", () => {
+        logStream.destroy();
+        resolve(true);
+      });
+    });
+  }
+
+  // hacky trick to check image exist or not
+  private async imageExist() {
+    const image = this.docker.getImage(this.image);
+    try {
+      await image.inspect();
+      return true;
+    } catch (error: any) {
+      if (error.message && (error.message as string).includes("404")) {
+        return false;
+      }
+      throw error;
+    }
+  }
+
+  private async checkImage() {
+    const exist = await this.imageExist();
+    if (exist) {
+      console.info(`info.use exising image ${this.image}`);
+    } else {
+      await this.pullImage();
+    }
+  }
+
   async shutdown() {
     if (!this.container) {
       return;
@@ -118,6 +153,9 @@ export abstract class ContainerAbstract {
   async start() {
     try {
       console.info(`info.starting ${this.name}`);
+      console.info(`info.checking image ${this.image}`);
+
+      await this.checkImage();
       const exposedPortsObj = this.portMappings.reduce((prev, portMapping) => {
         return {
           ...prev,
