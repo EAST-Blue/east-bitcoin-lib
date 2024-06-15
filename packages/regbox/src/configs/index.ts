@@ -1,5 +1,10 @@
 export default {
+  server: {
+    port: "8080",
+  },
   docker: {
+    socketPath: "/run/user/1000/podman/podman.sock",
+    printLog: false,
     network: "east_regbox",
   },
   bitcoin: {

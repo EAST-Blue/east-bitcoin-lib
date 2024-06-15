@@ -1,6 +1,7 @@
 import { ContainerAbstract } from "..";
 import configs from "../../configs";
 import { sleep } from "../../utils/utils";
+import { GenerateAddress } from "./types";
 
 export type BitcoinContainerArgs = {
   socketPath: string;
@@ -41,7 +42,7 @@ export class BitcoinContainer extends ContainerAbstract {
       `-rpcuser=${configs.bitcoin.user}`,
       `-rpcpassword=${configs.bitcoin.password}`,
       ...cmd,
-    ]);
+    ]) as Promise<string>;
   }
 
   private async checkNodeUntilReady() {
@@ -51,8 +52,23 @@ export class BitcoinContainer extends ContainerAbstract {
       try {
         await this.execBitcoinCli(["getrpcinfo"]);
         return;
-      } catch {}
+      } catch { }
     }
+  }
+
+  async generateBlocks(nblocks: number) {
+    const result = await this.execBitcoinCli(["-generate", nblocks.toString()]);
+    return JSON.parse(result) as GenerateAddress;
+  }
+
+  async getBalance() {
+    const result = await this.execBitcoinCli(["getbalance"]);
+    console.log({ result });
+    return parseInt(result, 10);
+  }
+
+  async sendToAddress(address: string, amount: number) {
+    await this.execBitcoinCli(["sendtoaddress", address, amount.toString()]);
   }
 
   async waitUntilReady() {
@@ -61,7 +77,9 @@ export class BitcoinContainer extends ContainerAbstract {
     console.info(`info.creating initial wallet: ${configs.bitcoin.wallet}`);
     await this.execBitcoinCli(["createwallet", configs.bitcoin.wallet]);
 
-    console.info(`info.generating first 10 blocks`);
-    await this.execBitcoinCli(["-generate", "10"]);
+    // miner should wait until the next 100 block to spend the balance.
+    // this should give 50 * 10 BTC to the wallet.
+    console.info(`info.generating first 110 blocks`);
+    await this.generateBlocks(110);
   }
 }

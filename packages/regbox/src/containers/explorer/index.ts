@@ -32,5 +32,5 @@ export class ExplorerContainer extends ContainerAbstract {
     });
   }
 
-  async waitUntilReady() {}
+  async waitUntilReady() { }
 }

@@ -1,50 +1,116 @@
-import { BitcoinContainer, ElectrsContainer } from "./containers";
+import express from "express";
+import cors from "cors";
+import {
+  BitcoinContainer,
+  ContainerAbstract,
+  ElectrsContainer,
+} from "./containers";
 import { ExplorerContainer } from "./containers/explorer";
-import { sleep } from "./utils/utils";
+import configs from "./configs";
+import {
+  containersPortInfo,
+  listeningPortInfo,
+  shutdownContainers,
+  startContainers,
+} from "./utils/utils";
+import { generateValidator, sendToAddressValidator } from "./validator/server";
+
+const server = express();
+server.use(cors());
+server.use(express.json());
 
 async function main() {
-  const socketPath = "/run/user/1000/podman/podman.sock";
-  const printLog = false;
-
   const bitcoinContainer = new BitcoinContainer({
-    socketPath,
-    printLog,
+    socketPath: configs.docker.socketPath,
+    printLog: configs.docker.printLog,
   });
-  await bitcoinContainer.start();
 
   const electrsContainer = new ElectrsContainer({
-    socketPath,
-    printLog,
+    socketPath: configs.docker.socketPath,
+    printLog: configs.docker.printLog,
   });
-  await electrsContainer.start();
 
   const explorerContainer = new ExplorerContainer({
-    socketPath,
-    printLog,
-  });
-  await explorerContainer.start();
-
-  console.info(`info.regtest is ready`);
-  console.log({
-    bitcoin: bitcoinContainer.portMappings,
-    electrs: electrsContainer.portMappings,
-    explorer: explorerContainer.portMappings,
+    socketPath: configs.docker.socketPath,
+    printLog: configs.docker.printLog,
   });
 
-  process.on("SIGINT", async function () {
-    await bitcoinContainer.shutdown();
-    await electrsContainer.shutdown();
-    await explorerContainer.shutdown();
+  // this should be in order
+  const containers: ContainerAbstract[] = [
+    bitcoinContainer,
+    electrsContainer,
+    explorerContainer,
+  ];
 
+  process.on("SIGINT", async function() {
+    await shutdownContainers(containers);
+
+    process.exit(0);
+  });
+
+  try {
+    await startContainers(containers);
+
+    server.post("/generate", async (req, res) => {
+      try {
+        await generateValidator.validate(req.body, { strict: true });
+        const nblocks = req.body.nblocks as number;
+
+        const result = await bitcoinContainer.generateBlocks(nblocks);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send(error);
+      }
+    });
+
+    server.get("/get-balance", async (_, res) => {
+      try {
+        const result = await bitcoinContainer.getBalance();
+        res.send({
+          balance: result,
+        });
+      } catch (error) {
+        res.status(500).send(error);
+      }
+    });
+
+    server.post("/send-to-address", async (req, res) => {
+      try {
+        await sendToAddressValidator.validate(req.body, { strict: true });
+        const address = req.body.address as string;
+        const amount = req.body.amount as number;
+
+        const result = await bitcoinContainer.sendToAddress(address, amount);
+        res.send(result);
+      } catch (error) {
+        console.log((error as any).message);
+        res.status(500).send(error);
+      }
+    });
+  } catch (error) {
+    console.error(error);
+
+    await shutdownContainers(containers);
+    process.exit(1);
+  }
+
+  const listen = server.listen(configs.server.port);
+  listen.on("error", async (error) => {
+    console.error(error);
+
+    await shutdownContainers(containers);
     process.exit(1);
   });
 
-  // TODO: block process
-  // this is temporary
-  await sleep(1000000);
-  await bitcoinContainer.shutdown();
-  await electrsContainer.shutdown();
-  await explorerContainer.shutdown();
+  listen.on("listening", () => {
+    listeningPortInfo([
+      {
+        name: "server",
+        ports: [configs.server.port],
+      },
+      ...containersPortInfo(containers),
+    ]);
+  });
 }
 
 main();

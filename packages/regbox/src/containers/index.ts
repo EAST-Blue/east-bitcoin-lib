@@ -50,7 +50,7 @@ export abstract class ContainerAbstract {
     this.docker = new Docker({ socketPath });
   }
 
-  private async logs() {
+  async logs() {
     if (!this.container) {
       return;
     }
@@ -73,7 +73,7 @@ export abstract class ContainerAbstract {
     });
   }
 
-  private async connectNetwork() {
+  protected async connectNetwork() {
     if (!this.container) {
       return;
     }
@@ -103,7 +103,7 @@ export abstract class ContainerAbstract {
     return;
   }
 
-  private async pullImage() {
+  protected async pullImage() {
     console.info(`info.pulling image ${this.image}`);
     const logStream = createLogStream({ printLog: this.printLog });
     const stream = await this.docker.pull(this.image);
@@ -118,7 +118,7 @@ export abstract class ContainerAbstract {
   }
 
   // hacky trick to check image exist or not
-  private async imageExist() {
+  protected async imageExist() {
     const image = this.docker.getImage(this.image);
     try {
       await image.inspect();
@@ -131,7 +131,7 @@ export abstract class ContainerAbstract {
     }
   }
 
-  private async checkImage() {
+  protected async checkImage() {
     const exist = await this.imageExist();
     if (exist) {
       console.info(`info.use exising image ${this.image}`);
