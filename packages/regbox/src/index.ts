@@ -83,7 +83,6 @@ async function main() {
         const result = await bitcoinContainer.sendToAddress(address, amount);
         res.send(result);
       } catch (error) {
-        console.log((error as any).message);
         res.status(500).send(error);
       }
     });

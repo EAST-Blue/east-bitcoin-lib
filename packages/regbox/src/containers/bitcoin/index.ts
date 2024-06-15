@@ -63,7 +63,6 @@ export class BitcoinContainer extends ContainerAbstract {
 
   async getBalance() {
     const result = await this.execBitcoinCli(["getbalance"]);
-    console.log({ result });
     return parseInt(result, 10);
   }
 

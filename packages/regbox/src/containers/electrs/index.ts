@@ -50,9 +50,7 @@ export class ElectrsContainer extends ContainerAbstract {
       try {
         await this.execCommand(["curl", "-s", "-S", "localhost:3002/mempool"]);
         return;
-      } catch (error) {
-        console.log(error);
-      }
+      } catch { }
     }
   }
 
