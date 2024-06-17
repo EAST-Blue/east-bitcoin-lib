@@ -108,7 +108,25 @@ export default function Page(): JSX.Element {
     await p.build();
 
     const psbt = p.toPSBT();
-    psbt.signAllInputs(wallet.p2tr(0).keypair); // TODO sign every input utxo
+
+    for (const [index, psbtInput] of p.inputs.entries()) {
+      switch (true) {
+        case psbtInput.utxo instanceof P2pkhUtxo:
+          psbt.signInput(index, wallet.p2pkh(0).keypair);
+          break;
+
+        case psbtInput.utxo instanceof P2wpkhUtxo:
+          psbt.signInput(index, wallet.p2wpkh(0).keypair);
+          break;
+
+        case psbtInput.utxo instanceof P2trUtxo:
+          psbt.signInput(index, wallet.p2tr(0).keypair);
+          break;
+
+        default:
+          break;
+      }
+    }
 
     const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
     console.log({ hex });
