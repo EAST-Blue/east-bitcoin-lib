@@ -1,0 +1,18 @@
+
+## Prerequisites
+
+Before you can run the EAST PSBT UI Builder locally, you need to run bitcoin local setup in your local machine to start the bitcoin regtest. Here's how : 
+1. Clone the regbox package
+```bash
+git clone https://github.com/EAST-Blue/east-bitcoin-lib.git regbox & cd regbox
+```
+
+2. Build and run regbox
+```bash
+yarn workspace @east-bitcoin-lib/regbox build && node ./packages/regbox/dist/index.js
+```
+
+3. Run this command and it should show the balance of the default wallet
+```bash
+bitcoin-cli -regtest -rpcuser=east -rpcpassword=east getbalance
+```
