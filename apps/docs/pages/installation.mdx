@@ -3,15 +3,17 @@
 This section will show you how to run East PSBT UI Builder locally using the regtest network that have been installed in the previous section.
 1. Clone the repo
 ```bash
-git clone https://github.com/EAST-Blue/east-bitcoin-lib.git & cd east-bitcoin-lib
+git clone https://github.com/EAST-Blue/east-bitcoin-lib.git && cd east-bitcoin-lib/apps/ui
 ```
 
-2. Build and run regbox
+2. Install dependencies
 ```bash
-yarn workspace @east-bitcoin-lib/regbox build && node ./packages/regbox/dist/index.js
+yarn
 ```
 
-3. Run this command and it should show the balance of the default wallet
+3. Run project
 ```bash
-bitcoin-cli -regtest -rpcuser=east -rpcpassword=east getbalance
+yarn dev
 ```
+
+4. Go to **[localhost:3001/psbt](http://localhost:3001/psbt)**
