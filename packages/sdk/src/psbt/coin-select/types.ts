@@ -1,9 +1,8 @@
-import { Address } from "../../addresses";
+import { P2pkhAutoUtxo, P2trAutoUtxo, P2wpkhAutoUtxo } from "../../addresses";
+import { P2shAutoUtxo } from "../../addresses/p2sh";
 import { API } from "../../repositories";
 
-export type UtxoSelect = {
+export type AutoUtxo = {
   api: API;
-  address: Address;
-  pubkey?: Buffer;
-  redeemScript?: Buffer;
+  from: P2pkhAutoUtxo | P2shAutoUtxo | P2wpkhAutoUtxo | P2trAutoUtxo;
 };

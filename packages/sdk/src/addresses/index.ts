@@ -18,6 +18,17 @@ export abstract class AddressUtxo {
   }
 }
 
+export type AddressAutoUtxoArgs = {
+  address: string;
+};
+
+export abstract class AddressAutoUtxo {
+  address: Address;
+  constructor({ address }: AddressAutoUtxoArgs) {
+    this.address = Address.fromString(address);
+  }
+}
+
 export type AddressArgs = {
   address: string;
 };
@@ -38,5 +49,6 @@ export class Address {
 
 export * from "./types";
 export * from "./p2pkh";
+export * from "./p2sh";
 export * from "./p2tr";
 export * from "./p2wpkh";

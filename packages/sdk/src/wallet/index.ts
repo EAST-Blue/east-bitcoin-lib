@@ -131,6 +131,7 @@ export class Wallet {
     return {
       address: p2tr.address!,
       keypair: tweakedKeyPair,
+      tapInternalKey: xOnly,
     };
   }
 }

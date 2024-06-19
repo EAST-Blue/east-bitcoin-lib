@@ -1,17 +1,24 @@
-import { P2pkhUtxo, P2trUtxo, P2wpkhUtxo } from "../../addresses";
-import { P2shUtxo } from "../../addresses/p2sh";
+import {
+  P2pkhAutoUtxo,
+  P2pkhUtxo,
+  P2trAutoUtxo,
+  P2trUtxo,
+  P2wpkhAutoUtxo,
+  P2wpkhUtxo,
+} from "../../addresses";
+import { P2shAutoUtxo, P2shUtxo } from "../../addresses/p2sh";
 import { BitcoinUTXO } from "../../repositories/bitcoin/types";
 import { Network } from "../../types";
 import { Input, InputType, Output, OutputOutput, OutputType } from "../types";
 
-import { UtxoSelect } from "./types";
+import { AutoUtxo } from "./types";
 
 // Refer to this page: https://bitcoinops.org/en/tools/calc-size/
 export const FEE_TX_EMPTY_SIZE = 4 + 1 + 1 + 4;
 
 export const FEE_TX_INPUT_BASE = 32 + 4 + 1 + 4;
 export const FEE_TX_INPUT_PUBKEYHASH = 107;
-export const FEE_TX_INPUT_SCRIPTHASH = 10; // calculate based on script length
+export const FEE_TX_INPUT_SCRIPTHASH = 1; // calculate based on script length
 export const FEE_TX_INPUT_SEGWIT = 27 + 1;
 export const FEE_TX_INPUT_SEGWIT_SCRIPTHASH = 0; // calculate based on script length
 export const FEE_TX_INPUT_TAPROOT = 17 + 1;
@@ -29,7 +36,12 @@ export type CoinSelectArgs = {
   outputs: Output[];
   feeRate: number;
   changeOutput?: OutputOutput;
-  utxoSelect?: UtxoSelect;
+  autoUtxo?: AutoUtxo;
+};
+
+export type InputBytesData = {
+  redeemScript?: Buffer;
+  unlockScript?: Buffer;
 };
 
 // highly inspired by https://github.com/bitcoinjs/coinselect & https://github.com/joundy/bitcoin-utxo-select
@@ -39,7 +51,7 @@ export class CoinSelect {
   outputs: Output[];
   feeRate: number;
   changeOutput?: OutputOutput;
-  utxoSelect?: UtxoSelect;
+  autoUtxo?: AutoUtxo;
 
   private utxoCandidates: BitcoinUTXO[] = [];
 
@@ -49,14 +61,14 @@ export class CoinSelect {
     outputs,
     feeRate,
     changeOutput,
-    utxoSelect,
+    autoUtxo,
   }: CoinSelectArgs) {
     this.network = network;
     this.inputs = inputs;
     this.outputs = outputs;
     this.feeRate = feeRate;
     this.changeOutput = changeOutput;
-    this.utxoSelect = utxoSelect;
+    this.autoUtxo = autoUtxo;
   }
 
   get dustThreshold() {
@@ -80,7 +92,7 @@ export class CoinSelect {
     return this.transactionBytes() * this.feeRate;
   }
 
-  private inputBytes(inputType: InputType, redeemScript?: Buffer) {
+  private inputBytes(inputType: InputType, data?: InputBytesData) {
     let bytes = FEE_TX_INPUT_BASE;
 
     switch (inputType) {
@@ -88,12 +100,15 @@ export class CoinSelect {
         bytes += FEE_TX_INPUT_PUBKEYHASH;
         break;
       case "p2sh":
-        if (!redeemScript) {
+        if (!data?.redeemScript || !data?.unlockScript) {
           throw new Error(
-            "errors.redeemScript is required when calculating p2sh input",
+            "errors.redeemScript & unlockScript is required when calculating p2sh input",
           );
         }
-        bytes += FEE_TX_INPUT_SCRIPTHASH + Buffer.byteLength(redeemScript);
+        bytes +=
+          FEE_TX_INPUT_SCRIPTHASH +
+          data.redeemScript.length +
+          data.unlockScript.length;
         break;
       case "p2wpkh":
         bytes += FEE_TX_INPUT_SEGWIT;
@@ -138,11 +153,16 @@ export class CoinSelect {
     return (
       FEE_TX_EMPTY_SIZE +
       this.inputs.reduce((prev, input) => {
-        let redeemScript;
         if (input.utxo instanceof P2shUtxo) {
-          redeemScript = input.utxo.redeemScript;
+          return (
+            prev +
+            this.inputBytes(input.utxo.type, {
+              redeemScript: input.utxo.redeemScript,
+              unlockScript: input.utxo.unlockScript,
+            })
+          );
         }
-        return prev + this.inputBytes(input.utxo.type, redeemScript);
+        return prev + this.inputBytes(input.utxo.type);
       }, 0) +
       this.outputs.reduce(
         (prev, output) => prev + this.outputBytes(output.output.type),
@@ -152,7 +172,7 @@ export class CoinSelect {
   }
 
   private async selectUtxoCandidates() {
-    if (!this.utxoSelect) return;
+    if (!this.autoUtxo) return;
 
     let transactionBytes = this.transactionBytes();
     let totalInputValue = this.totalInputValue;
@@ -164,15 +184,32 @@ export class CoinSelect {
       return;
     }
 
-    const utxos = await this.utxoSelect.api.bitcoin.getUTXOs(
-      this.utxoSelect.address.address,
+    const utxos = await this.autoUtxo.api.bitcoin.getUTXOs(
+      this.autoUtxo.from.address.address,
     );
 
     for (const utxo of utxos) {
-      const utxoBytes = this.inputBytes(
-        this.utxoSelect.address.type,
-        this.utxoSelect.redeemScript,
-      );
+      let utxoBytes;
+      switch (true) {
+        case this.autoUtxo.from instanceof P2pkhAutoUtxo:
+          utxoBytes = this.inputBytes(this.autoUtxo.from.address.type);
+          break;
+        case this.autoUtxo.from instanceof P2shAutoUtxo:
+          utxoBytes = this.inputBytes(this.autoUtxo.from.address.type, {
+            redeemScript: this.autoUtxo.from.redeemScript,
+            unlockScript: this.autoUtxo.from.unlockScript,
+          });
+          break;
+        case this.autoUtxo.from instanceof P2wpkhAutoUtxo:
+          utxoBytes = this.inputBytes(this.autoUtxo.from.address.type);
+          break;
+        case this.autoUtxo.from instanceof P2trAutoUtxo:
+          utxoBytes = this.inputBytes(this.autoUtxo.from.address.type);
+          break;
+        default:
+          throw new Error("errors.select from source is not implemented yet");
+      }
+
       const utxoFee = this.feeRate * utxoBytes;
       const utxoValue = utxo.value;
 
@@ -191,48 +228,42 @@ export class CoinSelect {
   }
 
   private async prepareUtxoCandidates() {
-    if (!this.utxoSelect) return;
+    if (!this.autoUtxo) return;
 
     for (const utxo of this.utxoCandidates) {
-      switch (this.utxoSelect.address.type) {
-        case "p2pkh":
+      switch (true) {
+        case this.autoUtxo.from instanceof P2pkhAutoUtxo:
           this.inputs.push({
             utxo: await P2pkhUtxo.fromBitcoinUTXO(
-              this.utxoSelect.api.bitcoin,
+              this.autoUtxo.api.bitcoin,
               utxo,
             ),
             value: utxo.value,
           });
           break;
-        case "p2sh":
-          if (!this.utxoSelect.redeemScript) {
-            throw new Error(
-              "errors.redeem script is required when using p2sh address",
-            );
-          }
+        case this.autoUtxo.from instanceof P2shAutoUtxo:
           this.inputs.push({
-            utxo: await P2shUtxo.fromBitcoinUTXO(
-              this.utxoSelect.api.bitcoin,
-              this.utxoSelect.redeemScript,
-              utxo,
-            ),
+            utxo: await P2shUtxo.fromBitcoinUTXO({
+              bitcoinAPI: this.autoUtxo.api.bitcoin,
+              bitcoinUTXO: utxo,
+              redeemScript: this.autoUtxo.from.redeemScript,
+              unlockScript: this.autoUtxo.from.unlockScript,
+            }),
             value: utxo.value,
           });
           break;
-        case "p2wpkh":
+        case this.autoUtxo.from instanceof P2wpkhAutoUtxo:
           this.inputs.push({
             utxo: await P2wpkhUtxo.fromBitcoinUTXO(utxo),
             value: utxo.value,
           });
           break;
-        case "p2tr":
-          if (!this.utxoSelect.pubkey) {
-            throw new Error(
-              "errors.pubkey is required when using taproot/p2tr address",
-            );
-          }
+        case this.autoUtxo.from instanceof P2trAutoUtxo:
           this.inputs.push({
-            utxo: await P2trUtxo.fromBitcoinUTXO(utxo, this.utxoSelect.pubkey),
+            utxo: await P2trUtxo.fromBitcoinUTXO(
+              utxo,
+              this.autoUtxo.from.tapInternalKey,
+            ),
             value: utxo.value,
           });
           break;

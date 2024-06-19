@@ -1,4 +1,4 @@
-import { AddressType, AddressUtxo, AddressUtxoArgs } from ".";
+import { AddressAutoUtxo, AddressType, AddressUtxo, AddressUtxoArgs } from ".";
 import { BitcoinUTXO } from "../repositories/bitcoin/types";
 
 export type P2wpkhUtxoArgs = AddressUtxoArgs & {
@@ -32,3 +32,5 @@ export class P2wpkhUtxo extends AddressUtxo {
     });
   }
 }
+
+export class P2wpkhAutoUtxo extends AddressAutoUtxo {}
