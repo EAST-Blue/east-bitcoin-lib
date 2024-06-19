@@ -129,6 +129,7 @@ export default function Page(): JSX.Element {
     }
 
     const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
+    console.log(wallet.p2wpkh(0).address, wallet.p2tr(0).address);
     console.log({ hex });
 
     return;
