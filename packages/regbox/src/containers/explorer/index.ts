@@ -1,10 +1,6 @@
 import { ContainerAbstract } from "..";
 import configs from "../../configs";
-
-export type ExplorerContainerArgs = {
-  socketPath: string;
-  printLog: boolean;
-};
+import { ExplorerContainerArgs } from "./types";
 
 export class ExplorerContainer extends ContainerAbstract {
   constructor({ socketPath, printLog }: ExplorerContainerArgs) {

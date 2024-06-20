@@ -1,12 +1,7 @@
 import { ContainerAbstract } from "..";
 import configs from "../../configs";
 import { sleep } from "../../utils/utils";
-import { GenerateAddress } from "./types";
-
-export type BitcoinContainerArgs = {
-  socketPath: string;
-  printLog: boolean;
-};
+import { BitcoinContainerArgs, GenerateAddress } from "./types";
 
 export class BitcoinContainer extends ContainerAbstract {
   constructor({ socketPath, printLog }: BitcoinContainerArgs) {

@@ -1,21 +1,6 @@
 import Docker, { Container } from "dockerode";
 import { createLogStream } from "../utils/utils";
-
-export type PortMapping = {
-  host: string;
-  container: string;
-};
-
-export type ContainerAbstractArgs = {
-  socketPath?: string;
-  name: string;
-  image: string;
-  cmd: string[];
-  env: string[];
-  networkName: string;
-  portMappings: PortMapping[];
-  printLog: boolean;
-};
+import { ContainerAbstractArgs, PortMapping } from "./types";
 
 export abstract class ContainerAbstract {
   name: string;

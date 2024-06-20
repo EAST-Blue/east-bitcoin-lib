@@ -1,11 +1,7 @@
 import { ContainerAbstract } from "..";
 import configs from "../../configs";
 import { sleep } from "../../utils/utils";
-
-export type ElectrsContainerArgs = {
-  socketPath: string;
-  printLog: boolean;
-};
+import { ElectrsContainerArgs } from "./types";
 
 export class ElectrsContainer extends ContainerAbstract {
   constructor({ socketPath, printLog }: ElectrsContainerArgs) {
