@@ -205,7 +205,7 @@ export default function Page(): JSX.Element {
                     className={`${keyOption === KeyOptionEnum.ALICE && "border-2 border-gray-300"} rounded-sm shadow-sm bg-[#874642] hover:bg-[#873642] text-gray-200 text-sm py-2 px-4`}
                     onClick={() => {
                       setKey(
-                        "final chat okay post increase install picnic library modify legend soap cube"
+                        "left alcohol close proof inform total box outer front jealous cement lunch"
                       );
                       setKeyOption(KeyOptionEnum.ALICE);
                     }}
@@ -221,7 +221,7 @@ export default function Page(): JSX.Element {
                     className={`${keyOption === KeyOptionEnum.BOB && "border-2 border-gray-300"} rounded-sm shadow-sm bg-[#874642] hover:bg-[#873642] text-gray-200 text-sm py-2 px-4`}
                     onClick={() => {
                       setKey(
-                        "argue liar sauce arrange worry bulb festival alien concert target pen speak"
+                        "nephew wise journey menu brand close garlic solution timber message salad knife"
                       );
                       setKeyOption(KeyOptionEnum.BOB);
                     }}

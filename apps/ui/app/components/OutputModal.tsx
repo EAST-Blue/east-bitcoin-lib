@@ -135,11 +135,25 @@ const OutputModal = ({
                     />
                     <label className="block text-sm font-medium leading-6 text-gray-200 -mt-1">
                       or send to{" "}
-                      <span className="underline hover:cursor-pointer">
+                      <span
+                        onClick={() => {
+                          setPubkey(
+                            "bcrt1q3a34qdsw4dd7ye4fdvzut88tcjgz76d8gkjqdd"
+                          );
+                        }}
+                        className="underline hover:cursor-pointer"
+                      >
                         Alice
                       </span>
                       {", "}
-                      <span className="underline hover:cursor-pointer">
+                      <span
+                        onClick={() => {
+                          setPubkey(
+                            "bcrt1q63062x9c98g025gttswwpmjk49wcysk5jeh4pd"
+                          );
+                        }}
+                        className="underline hover:cursor-pointer"
+                      >
                         Bob
                       </span>
                     </label>
@@ -160,11 +174,25 @@ const OutputModal = ({
                     />
                     <label className="block text-sm font-medium leading-6 text-gray-200 -mt-1">
                       or send to{" "}
-                      <span className="underline hover:cursor-pointer">
+                      <span
+                        onClick={() => {
+                          setPubkey(
+                            "bcrt1pxc8kgrxdlzvclef9fnfd7nslmval2xlgg30nxw06hl86j4lml50sauyyat"
+                          );
+                        }}
+                        className="underline hover:cursor-pointer"
+                      >
                         Alice
                       </span>
                       {", "}
-                      <span className="underline hover:cursor-pointer">
+                      <span
+                        onClick={() => {
+                          setPubkey(
+                            "bcrt1pny8rwj0j4xnlgmqkx8hqmf0tdx7zdh5y0u7w0te65j79n00a584sxupumd"
+                          );
+                        }}
+                        className="underline hover:cursor-pointer"
+                      >
                         Bob
                       </span>
                     </label>
