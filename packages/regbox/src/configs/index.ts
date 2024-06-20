@@ -8,7 +8,7 @@ export default {
     network: "east_regbox",
   },
   bitcoin: {
-    name: "east_bitcoin_node__",
+    name: "east_bitcoin_node",
     image: "docker.io/ruimarinho/bitcoin-core:24",
     user: "east",
     password: "east",
@@ -17,14 +17,14 @@ export default {
     peerPort: "18444",
   },
   electrs: {
-    name: "east_electrs__",
-    image: "docker.io/haffjjj/blockstream-electrs:v1.0.0",
+    name: "east_electrs",
+    image: "docker.io/eastbluehq/blockstream-electrs:v1.0.1",
     rpcPort: "60401",
     restPort: "3002",
   },
   explorer: {
-    name: "east_explorer__",
-    image: "docker.io/haffjjj/janoside-btc-rpc-explorer:v3.4.0",
+    name: "east_explorer",
+    image: "docker.io/eastbluehq/janoside-btc-rpc-explorer:v3.4.0",
     port: "3000",
   },
 };
