@@ -19,6 +19,9 @@ const server = express();
 server.use(cors());
 server.use(express.json());
 
+// TODO BUG:
+// - that name is already in use -> duplicate container name
+
 async function main() {
   const bitcoinContainer = new BitcoinContainer({
     socketPath: configs.docker.socketPath,

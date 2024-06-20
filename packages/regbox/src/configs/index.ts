@@ -13,7 +13,8 @@ export default {
     user: "east",
     password: "east",
     wallet: "east",
-    port: "18443",
+    rpcPort: "18443",
+    peerPort: "18444",
   },
   electrs: {
     name: "east_electrs__",

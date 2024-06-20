@@ -26,8 +26,12 @@ export class BitcoinContainer extends ContainerAbstract {
       networkName: configs.docker.network,
       portMappings: [
         {
-          host: configs.bitcoin.port,
+          host: configs.bitcoin.rpcPort,
           container: "18443/tcp",
+        },
+        {
+          host: configs.bitcoin.peerPort,
+          container: "18444/tcp",
         },
       ],
       socketPath,
