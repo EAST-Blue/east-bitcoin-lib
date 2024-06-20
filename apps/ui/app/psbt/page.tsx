@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useDeferredValue, useEffect, useRef, useState } from "react";
 import InputModal from "../components/InputModal";
 import Sidebar from "../components/Sidebar";
 import { useKeyContext } from "../contexts/KeyContext";
@@ -34,6 +34,9 @@ import OutputViewModal from "../components/OutputViewModal";
 import { CoinSelect } from "@east-bitcoin-lib/sdk/dist/psbt/coin-select";
 import { Input } from "@east-bitcoin-lib/sdk/dist/psbt/types";
 import { parseOutput } from "../utils/parseOutput";
+import { PrismEditor, createEditor } from "prism-code-editor";
+import axios from "axios";
+import IconMine from "../icons/IconMine";
 
 export default function Page(): JSX.Element {
   const { key, keyOption, setKey, setKeyOption } = useKeyContext() as any;
@@ -42,12 +45,55 @@ export default function Page(): JSX.Element {
   const { utxos } = useInputContext() as InputContextType;
   const { outputs } = useOutputContext() as OutputContextType;
 
+  const unlockRef = useRef<HTMLDivElement>(null);
+  const unlockEditorRef = useRef<PrismEditor>();
+  const lockRef = useRef<HTMLDivElement>(null);
+  const lockEditorRef = useRef<PrismEditor>();
   const [openInputModal, setOpenInputModal] = useState(false);
   const [openOutputModal, setOpenOutputModal] = useState(false);
   const [openImportWif, setOpenImportWif] = useState(false);
   const [openRegtestModal, setOpenRegtestModal] = useState(false);
   const [viewInput, setViewInput] = useState<BitcoinUTXO | null>(null);
   const [viewOutput, setViewOutput] = useState<PSBTOutput | null>(null);
+  const [hex, setHex] = useState("");
+  const [mineBlock, setMineBlock] = useState<string[]>([]);
+
+  useEffect(() => {
+    const editor = (unlockEditorRef.current = createEditor(unlockRef.current!, {
+      value: "",
+      language: "nasm",
+      tabSize: 2,
+      insertSpaces: false,
+      lineNumbers: false,
+      wordWrap: true,
+    }));
+    import("../psbt/extension").then((module) => module.addExtensions(editor));
+
+    return editor.remove;
+  }, [key]);
+
+  useEffect(() => {
+    const editor = (lockEditorRef.current = createEditor(lockRef.current!, {
+      value: "",
+      language: "nasm",
+      tabSize: 2,
+      insertSpaces: false,
+      lineNumbers: false,
+      wordWrap: true,
+    }));
+    import("../psbt/extension").then((module) => module.addExtensions(editor));
+
+    return editor.remove;
+  }, [key]);
+
+  const mine = async () => {
+    const result = await axios.post(`http://localhost:8080/generate`, {
+      nblocks: 6,
+    });
+    setMineBlock(result.data?.blocks || []);
+
+    return;
+  };
 
   const sign = async () => {
     if (network === null) return;
@@ -132,6 +178,13 @@ export default function Page(): JSX.Element {
     console.log(wallet.p2wpkh(0).address, wallet.p2tr(0).address);
     console.log({ hex });
 
+    const result = await axios.post(
+      `http://localhost:8080/sendrawtransaction`,
+      {
+        hex,
+      }
+    );
+    console.log(result.data);
     return;
   };
 
@@ -197,9 +250,10 @@ export default function Page(): JSX.Element {
               Choose your key
             </label>
             <div
-              className={`${network === null && "opacity-30"} flex flex-row gap-x-4`}
+              className={`${network === null && "opacity-30"} flex flex-row gap-x-4 pb-6`}
             >
-              <div className="border-b border-gray-900/10 pb-12">
+              <div className="border-b border-gray-900/10">
+                {" "}
                 <div className="mt-2">
                   <button
                     className={`${keyOption === KeyOptionEnum.ALICE && "border-2 border-gray-300"} rounded-sm shadow-sm bg-[#874642] hover:bg-[#873642] text-gray-200 text-sm py-2 px-4`}
@@ -215,7 +269,7 @@ export default function Page(): JSX.Element {
                   </button>
                 </div>
               </div>
-              <div className="border-b border-gray-900/10 pb-12">
+              <div className="border-b border-gray-900/10">
                 <div className="mt-2">
                   <button
                     className={`${keyOption === KeyOptionEnum.BOB && "border-2 border-gray-300"} rounded-sm shadow-sm bg-[#874642] hover:bg-[#873642] text-gray-200 text-sm py-2 px-4`}
@@ -231,7 +285,7 @@ export default function Page(): JSX.Element {
                   </button>
                 </div>
               </div>
-              <div className="border-b border-gray-900/10 pb-12">
+              <div className="border-b border-gray-900/10">
                 <div className="mt-2">
                   <button
                     onClick={() => {
@@ -246,6 +300,33 @@ export default function Page(): JSX.Element {
               </div>
             </div>
 
+            {/* {key !== null && (
+              <div className="flex flex-row">
+                <div className="w-1/2 my-2">
+                  <label className="block text-sm font-medium leading-6 text-gray-200">
+                    Lockscript (for p2sh)
+                  </label>
+                  <div
+                    ref={lockRef}
+                    className="rounded-sm border border-gray-700 overflow-auto break-words"
+                  />
+                </div>
+              </div>
+            )}
+            {key !== null && (
+              <div className="flex flex-row">
+                <div className="w-1/2 my-2">
+                  <label className="block text-sm font-medium leading-6 text-gray-200">
+                    Unlockscript (for p2sh)
+                  </label>
+                  <div
+                    ref={unlockRef}
+                    className="rounded-sm border border-gray-700 overflow-auto break-words"
+                  />
+                </div>
+              </div>
+            )} */}
+
             <div className="flex flex-row">
               <div className="border-b border-gray-900/10 pb-12">
                 <label className="block text-sm font-medium leading-6 text-gray-200">
@@ -256,7 +337,7 @@ export default function Page(): JSX.Element {
                     onClick={() => {
                       setOpenInputModal(true);
                     }}
-                    className={`${key === null && "cursor-not-allowed opacity-30"} rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40`}
+                    className={`${key === null && "cursor-not-allowed opacity-30"} rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-[170px]`}
                     disabled={key === null}
                   >
                     Add Input +
@@ -283,7 +364,7 @@ export default function Page(): JSX.Element {
                 </label>
                 <div className="mt-2">
                   <button
-                    className={`${key === null && "cursor-not-allowed opacity-30"} rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40`}
+                    className={`${key === null && "cursor-not-allowed opacity-30"} rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-[165px]`}
                     disabled={key === null}
                     onClick={() => {
                       setOpenOutputModal(true);
@@ -307,7 +388,7 @@ export default function Page(): JSX.Element {
               </div>
             </div>
             <div className="flex flex-row">
-              <div className="border-b border-gray-900/10 pb-12">
+              <div className="border-b border-gray-900/10 pb-6">
                 <label className="block text-sm font-medium leading-6 text-gray-200">
                   Locktime
                 </label>
@@ -320,15 +401,16 @@ export default function Page(): JSX.Element {
                 </div>
               </div>
             </div>
+
             <div className="flex flex-row">
-              <div className="border-b border-gray-900/10 pb-12">
+              <div className="border-b border-gray-900/10 pb-4">
                 <div className="mt-2">
                   <button
                     className={`${key === null && "cursor-not-allowed opacity-30"}  rounded-sm shadow-sm bg-[#224242] hover:bg-[#225242] text-gray-200 text-sm py-2 px-20 mr-4`}
                     disabled={key === null}
                     onClick={sign}
                   >
-                    Sign & Generate
+                    Sign & Broadcast
                   </button>
                   <button
                     onClick={() => {
@@ -343,6 +425,25 @@ export default function Page(): JSX.Element {
                 </div>
               </div>
             </div>
+
+            <div className="flex flex-row">
+              <div className="border-b border-gray-900/10 pb-2">
+                <div className="mt-2">
+                  <button
+                    className="w-full flex flex-cols gap-x-4 rounded-sm shadow-sm bg-[#504227] hover:bg-[#3d372b] text-gray-200 text-sm py-2 px-36"
+                    onClick={mine}
+                  >
+                    <IconMine size={20} color="#ffffff" className="" />
+                    Mine Block
+                  </button>
+                </div>
+              </div>
+            </div>
+            {mineBlock.length > 0 && (
+              <p className="text-gray-400 text-sm">
+                Sucessfully mined {mineBlock.length} block
+              </p>
+            )}
           </div>
         </div>
       </main>

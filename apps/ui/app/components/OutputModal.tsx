@@ -199,18 +199,6 @@ const OutputModal = ({
                   </div>
                 </div>
               )}
-              <div className="flex flex-row">
-                <div className="w-full my-2">
-                  <label className="block text-sm font-medium leading-6 text-gray-200">
-                    locking script (asm):
-                  </label>
-                  <div
-                    ref={divRef}
-                    className="rounded-sm border border-gray-700 overflow-auto break-words"
-                  />
-                </div>
-              </div>
-
               <div className="flex flex-row my-2">
                 <button
                   className="w-full rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40"
