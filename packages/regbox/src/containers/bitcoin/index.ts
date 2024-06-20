@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { ContainerAbstract } from "..";
 import configs from "../../configs";
 import { sleep } from "../../utils/utils";
@@ -46,7 +47,7 @@ export class BitcoinContainer extends ContainerAbstract {
 
   private async checkNodeUntilReady() {
     while (true) {
-      console.info(`info.checking ${this.name} `);
+      this.logger(`checking ${this.name} `);
       await sleep(1000);
       try {
         await this.execBitcoinCli(["getrpcinfo"]);
@@ -69,15 +70,19 @@ export class BitcoinContainer extends ContainerAbstract {
     await this.execBitcoinCli(["sendtoaddress", address, amount.toString()]);
   }
 
+  logger(log: string) {
+    console.log(chalk.yellow(log));
+  }
+
   async waitUntilReady() {
     await this.checkNodeUntilReady();
 
-    console.info(`info.creating initial wallet: ${configs.bitcoin.wallet}`);
+    this.logger(`creating initial wallet: ${configs.bitcoin.wallet}`);
     await this.execBitcoinCli(["createwallet", configs.bitcoin.wallet]);
 
     // miner should wait until the next 100 block to spend the balance.
     // this should give 50 * 10 BTC to the wallet.
-    console.info(`info.generating first 110 blocks`);
+    this.logger(`generating first 110 blocks`);
     await this.generateBlocks(110);
   }
 }

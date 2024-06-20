@@ -1,3 +1,4 @@
+import { printTable, Table } from "console-table-printer";
 import stream from "stream";
 import { ContainerAbstract } from "../containers";
 
@@ -27,9 +28,23 @@ export function sleep(ms: number) {
 }
 
 export function listeningPortInfo(datas: { name: string; ports: string[] }[]) {
+  const table = new Table({
+    columns: [
+      { name: "name", alignment: "left" },
+      { name: "ports", alignment: "left" },
+    ],
+  });
+
   for (const data of datas) {
-    console.info(`${data.name}: ${data.ports}`);
+    table.addRow(
+      {
+        name: data.name,
+        ports: data.ports,
+      },
+      { color: "green" },
+    );
   }
+  table.printTable();
 }
 
 export async function startContainers(containers: ContainerAbstract[]) {

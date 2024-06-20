@@ -44,7 +44,7 @@ export abstract class ContainerAbstract {
       printLog: true,
     });
 
-    console.info(`info.attaching log for ${this.name}`);
+    this.logger(`attaching log for ${this.name}`);
     const stream = await this.container.logs({
       follow: true,
       stderr: true,
@@ -71,16 +71,16 @@ export abstract class ContainerAbstract {
     let network;
 
     if (networkId) {
-      console.info(`info.use exising network ${this.networkName}`);
+      this.logger(`use exising network ${this.networkName}`);
       network = this.docker.getNetwork(networkId);
     } else {
-      console.info(`info.creating network ${this.networkName}`);
+      this.logger(`creating network ${this.networkName}`);
       network = await this.docker.createNetwork({
         Name: this.networkName,
       });
     }
 
-    console.info(`info.connecting network into ${this.name}`);
+    this.logger(`connecting network into ${this.name}`);
     await network.connect({
       Container: this.container.id,
     });
@@ -89,7 +89,7 @@ export abstract class ContainerAbstract {
   }
 
   protected async pullImage() {
-    console.info(`info.pulling image ${this.image}`);
+    this.logger(`info.pulling image ${this.image}`);
     const logStream = createLogStream({ printLog: this.printLog });
     const stream = await this.docker.pull(this.image);
     stream.pipe(logStream);
@@ -119,7 +119,7 @@ export abstract class ContainerAbstract {
   protected async checkImage() {
     const exist = await this.imageExist();
     if (exist) {
-      console.info(`info.use exising image ${this.image}`);
+      this.logger(`use exising image ${this.image}`);
     } else {
       await this.pullImage();
     }
@@ -130,15 +130,15 @@ export abstract class ContainerAbstract {
       return;
     }
 
-    console.info(`info.shutting down ${this.name}`);
+    this.logger(`shutting down ${this.name}`);
     await this.container.stop();
     await this.container.remove();
   }
 
   async start() {
     try {
-      console.info(`info.starting ${this.name}`);
-      console.info(`info.checking image ${this.image}`);
+      this.logger(`starting ${this.name}`);
+      this.logger(`checking image ${this.image}`);
 
       await this.checkImage();
       const exposedPortsObj = this.portMappings.reduce((prev, portMapping) => {
@@ -180,7 +180,7 @@ export abstract class ContainerAbstract {
 
       await this.waitUntilReady();
 
-      console.info(`info.${this.name} is ready`);
+      this.logger(`${this.name} is ready`);
       return this.container;
     } catch (error) {
       this.shutdown();
@@ -235,6 +235,7 @@ export abstract class ContainerAbstract {
     });
   }
 
+  abstract logger(log: string): void;
   abstract waitUntilReady(): Promise<void>;
 }
 

@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { ContainerAbstract } from "..";
 import configs from "../../configs";
 import { ExplorerContainerArgs } from "./types";
@@ -26,6 +27,10 @@ export class ExplorerContainer extends ContainerAbstract {
       socketPath,
       printLog,
     });
+  }
+
+  logger(log: string) {
+    console.log(chalk.magenta(log));
   }
 
   async waitUntilReady() { }

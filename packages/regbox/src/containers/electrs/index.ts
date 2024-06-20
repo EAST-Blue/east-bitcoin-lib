@@ -1,3 +1,4 @@
+import chalk from "chalk";
 import { ContainerAbstract } from "..";
 import configs from "../../configs";
 import { sleep } from "../../utils/utils";
@@ -41,13 +42,17 @@ export class ElectrsContainer extends ContainerAbstract {
 
   private async checkServerUntilReady() {
     while (true) {
-      console.info(`info.checking ${this.name} `);
+      this.logger(`checking ${this.name} `);
       await sleep(1000);
       try {
         await this.execCommand(["curl", "-s", "-S", "localhost:3002/mempool"]);
         return;
       } catch { }
     }
+  }
+
+  logger(log: string) {
+    console.log(chalk.blue(log));
   }
 
   async waitUntilReady() {
