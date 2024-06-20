@@ -9,7 +9,7 @@ export default {
   },
   bitcoin: {
     name: "east_bitcoin_node__",
-    image: "docker.io/ruimarinho/bitcoin-core:24-alpine",
+    image: "docker.io/ruimarinho/bitcoin-core:24",
     user: "east",
     password: "east",
     wallet: "east",
