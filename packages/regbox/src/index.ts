@@ -118,5 +118,5 @@ async function main() {
 main();
 
 export * from "./containers";
-export * from "./utils/utils";
+export * from "./utils";
 export * from "./configs";
