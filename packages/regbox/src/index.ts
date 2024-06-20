@@ -12,7 +12,7 @@ import {
   listeningPortInfo,
   shutdownContainers,
   startContainers,
-} from "./utils/utils";
+} from "./utils";
 import { generateValidator, sendToAddressValidator } from "./validator/server";
 
 const server = express();
@@ -118,3 +118,5 @@ async function main() {
 main();
 
 export * from "./containers";
+export * from "./utils/utils";
+export * from "./configs";

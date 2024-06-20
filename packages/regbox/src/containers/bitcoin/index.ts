@@ -1,7 +1,7 @@
 import chalk from "chalk";
 import { ContainerAbstract } from "..";
 import configs from "../../configs";
-import { sleep } from "../../utils/utils";
+import { sleep } from "../../utils";
 import { BitcoinContainerArgs, GenerateAddress } from "./types";
 
 export class BitcoinContainer extends ContainerAbstract {

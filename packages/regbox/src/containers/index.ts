@@ -1,5 +1,5 @@
 import Docker, { Container } from "dockerode";
-import { createLogStream } from "../utils/utils";
+import { createLogStream } from "../utils";
 import { ContainerAbstractArgs, PortMapping } from "./types";
 
 export abstract class ContainerAbstract {

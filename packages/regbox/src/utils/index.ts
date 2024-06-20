@@ -1,4 +1,4 @@
-import { printTable, Table } from "console-table-printer";
+import { Table } from "console-table-printer";
 import stream from "stream";
 import { ContainerAbstract } from "../containers";
 
