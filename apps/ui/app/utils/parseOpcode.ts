@@ -10,7 +10,7 @@ export const parseScript = (plaintext: string): any => {
     } else if (opcodes[component]) {
       return opcodes[component];
     } else {
-      throw new Error(`Unknown component: ${component}`);
+      return Buffer.from(component, "utf8");
     }
   });
 

@@ -49,7 +49,11 @@ const OutputModal = ({
     if (outputType === "address" && pubkey === "") return;
     if (outputType === "script" && !scriptEditorRef.current?.value) return;
 
-    saveOutputs([{ address: pubkey, value }]);
+    if (outputType === "address") {
+      saveOutputs([{ address: pubkey, value }]);
+    } else {
+      saveOutputs([{ script: scriptEditorRef.current?.value, value }]);
+    }
 
     setValue(0);
     setPubkey("");
