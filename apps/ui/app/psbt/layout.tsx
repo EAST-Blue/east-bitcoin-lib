@@ -7,6 +7,8 @@ import { KeyContextProvider } from "../contexts/KeyContext";
 import { NetworkContextProvider } from "../contexts/NetworkContext";
 import { InputContextProvider } from "../contexts/InputContext";
 import { OutputContextProvider } from "../contexts/OutputContext";
+import { UnlockScriptProvider } from "../contexts/UnlockScriptContext";
+import { LockScriptProvider } from "../contexts/LockScriptContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -27,7 +29,11 @@ export default function RootLayout({
           <KeyContextProvider>
             <OutputContextProvider>
               <InputContextProvider>
-                <PsbtContextProvider>{children}</PsbtContextProvider>
+                <UnlockScriptProvider>
+                  <LockScriptProvider>
+                    <PsbtContextProvider>{children}</PsbtContextProvider>
+                  </LockScriptProvider>
+                </UnlockScriptProvider>
               </InputContextProvider>
             </OutputContextProvider>
           </KeyContextProvider>

@@ -1,5 +1,6 @@
 export type PSBTOutput = {
-  address: string;
+  address?: string;
+  script?: string;
   value: number;
 };
 

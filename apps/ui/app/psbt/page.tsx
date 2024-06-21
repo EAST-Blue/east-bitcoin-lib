@@ -13,11 +13,15 @@ import {
   Address,
   AddressType,
   BElectrsAPI,
+  BitcoinAPIAbstract,
   OrdAPI,
   P2pkhUtxo,
+  P2shAutoUtxo,
+  P2shUtxo,
   P2trUtxo,
   P2wpkhUtxo,
   PSBT,
+  Script,
   Wallet,
   getAddressType,
 } from "@east-bitcoin-lib/sdk";
@@ -37,6 +41,11 @@ import { parseOutput } from "../utils/parseOutput";
 import { PrismEditor, createEditor } from "prism-code-editor";
 import axios from "axios";
 import IconMine from "../icons/IconMine";
+import { useUnlockScriptContext } from "../contexts/UnlockScriptContext";
+import { UnlockScriptContextType } from "../types/UnlockScriptContextType";
+import { parseScript } from "../utils/parseOpcode";
+import { useLockScriptContext } from "../contexts/LockScriptContext";
+import { LockScriptContextType } from "../types/LockScriptContextType";
 
 export default function Page(): JSX.Element {
   const { key, keyOption, setKey, setKeyOption } = useKeyContext() as any;
@@ -44,6 +53,10 @@ export default function Page(): JSX.Element {
     useNetworkContext() as any;
   const { utxos } = useInputContext() as InputContextType;
   const { outputs } = useOutputContext() as OutputContextType;
+  const { unlockScript, saveUnlockScript } =
+    useUnlockScriptContext() as UnlockScriptContextType;
+  const { lockScript, saveLockScript } =
+    useLockScriptContext() as LockScriptContextType;
 
   const unlockRef = useRef<HTMLDivElement>(null);
   const unlockEditorRef = useRef<PrismEditor>();
@@ -55,7 +68,6 @@ export default function Page(): JSX.Element {
   const [openRegtestModal, setOpenRegtestModal] = useState(false);
   const [viewInput, setViewInput] = useState<BitcoinUTXO | null>(null);
   const [viewOutput, setViewOutput] = useState<PSBTOutput | null>(null);
-  const [hex, setHex] = useState("");
   const [mineBlock, setMineBlock] = useState<string[]>([]);
 
   useEffect(() => {
@@ -105,11 +117,6 @@ export default function Page(): JSX.Element {
         regtest: network,
       },
     });
-    // const api = new API({
-    //   network: "regtest",
-    //   bitcoin: bitcoinApi,
-    //   ord: new OrdAPI({ network: "regtest" }),
-    // });
 
     const wallet = new Wallet({
       mnemonic: key,
@@ -130,11 +137,22 @@ export default function Page(): JSX.Element {
           inputs.push({ utxo: p2wpkhUtxo, value: utxo.value });
           break;
 
+        case "p2sh":
+          const p2shUtxo = await P2shUtxo.fromBitcoinUTXO({
+            bitcoinAPI: bitcoinApi,
+            bitcoinUTXO: utxo,
+            redeemScript: wallet.p2sh(parseScript(lockScript!)).redeemScript,
+            unlockScript: Script.compile(parseScript(unlockScript!)),
+          });
+          inputs.push({ utxo: p2shUtxo, value: utxo.value });
+          break;
+
         case "p2tr":
           const p2tr = wallet.p2tr(0);
+          console.log(p2tr.tapInternalKey, p2tr.keypair.publicKey);
           const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
             utxo,
-            p2tr.keypair.publicKey
+            p2tr.tapInternalKey
           );
           inputs.push({ utxo: p2trUtxo, value: utxo.value });
           break;
@@ -144,6 +162,7 @@ export default function Page(): JSX.Element {
       }
     }
 
+    console.log(utxos, outputs);
     const p = new PSBT({
       network: networkOption,
       inputs: inputs,
@@ -165,6 +184,13 @@ export default function Page(): JSX.Element {
           psbt.signInput(index, wallet.p2wpkh(0).keypair);
           break;
 
+        case psbtInput.utxo instanceof P2shUtxo:
+          psbt.finalizeInput(
+            index,
+            PSBT.finalScript(parseScript(unlockScript!))
+          );
+          break;
+
         case psbtInput.utxo instanceof P2trUtxo:
           psbt.signInput(index, wallet.p2tr(0).keypair);
           break;
@@ -175,7 +201,6 @@ export default function Page(): JSX.Element {
     }
 
     const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
-    console.log(wallet.p2wpkh(0).address, wallet.p2tr(0).address);
     console.log({ hex });
 
     const result = await axios.post(
@@ -186,6 +211,17 @@ export default function Page(): JSX.Element {
     );
     console.log(result.data);
     return;
+  };
+
+  const onSaveScript = () => {
+    const lockScriptValue = lockEditorRef.current?.value;
+    const unlockScriptValue = unlockEditorRef.current?.value;
+
+    if (!lockScriptValue) return;
+    if (!unlockScriptValue) return;
+
+    saveLockScript(lockScriptValue);
+    saveUnlockScript(unlockScriptValue);
   };
 
   return (
@@ -300,32 +336,36 @@ export default function Page(): JSX.Element {
               </div>
             </div>
 
-            {/* {key !== null && (
-              <div className="flex flex-row">
-                <div className="w-1/2 my-2">
-                  <label className="block text-sm font-medium leading-6 text-gray-200">
-                    Lockscript (for p2sh)
-                  </label>
-                  <div
-                    ref={lockRef}
-                    className="rounded-sm border border-gray-700 overflow-auto break-words"
-                  />
+            {key !== null && (
+              <div className="pb-6">
+                <div className="flex flex-row">
+                  <div className="w-1/2 border-b border-gray-900/10">
+                    <label className="block text-sm font-medium text-gray-200">
+                      Lock & Unlock Script for P2SH
+                      <span className="mx-2 text-xs text-gray-700">
+                        *optional
+                      </span>
+                    </label>
+                    <div className="flex flex-cols gap-x-2 justify-around mt-2 ">
+                      <div
+                        ref={lockRef}
+                        className="w-full rounded-sm border border-gray-700 overflow-auto break-words"
+                      />
+                      <div
+                        ref={unlockRef}
+                        className="w-full rounded-sm border border-gray-700 overflow-auto break-words"
+                      />
+                    </div>
+                  </div>
                 </div>
+                <button
+                  onClick={onSaveScript}
+                  className="w-1/2 rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-[170px] mt-1"
+                >
+                  Save Script
+                </button>
               </div>
             )}
-            {key !== null && (
-              <div className="flex flex-row">
-                <div className="w-1/2 my-2">
-                  <label className="block text-sm font-medium leading-6 text-gray-200">
-                    Unlockscript (for p2sh)
-                  </label>
-                  <div
-                    ref={unlockRef}
-                    className="rounded-sm border border-gray-700 overflow-auto break-words"
-                  />
-                </div>
-              </div>
-            )} */}
 
             <div className="flex flex-row">
               <div className="border-b border-gray-900/10 pb-12">

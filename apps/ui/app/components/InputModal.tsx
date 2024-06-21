@@ -1,12 +1,20 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import { useNetworkContext } from "../contexts/NetworkContext";
 import { useKeyContext } from "../contexts/KeyContext";
-import { BElectrsAPI, Script, Wallet } from "@east-bitcoin-lib/sdk";
+import {
+  BElectrsAPI,
+  Script,
+  StackScripts,
+  Wallet,
+} from "@east-bitcoin-lib/sdk";
 import { useInputContext } from "../contexts/InputContext";
 import { BitcoinUTXO } from "@east-bitcoin-lib/sdk/dist/repositories/bitcoin/types";
 import { InputContextType } from "../types/InputContextType";
+import { useLockScriptContext } from "../contexts/LockScriptContext";
+import { LockScriptContextType } from "../types/LockScriptContextType";
+import { parseScript } from "../utils/parseOpcode";
 
 const InputModal = ({
   isOpen,
@@ -20,6 +28,7 @@ const InputModal = ({
   const { utxos, saveUtxos } = useInputContext() as InputContextType;
   const { key } = useKeyContext() as any;
   const { network, networkOption } = useNetworkContext() as any;
+  const { lockScript } = useLockScriptContext() as LockScriptContextType;
 
   const [selectedInput, setSelectedInput] = useState<BitcoinUTXO | null>(null);
   const [inputs, setInputs] = useState<BitcoinUTXO[]>([]);
@@ -63,13 +72,9 @@ const InputModal = ({
         break;
 
       case "p2sh":
-        // TODO change this
-        const lockScripts = [
-          Script.OP_ADD,
-          Script.encodeNumber(2000),
-          Script.OP_EQUAL,
-        ];
-        const p2sh = wallet.p2sh(lockScripts);
+        if (lockScript === null) break;
+
+        const p2sh = wallet.p2sh(parseScript(lockScript));
         _inputs = await bitcoinApi.getUTXOs(p2sh.address);
         break;
 
@@ -159,7 +164,7 @@ const InputModal = ({
                     <option value={"p2wpkh"}>
                       P2WPKH (Pay to Witness Public Key Hash)
                     </option>
-                    {/* <option value={"p2sh"}>P2SH (Pay to Script Hash)</option> */}
+                    <option value={"p2sh"}>P2SH (Pay to Script Hash)</option>
                     <option value={"p2tr"}>P2TR (Pay to Taproot)</option>
                   </select>
                 </div>

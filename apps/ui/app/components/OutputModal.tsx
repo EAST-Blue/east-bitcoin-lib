@@ -25,12 +25,13 @@ const OutputModal = ({
   const [addressType, setAddressType] = useState<string>("nonstandard");
   const [pubkey, setPubkey] = useState<string>("");
   const [value, setValue] = useState<number>(0);
+  const [outputType, setOutputType] = useState<string>("address");
 
-  const divRef = useRef<HTMLDivElement>(null);
-  const editorRef = useRef<PrismEditor>();
+  const scriptRef = useRef<HTMLDivElement>(null);
+  const scriptEditorRef = useRef<PrismEditor>();
 
   useEffect(() => {
-    const editor = (editorRef.current = createEditor(divRef.current!, {
+    const editor = (scriptEditorRef.current = createEditor(scriptRef.current!, {
       value: "",
       language: "nasm",
       tabSize: 2,
@@ -41,11 +42,12 @@ const OutputModal = ({
     import("../psbt/extension").then((module) => module.addExtensions(editor));
 
     return editor.remove;
-  }, []);
+  }, [outputType]);
 
   const onSave = () => {
-    if (value <= 0) return;
-    if (pubkey === "") return;
+    if (outputType === "address" && value <= 0) return;
+    if (outputType === "address" && pubkey === "") return;
+    if (outputType === "script" && !scriptEditorRef.current?.value) return;
 
     saveOutputs([{ address: pubkey, value }]);
 
@@ -90,22 +92,29 @@ const OutputModal = ({
               </div>
             </div>
             <div className="flex flex-col p-4">
-              <div className="flex flex-row">
-                <div className="w-full  my-2">
+              <div className="flex flex-col">
+                <div className="w-full my-2">
                   <label className="block text-sm font-medium leading-6 text-gray-200">
-                    Address Type:
+                    Output Type:
                   </label>
-                  <select
-                    value={addressType}
-                    onChange={(e) => setAddressType(e.target.value)}
-                    className="w-11/12 bg-[#0F111B] hover:bg-[#0F171B] rounded-md text-sm hover:cursor-pointer"
-                  >
-                    <option value={"nonstandard"}>Nonstandard</option>
-                    <option value={"p2wpkh"}>
-                      P2WPKH (Pay to Witness Public Key Hash)
-                    </option>
-                    <option value={"p2tr"}>P2TR (Pay to Taproot)</option>
-                  </select>
+                  <div className="w-full flex flex-row gap-x-2">
+                    <button
+                      onClick={() => {
+                        setOutputType("address");
+                      }}
+                      className={`${outputType === "address" && "border border-white"} rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-10`}
+                    >
+                      Address
+                    </button>
+                    <button
+                      onClick={() => {
+                        setOutputType("script");
+                      }}
+                      className={`${outputType === "script" && "border border-white"} rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-10`}
+                    >
+                      Custom Script
+                    </button>
+                  </div>
                 </div>
               </div>
               <div className="flex flex-row">
@@ -121,84 +130,125 @@ const OutputModal = ({
                   />
                 </div>
               </div>
-              {addressType === "p2wpkh" && (
-                <div className="flex flex-row">
-                  <div className="w-full my-2">
-                    <label className="block text-sm font-medium leading-6 text-gray-200">
-                      address:
-                    </label>
-                    <input
-                      type="text"
-                      value={pubkey}
-                      onChange={(e) => setPubkey(e.target.value)}
-                      className="w-full bg-transparent rounded-md text-sm border-gray-700"
-                    />
-                    <label className="block text-sm font-medium leading-6 text-gray-200 -mt-1">
-                      or send to{" "}
-                      <span
-                        onClick={() => {
-                          setPubkey(
-                            "bcrt1q3a34qdsw4dd7ye4fdvzut88tcjgz76d8gkjqdd"
-                          );
-                        }}
-                        className="underline hover:cursor-pointer"
-                      >
-                        Alice
-                      </span>
-                      {", "}
-                      <span
-                        onClick={() => {
-                          setPubkey(
-                            "bcrt1q63062x9c98g025gttswwpmjk49wcysk5jeh4pd"
-                          );
-                        }}
-                        className="underline hover:cursor-pointer"
-                      >
-                        Bob
-                      </span>
-                    </label>
+
+              {outputType === "script" && (
+                <>
+                  <div className="flex flex-row">
+                    <div className="w-full my-2">
+                      <label className="block text-sm font-medium leading-6 text-gray-200">
+                        custom script (asm):
+                      </label>
+                      <div
+                        ref={scriptRef}
+                        className="w-full rounded-sm border border-gray-700 overflow-auto break-words"
+                      />
+                    </div>
                   </div>
-                </div>
+                </>
               )}
-              {addressType === "p2tr" && (
-                <div className="flex flex-row">
-                  <div className="w-full my-2">
-                    <label className="block text-sm font-medium leading-6 text-gray-200">
-                      address:
-                    </label>
-                    <input
-                      type="text"
-                      value={pubkey}
-                      onChange={(e) => setPubkey(e.target.value)}
-                      className="w-full bg-transparent rounded-md text-sm border-gray-700"
-                    />
-                    <label className="block text-sm font-medium leading-6 text-gray-200 -mt-1">
-                      or send to{" "}
-                      <span
-                        onClick={() => {
-                          setPubkey(
-                            "bcrt1pxc8kgrxdlzvclef9fnfd7nslmval2xlgg30nxw06hl86j4lml50sauyyat"
-                          );
-                        }}
-                        className="underline hover:cursor-pointer"
+
+              {outputType === "address" && (
+                <>
+                  <div className="flex flex-row">
+                    <div className="w-full  my-2">
+                      <label className="block text-sm font-medium leading-6 text-gray-200">
+                        Address Type:
+                      </label>
+                      <select
+                        value={addressType}
+                        onChange={(e) => setAddressType(e.target.value)}
+                        className="w-11/12 bg-[#0F111B] hover:bg-[#0F171B] rounded-md text-sm hover:cursor-pointer"
                       >
-                        Alice
-                      </span>
-                      {", "}
-                      <span
-                        onClick={() => {
-                          setPubkey(
-                            "bcrt1pny8rwj0j4xnlgmqkx8hqmf0tdx7zdh5y0u7w0te65j79n00a584sxupumd"
-                          );
-                        }}
-                        className="underline hover:cursor-pointer"
-                      >
-                        Bob
-                      </span>
-                    </label>
+                        <option value={"nonstandard"}>Nonstandard</option>
+                        <option value={"p2wpkh"}>
+                          P2WPKH (Pay to Witness Public Key Hash)
+                        </option>
+                        <option value={"p2tr"}>P2TR (Pay to Taproot)</option>
+                      </select>
+                    </div>
                   </div>
-                </div>
+
+                  {addressType === "p2wpkh" && (
+                    <div className="flex flex-row">
+                      <div className="w-full my-2">
+                        <label className="block text-sm font-medium leading-6 text-gray-200">
+                          address:
+                        </label>
+                        <input
+                          type="text"
+                          value={pubkey}
+                          onChange={(e) => setPubkey(e.target.value)}
+                          className="w-full bg-transparent rounded-md text-sm border-gray-700"
+                        />
+                        <label className="block text-sm font-medium leading-6 text-gray-200 -mt-1">
+                          or send to{" "}
+                          <span
+                            onClick={() => {
+                              setPubkey(
+                                "bcrt1q3a34qdsw4dd7ye4fdvzut88tcjgz76d8gkjqdd"
+                              );
+                            }}
+                            className="underline hover:cursor-pointer"
+                          >
+                            Alice
+                          </span>
+                          {", "}
+                          <span
+                            onClick={() => {
+                              setPubkey(
+                                "bcrt1q63062x9c98g025gttswwpmjk49wcysk5jeh4pd"
+                              );
+                            }}
+                            className="underline hover:cursor-pointer"
+                          >
+                            Bob
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                  {addressType === "p2tr" && (
+                    <div className="flex flex-row">
+                      <div className="w-full my-2">
+                        <label className="block text-sm font-medium leading-6 text-gray-200">
+                          address:
+                        </label>
+                        <input
+                          type="text"
+                          value={pubkey}
+                          onChange={(e) => setPubkey(e.target.value)}
+                          className="w-full bg-transparent rounded-md text-sm border-gray-700"
+                        />
+                        <label className="block text-sm font-medium leading-6 text-gray-200 -mt-1">
+                          or send to{" "}
+                          <span
+                            onClick={() => {
+                              setPubkey(
+                                "bcrt1pxc8kgrxdlzvclef9fnfd7nslmval2xlgg30nxw06hl86j4lml50sauyyat"
+                              );
+                            }}
+                            className="underline hover:cursor-pointer"
+                          >
+                            Alice
+                          </span>
+                          {", "}
+                          <span
+                            onClick={() => {
+                              setPubkey(
+                                "bcrt1pny8rwj0j4xnlgmqkx8hqmf0tdx7zdh5y0u7w0te65j79n00a584sxupumd"
+                              );
+                            }}
+                            className="underline hover:cursor-pointer"
+                          >
+                            Bob
+                          </span>
+                        </label>
+                      </div>
+                    </div>
+                  )}
+                </>
               )}
+
               <div className="flex flex-row my-2">
                 <button
                   className="w-full rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40"
