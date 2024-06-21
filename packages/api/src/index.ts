@@ -1,6 +1,6 @@
 import { Account } from "./account";
 import Transaction from "./transaction";
-import { ClientArgs, MutateArgs, Network } from "./types";
+import { ClientArgs, MutateArgs, Network, QueryArgs } from "./types";
 
 // wallet request sign (from private key, from file, from browser)
 // signed msg push to rpc connection
@@ -41,12 +41,30 @@ export default class Client {
       actions: actions,
     });
 
-    const signature = await newTx.send("mutate");
-    const body = await signature.json();
+    const signature = await newTx.exec();
+    const body = await signature?.json();
 
     const b64decode = Buffer.from(body.result.result, "base64");
 
-    console.log(b64decode.toString());
+    return b64decode.toString();
   }
-  query() {}
+
+  async query({ receiver, function_name, args }: QueryArgs) {
+    const newQueryTx = new Transaction(this, {
+      signer: "dontcare",
+      receiver: receiver,
+      actions: [
+        {
+          kind: "view",
+          function_name: function_name,
+          args: args,
+        },
+      ],
+    });
+
+    const response = await newQueryTx.exec();
+    const body = await response.json();
+
+    return body;
+  }
 }

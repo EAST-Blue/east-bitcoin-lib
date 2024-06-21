@@ -4,7 +4,7 @@ export type { ECPairAPI };
 
 export const BorshQuerySchema = {
   struct: {
-    method: "string",
+    function_name: "string",
     args: {
       array: {
         type: "string",

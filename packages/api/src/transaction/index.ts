@@ -9,22 +9,6 @@ import { sha256 } from "../utils";
 import Client from "..";
 import { Account } from "../account";
 
-// const params = {
-//     id: "sha256(signature)",
-//     signature: "secp256k1.ecdsaSign(transaction, privKey)",
-//     transaction: {
-//       signer: pubKey.toString("hex"),
-//       receiver: "abc",
-//       actions: [
-//         {
-//           kind: "call",
-//           method_name: "asd",
-//           args: ["hello", "world"],
-//         },
-//       ],
-//     },
-//   };
-
 export default class Transaction {
   client: Client;
   params: TransactionParams;
@@ -83,8 +67,7 @@ export default class Transaction {
   }
 
   //   call sign first, generate params, serialize, then submit to rpc
-  async send(type: string) {
-    const method = type === "mutate" ? "Runtime.Mutate" : "Runtime.Query";
+  async mutate() {
     const { signature, msg } = await this.sign();
 
     const txId = await sha256(Buffer.from(signature));
@@ -106,7 +89,7 @@ export default class Transaction {
     const body = {
       jsonrpc: "2.0",
       id: account.requestId,
-      method: method,
+      method: "Runtime.Mutate",
       params: [mainTxPackedHex],
     };
 
@@ -119,5 +102,39 @@ export default class Transaction {
     });
 
     return response;
+  }
+
+  //   call sign first, generate params, serialize, then submit to rpc
+  async query() {
+    const body = {
+      jsonrpc: "2.0",
+      id: "dontcare",
+      method: "Runtime.Query",
+      params: [
+        {
+          target: this.params.receiver,
+          function_name: this.params.actions[0]?.function_name,
+          args: this.params.actions[0]?.args,
+        },
+      ],
+    };
+
+    const response = await fetch(this.client.rpcUrl, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json;charset=UTF-8",
+      },
+      body: JSON.stringify(body),
+    });
+
+    return response;
+  }
+
+  async exec() {
+    if (this.params.signer === "dontcare") {
+      return await this.query();
+    } else {
+      return await this.mutate();
+    }
   }
 }

@@ -12,3 +12,9 @@ export type MutateArgs = {
   receiver: string;
   actions: Action[];
 };
+
+export type QueryArgs = {
+  receiver: string;
+  function_name: string;
+  args: string[];
+};

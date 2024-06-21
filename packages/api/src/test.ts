@@ -10,20 +10,26 @@ const main = async () => {
     "7c67c815e1c4a25fe70d95aad9440b682bdcbe6e2baf34d460966e605705ea8e"
   );
 
-  const lastNonce = await client.accounts.get(pubKey)?.getNonce();
-  console.log(lastNonce);
-
-  client.mutate({
+  const mutateResp = await client.mutate({
     signer: pubKey,
     receiver: "smart-index",
     actions: [
       {
         kind: "call",
-        method_name: "indexBlock",
+        function_name: "indexBlock",
         args: ["hello", "world"],
       },
     ],
   });
+  console.log(mutateResp);
+
+  const queryResp = await client.query({
+    receiver: "smart-index",
+    function_name: "getBlock",
+    args: ["hello", "world"],
+  });
+
+  console.log(queryResp);
 };
 
 main();

@@ -40,7 +40,7 @@ export class Account {
 
   async getNonce(): Promise<number> {
     const params = borsh.serialize(BorshQuerySchema, {
-      method: "get_nonce",
+      function_name: "get_nonce",
       args: [this.getPublicKey()],
     });
     const paramsInHex = Buffer.from(params).toString("hex");

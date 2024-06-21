@@ -6,7 +6,7 @@ export type TransactionParams = {
 
 export type Action = {
   kind: string;
-  method_name: string;
+  function_name: string;
   args: string[];
 };
 
@@ -30,7 +30,7 @@ export const borshTransactionSchema = {
 const borshActionSchema = {
   struct: {
     kind: "string",
-    method_name: "string",
+    function_name: "string",
     args: {
       array: {
         type: "string",
