@@ -1,7 +1,7 @@
 import { BitcoinUTXO } from "@east-bitcoin-lib/sdk/dist/repositories/bitcoin/types";
 
 export type InputContextType = {
-  utxos: BitcoinUTXO[];
+  utxos: any[];
   saveUtxos: (utxos: BitcoinUTXO[]) => void;
   removeUtxoByTxid: (txid: string) => void;
 };

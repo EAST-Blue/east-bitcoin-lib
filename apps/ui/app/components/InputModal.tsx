@@ -15,6 +15,7 @@ import { InputContextType } from "../types/InputContextType";
 import { useLockScriptContext } from "../contexts/LockScriptContext";
 import { LockScriptContextType } from "../types/LockScriptContextType";
 import { parseScript } from "../utils/parseOpcode";
+import { PrismEditor, createEditor } from "prism-code-editor";
 
 const InputModal = ({
   isOpen,
@@ -30,12 +31,51 @@ const InputModal = ({
   const { network, networkOption } = useNetworkContext() as any;
   const { lockScript } = useLockScriptContext() as LockScriptContextType;
 
-  const [selectedInput, setSelectedInput] = useState<BitcoinUTXO | null>(null);
+  const unlockRef = useRef<HTMLDivElement>(null);
+  const unlockEditorRef = useRef<PrismEditor>();
+  const lockRef = useRef<HTMLDivElement>(null);
+  const lockEditorRef = useRef<PrismEditor>();
+
+  const [selectedInput, setSelectedInput] = useState<any | null>(null);
   const [inputs, setInputs] = useState<BitcoinUTXO[]>([]);
   const [addressType, setAddressType] = useState<string>("");
 
+  useEffect(() => {
+    const editor = (unlockEditorRef.current = createEditor(unlockRef.current!, {
+      value: "",
+      language: "nasm",
+      tabSize: 2,
+      insertSpaces: false,
+      lineNumbers: false,
+      wordWrap: true,
+    }));
+    import("../psbt/extension").then((module) => module.addExtensions(editor));
+
+    return editor.remove;
+  }, [addressType]);
+
+  useEffect(() => {
+    const editor = (lockEditorRef.current = createEditor(lockRef.current!, {
+      value: "",
+      language: "nasm",
+      tabSize: 2,
+      insertSpaces: false,
+      lineNumbers: false,
+      wordWrap: true,
+    }));
+    import("../psbt/extension").then((module) => module.addExtensions(editor));
+
+    return editor.remove;
+  }, [addressType]);
+
   const onSave = () => {
     if (!selectedInput) return;
+
+    // hacky for p2sh
+    if (unlockEditorRef.current?.value) {
+      selectedInput["lockScript"] = lockEditorRef.current?.value;
+      selectedInput["unlockScript"] = unlockEditorRef.current?.value;
+    }
     saveUtxos([selectedInput]);
 
     setSelectedInput(null);
@@ -59,7 +99,7 @@ const InputModal = ({
       },
     });
 
-    let _inputs;
+    let _inputs: any[] = [];
     switch (addressType) {
       case "p2pkh":
         const p2pkh = wallet.p2pkh(0);
@@ -69,13 +109,6 @@ const InputModal = ({
       case "p2wpkh":
         const p2wpkh = wallet.p2wpkh(0);
         _inputs = await bitcoinApi.getUTXOs(p2wpkh.address);
-        break;
-
-      case "p2sh":
-        if (lockScript === null) break;
-
-        const p2sh = wallet.p2sh(parseScript(lockScript));
-        _inputs = await bitcoinApi.getUTXOs(p2sh.address);
         break;
 
       case "p2tr":
@@ -94,7 +127,6 @@ const InputModal = ({
       const unusedInputs = filteredInputs.filter((i) => {
         return !utxos.some((e) => e.txid === i.txid);
       });
-      console.log(unusedInputs);
       setInputs(unusedInputs);
     } else {
       setInputs(filteredInputs);
@@ -108,6 +140,40 @@ const InputModal = ({
   useEffect(() => {
     getInputsByAddress();
   }, []);
+
+  const onSaveScript = async () => {
+    const lockScript = lockEditorRef.current?.value;
+    const unlockScript = unlockEditorRef.current?.value;
+
+    if (!lockScript) return;
+    if (!unlockScript) return;
+
+    const wallet = new Wallet({
+      network: networkOption,
+      mnemonic: key,
+    });
+    const bitcoinApi = new BElectrsAPI({
+      network: networkOption,
+      apiUrl: {
+        [networkOption]: network,
+      },
+    });
+
+    const p2sh = wallet.p2sh(parseScript(lockScript!));
+    const _inputs = await bitcoinApi.getUTXOs(p2sh.address);
+
+    const filteredInputs =
+      _inputs?.filter((i) => i?.status?.confirmed === true) || [];
+
+    if (utxos.length > 0) {
+      const unusedInputs = filteredInputs.filter((i) => {
+        return !utxos.some((e) => e.txid === i.txid);
+      });
+      setInputs(unusedInputs);
+    } else {
+      setInputs(filteredInputs);
+    }
+  };
 
   return (
     <div
@@ -170,6 +236,41 @@ const InputModal = ({
                 </div>
               </div>
 
+              {addressType === "p2sh" && (
+                <div className="pb-6 mt-4">
+                  <div className="flex flex-row gap-x-2">
+                    <div className="w-full border-b border-gray-900/10">
+                      <label className="block text-sm font-medium text-gray-200">
+                        Lockscript
+                      </label>
+                      <div className="flex flex-cols gap-x-2 justify-around">
+                        <div
+                          ref={lockRef}
+                          className="w-full rounded-sm border border-gray-700 overflow-auto break-words"
+                        />
+                      </div>
+                    </div>
+                    <div className="w-full border-b border-gray-900/10">
+                      <label className="block text-sm font-medium text-gray-200">
+                        Unlockscript
+                      </label>
+                      <div className="flex flex-cols gap-x-2 justify-around">
+                        <div
+                          ref={unlockRef}
+                          className="w-full rounded-sm border border-gray-700 overflow-auto break-words"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <button
+                    onClick={onSaveScript}
+                    className="text-center rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-10 mt-1 mx-auto"
+                  >
+                    Load P2SH UTXO
+                  </button>
+                </div>
+              )}
+
               <div className="flex flex-row">
                 <div className="w-full  my-2">
                   <label className="block text-sm font-medium leading-6 text-gray-200">
@@ -218,33 +319,6 @@ const InputModal = ({
                   </div>
                 </div>
               )}
-              {/* <div className="flex flex-row">
-                <div className="w-full  my-2">
-                  <label className="block text-sm font-medium leading-6 text-gray-200">
-                    unlocking script:
-                  </label>
-                  <textarea
-                    disabled
-                    className="w-11/12 bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
-                    rows={5}
-                  />
-                </div>
-              </div>
-              <div className="flex flex-row">
-                <div className="w-full  my-2">
-                  <label className="block text-sm font-medium leading-6 text-gray-200">
-                    witness{" "}
-                    <span className="text-xs text-gray-400">
-                      (for segwit address)
-                    </span>
-                  </label>
-                  <textarea
-                    disabled
-                    className="w-11/12 bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
-                    rows={5}
-                  />
-                </div>
-              </div> */}
               <div className="flex flex-row my-2">
                 <button
                   className="w-full rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-40"

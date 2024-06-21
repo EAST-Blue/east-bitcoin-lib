@@ -9,7 +9,7 @@ const InputContext = createContext<InputContextType | null>(null);
 export const InputContextProvider = ({ children }: { children: ReactNode }) => {
   const [utxos, setUtxos] = useState<BitcoinUTXO[]>([]);
 
-  const saveUtxos = (_utxos: BitcoinUTXO[]) => {
+  const saveUtxos = (_utxos: any[]) => {
     const newUtxos = [...utxos, ..._utxos];
     setUtxos(newUtxos);
   };

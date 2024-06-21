@@ -22,7 +22,9 @@ import {
   P2wpkhUtxo,
   PSBT,
   Script,
+  StackScripts,
   Wallet,
+  ecpair,
   getAddressType,
 } from "@east-bitcoin-lib/sdk";
 import { useNetworkContext } from "../contexts/NetworkContext";
@@ -70,34 +72,6 @@ export default function Page(): JSX.Element {
   const [viewOutput, setViewOutput] = useState<PSBTOutput | null>(null);
   const [mineBlock, setMineBlock] = useState<string[]>([]);
 
-  useEffect(() => {
-    const editor = (unlockEditorRef.current = createEditor(unlockRef.current!, {
-      value: "",
-      language: "nasm",
-      tabSize: 2,
-      insertSpaces: false,
-      lineNumbers: false,
-      wordWrap: true,
-    }));
-    import("../psbt/extension").then((module) => module.addExtensions(editor));
-
-    return editor.remove;
-  }, [key]);
-
-  useEffect(() => {
-    const editor = (lockEditorRef.current = createEditor(lockRef.current!, {
-      value: "",
-      language: "nasm",
-      tabSize: 2,
-      insertSpaces: false,
-      lineNumbers: false,
-      wordWrap: true,
-    }));
-    import("../psbt/extension").then((module) => module.addExtensions(editor));
-
-    return editor.remove;
-  }, [key]);
-
   const mine = async () => {
     const result = await axios.post(`http://localhost:8080/generate`, {
       nblocks: 6,
@@ -108,8 +82,8 @@ export default function Page(): JSX.Element {
   };
 
   const sign = async () => {
-    if (network === null) return;
-    if (key === null) return;
+    // if (network === null) return;
+    // if (key === null) return;
 
     const bitcoinApi = new BElectrsAPI({
       network: "regtest",
@@ -141,15 +115,15 @@ export default function Page(): JSX.Element {
           const p2shUtxo = await P2shUtxo.fromBitcoinUTXO({
             bitcoinAPI: bitcoinApi,
             bitcoinUTXO: utxo,
-            redeemScript: wallet.p2sh(parseScript(lockScript!)).redeemScript,
-            unlockScript: Script.compile(parseScript(unlockScript!)),
+            redeemScript: wallet.p2sh(parseScript(utxo?.lockScript!))
+              .redeemScript,
+            unlockScript: Script.compile(parseScript(utxo.unlockScript!)),
           });
           inputs.push({ utxo: p2shUtxo, value: utxo.value });
           break;
 
         case "p2tr":
           const p2tr = wallet.p2tr(0);
-          console.log(p2tr.tapInternalKey, p2tr.keypair.publicKey);
           const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
             utxo,
             p2tr.tapInternalKey
@@ -162,7 +136,6 @@ export default function Page(): JSX.Element {
       }
     }
 
-    console.log(utxos, outputs);
     const p = new PSBT({
       network: networkOption,
       inputs: inputs,
@@ -178,21 +151,24 @@ export default function Page(): JSX.Element {
       switch (true) {
         case psbtInput.utxo instanceof P2pkhUtxo:
           psbt.signInput(index, wallet.p2pkh(0).keypair);
+          psbt.finalizeInput(index);
           break;
 
         case psbtInput.utxo instanceof P2wpkhUtxo:
           psbt.signInput(index, wallet.p2wpkh(0).keypair);
+          psbt.finalizeInput(index);
           break;
 
         case psbtInput.utxo instanceof P2shUtxo:
           psbt.finalizeInput(
             index,
-            PSBT.finalScript(parseScript(unlockScript!))
+            PSBT.finalScript(psbtInput.utxo.unlockScript as any)
           );
           break;
 
         case psbtInput.utxo instanceof P2trUtxo:
           psbt.signInput(index, wallet.p2tr(0).keypair);
+          psbt.finalizeInput(index);
           break;
 
         default:
@@ -200,7 +176,7 @@ export default function Page(): JSX.Element {
       }
     }
 
-    const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
+    const hex = psbt.extractTransaction().toHex();
     console.log({ hex });
 
     const result = await axios.post(
@@ -336,37 +312,6 @@ export default function Page(): JSX.Element {
               </div>
             </div>
 
-            {key !== null && (
-              <div className="pb-6">
-                <div className="flex flex-row">
-                  <div className="w-1/2 border-b border-gray-900/10">
-                    <label className="block text-sm font-medium text-gray-200">
-                      Lock & Unlock Script for P2SH
-                      <span className="mx-2 text-xs text-gray-700">
-                        *optional
-                      </span>
-                    </label>
-                    <div className="flex flex-cols gap-x-2 justify-around mt-2 ">
-                      <div
-                        ref={lockRef}
-                        className="w-full rounded-sm border border-gray-700 overflow-auto break-words"
-                      />
-                      <div
-                        ref={unlockRef}
-                        className="w-full rounded-sm border border-gray-700 overflow-auto break-words"
-                      />
-                    </div>
-                  </div>
-                </div>
-                <button
-                  onClick={onSaveScript}
-                  className="w-1/2 rounded-sm shadow-sm bg-[#222842] hover:bg-[#223242] text-gray-200 text-sm py-1 px-[170px] mt-1"
-                >
-                  Save Script
-                </button>
-              </div>
-            )}
-
             <div className="flex flex-row">
               <div className="border-b border-gray-900/10 pb-12">
                 <label className="block text-sm font-medium leading-6 text-gray-200">
@@ -447,7 +392,7 @@ export default function Page(): JSX.Element {
                 <div className="mt-2">
                   <button
                     className={`${key === null && "cursor-not-allowed opacity-30"}  rounded-sm shadow-sm bg-[#224242] hover:bg-[#225242] text-gray-200 text-sm py-2 px-20 mr-4`}
-                    disabled={key === null}
+                    // disabled={key === null}
                     onClick={sign}
                   >
                     Sign & Broadcast
