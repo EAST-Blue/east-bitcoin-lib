@@ -7,7 +7,6 @@ import {
   ElectrsContainer,
 } from "./containers";
 import { ExplorerContainer } from "./containers/explorer";
-import configs from "./configs";
 import {
   containersPortInfo,
   listeningPortInfo,
@@ -96,7 +95,7 @@ async function regbox(config: Config) {
     process.exit(1);
   }
 
-  const listen = server.listen(configs.server.port);
+  const listen = server.listen(config.server.port);
   listen.on("error", async (error) => {
     console.error(error);
 
@@ -108,7 +107,7 @@ async function regbox(config: Config) {
     listeningPortInfo([
       {
         name: "server",
-        ports: [configs.server.port],
+        ports: [config.server.port],
       },
       ...containersPortInfo(containers),
     ]);
@@ -183,4 +182,4 @@ main();
 
 export * from "./containers";
 export * from "./utils";
-export * from "./configs";
+export * from "./types";
