@@ -135,6 +135,13 @@ export abstract class ContainerAbstract {
     await this.container.remove();
   }
 
+  async cleanUp() {
+    // TODO:
+    // - remove network
+    // - remove container
+    // - remove image (optional)
+  }
+
   async start() {
     try {
       this.logger(`starting ${this.name}`);
