@@ -2,7 +2,7 @@
 
 import { OpReturnType } from "./types";
 
-export type OpReturnArgs = {
+export type OpReturnParams = {
   script: Buffer;
 };
 
@@ -10,7 +10,7 @@ export class OpReturn {
   type: OpReturnType = "op_return";
   script: Buffer;
 
-  constructor({ script }: OpReturnArgs) {
+  constructor({ script }: OpReturnParams) {
     this.script = script;
   }
 }

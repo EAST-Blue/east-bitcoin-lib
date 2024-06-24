@@ -1,13 +1,13 @@
 import { Network } from "../../types";
 
-export type OrdAPIArgs = {
+export type OrdAPIParams = {
   network: Network;
 };
 
 export class OrdAPI {
   protected readonly network: Network;
 
-  constructor({ network }: OrdAPIArgs) {
+  constructor({ network }: OrdAPIParams) {
     this.network = network;
   }
 

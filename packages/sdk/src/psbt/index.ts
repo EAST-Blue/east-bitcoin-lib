@@ -1,13 +1,13 @@
 import { Psbt, payments, script } from "bitcoinjs-lib";
 import { Address, P2pkhUtxo, P2trUtxo, P2wpkhUtxo } from "../addresses";
 import { bitcoinJsNetwork } from "../utils";
-import { CoinSelect, CoinSelectArgs } from "./coin-select";
+import { CoinSelect, CoinSelectParams } from "./coin-select";
 import { Input, Output } from "./types";
 import { OpReturn } from "../addresses/opReturn";
 import { P2shUtxo } from "../addresses/p2sh";
 import { StackScripts } from "../script";
 
-export type PSBTArgs = CoinSelectArgs & {};
+export type PSBTParams = CoinSelectParams & {};
 
 export class PSBT extends CoinSelect {
   private psbt: Psbt;
@@ -19,7 +19,7 @@ export class PSBT extends CoinSelect {
     feeRate,
     changeOutput,
     autoUtxo: utxoSelect,
-  }: PSBTArgs) {
+  }: PSBTParams) {
     super({
       network,
       inputs,
@@ -66,8 +66,8 @@ export class PSBT extends CoinSelect {
           tapInternalKey: input.utxo.tapInternalKey,
           ...(input.utxo.tapLeafScript
             ? {
-                tapLeafScript: input.utxo.tapLeafScript,
-              }
+              tapLeafScript: input.utxo.tapLeafScript,
+            }
             : {}),
         });
         break;
@@ -119,7 +119,7 @@ export class PSBT extends CoinSelect {
   }
 
   static finalScript(unlockScripts: StackScripts) {
-    return ({} = {}, {} = {}, redeemScript: Buffer) => {
+    return ({ } = {}, { } = {}, redeemScript: Buffer) => {
       const payment = payments.p2sh({
         redeem: {
           output: redeemScript,

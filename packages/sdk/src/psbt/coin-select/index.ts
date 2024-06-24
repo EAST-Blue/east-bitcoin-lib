@@ -30,7 +30,7 @@ export const FEE_TX_OUTPUT_SEGWIT = 22;
 export const FEE_TX_OUTPUT_SEGWIT_SCRIPTHASH = 34;
 export const FEE_TX_OUTPUT_TAPROOT = 34;
 
-export type CoinSelectArgs = {
+export type CoinSelectParams = {
   network: Network;
   inputs: Input[];
   outputs: Output[];
@@ -62,7 +62,7 @@ export class CoinSelect {
     feeRate,
     changeOutput,
     autoUtxo,
-  }: CoinSelectArgs) {
+  }: CoinSelectParams) {
     this.network = network;
     this.inputs = inputs;
     this.outputs = outputs;
