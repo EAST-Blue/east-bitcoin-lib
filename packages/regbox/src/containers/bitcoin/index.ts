@@ -1,46 +1,50 @@
 import chalk from "chalk";
 import { ContainerAbstract } from "..";
-import configs from "../../configs";
 import { sleep } from "../../utils";
-import { BitcoinContainerArgs, GenerateAddress } from "./types";
+import { BitcoinContainerParams, GenerateAddress } from "./types";
+import { Config } from "../../types";
 
 export class BitcoinContainer extends ContainerAbstract {
-  constructor({ socketPath, printLog }: BitcoinContainerArgs) {
+  config: Config;
+
+  constructor({ config }: BitcoinContainerParams) {
     super({
-      name: configs.bitcoin.name,
-      image: configs.bitcoin.image,
+      name: config.bitcoin.name,
+      image: config.bitcoin.image,
       cmd: [
         "-txindex=1",
         "-regtest=1",
         "-rpcallowip=0.0.0.0/0",
         "-rpcbind=0.0.0.0",
-        `-rpcuser=${configs.bitcoin.user}`,
-        `-rpcpassword=${configs.bitcoin.password}`,
+        `-rpcuser=${config.bitcoin.user}`,
+        `-rpcpassword=${config.bitcoin.password}`,
         "-fallbackfee=0.00001",
       ],
       env: [],
-      networkName: configs.docker.network,
+      networkName: config.container.network,
       portMappings: [
         {
-          host: configs.bitcoin.rpcPort,
+          host: config.bitcoin.rpcPort,
           container: "18443/tcp",
         },
         {
-          host: configs.bitcoin.peerPort,
+          host: config.bitcoin.peerPort,
           container: "18444/tcp",
         },
       ],
-      socketPath,
-      printLog,
+      socketPath: config.container.socketPath,
+      printLog: config.container.printLog,
     });
+
+    this.config = config;
   }
 
   private async execBitcoinCli(cmd: string[]) {
     return this.execCommand([
       "bitcoin-cli",
       "-regtest",
-      `-rpcuser=${configs.bitcoin.user}`,
-      `-rpcpassword=${configs.bitcoin.password}`,
+      `-rpcuser=${this.config.bitcoin.user}`,
+      `-rpcpassword=${this.config.bitcoin.password}`,
       ...cmd,
     ]) as Promise<string>;
   }
@@ -77,8 +81,8 @@ export class BitcoinContainer extends ContainerAbstract {
   async waitUntilReady() {
     await this.checkNodeUntilReady();
 
-    this.logger(`creating initial wallet: ${configs.bitcoin.wallet}`);
-    await this.execBitcoinCli(["createwallet", configs.bitcoin.wallet]);
+    this.logger(`creating initial wallet: ${this.config.bitcoin.wallet}`);
+    await this.execBitcoinCli(["createwallet", this.config.bitcoin.wallet]);
 
     // miner should wait until the next 100 block to spend the balance.
     // this should give 50 * 10 BTC to the wallet.

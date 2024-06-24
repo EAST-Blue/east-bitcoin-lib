@@ -1,6 +1,7 @@
-export type BitcoinContainerArgs = {
-  socketPath: string;
-  printLog: boolean;
+import { Config } from "../../types";
+
+export type BitcoinContainerParams = {
+  config: Config;
 };
 
 export type GenerateAddress = {

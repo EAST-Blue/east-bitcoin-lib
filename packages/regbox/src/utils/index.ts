@@ -2,11 +2,11 @@ import { Table } from "console-table-printer";
 import stream from "stream";
 import { ContainerAbstract } from "../containers";
 
-export type CreateLogStreamArgs = {
+export type CreateLogStreamParams = {
   printLog: boolean;
   onLog?: (log: string) => void;
 };
-export function createLogStream({ printLog, onLog }: CreateLogStreamArgs) {
+export function createLogStream({ printLog, onLog }: CreateLogStreamParams) {
   const logStream = new stream.PassThrough();
   logStream.on("data", function(chunk) {
     const log = chunk.toString("utf8");
@@ -68,4 +68,13 @@ export function containersPortInfo(containers: ContainerAbstract[]) {
       }),
     };
   });
+}
+
+export function parseArgToNumber(arg: string): number {
+  const result = parseInt(arg, 10);
+  if (isNaN(result)) {
+    throw new Error(`errors.argument ${arg} is  not a number`);
+  }
+
+  return result;
 }

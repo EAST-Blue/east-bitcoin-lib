@@ -1,6 +1,6 @@
 import Docker, { Container } from "dockerode";
 import { createLogStream } from "../utils";
-import { ContainerAbstractArgs, PortMapping } from "./types";
+import { ContainerAbstractParams, PortMapping } from "./types";
 
 export abstract class ContainerAbstract {
   name: string;
@@ -23,7 +23,7 @@ export abstract class ContainerAbstract {
     networkName,
     portMappings,
     printLog,
-  }: ContainerAbstractArgs) {
+  }: ContainerAbstractParams) {
     this.name = name;
     this.image = image;
     this.cmd = cmd;

@@ -1,4 +1,5 @@
-export type ElectrsContainerArgs = {
-  socketPath: string;
-  printLog: boolean;
+import { Config } from "../../types";
+
+export type ElectrsContainerParams = {
+  config: Config;
 };

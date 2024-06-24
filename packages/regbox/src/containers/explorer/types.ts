@@ -1,4 +1,5 @@
-export type ExplorerContainerArgs = {
-  socketPath: string;
-  printLog: boolean;
+import { Config } from "../../types";
+
+export type ExplorerContainerParams = {
+  config: Config;
 };

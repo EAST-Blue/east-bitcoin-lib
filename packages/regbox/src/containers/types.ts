@@ -3,7 +3,7 @@ export type PortMapping = {
   container: string;
 };
 
-export type ContainerAbstractArgs = {
+export type ContainerAbstractParams = {
   socketPath?: string;
   name: string;
   image: string;

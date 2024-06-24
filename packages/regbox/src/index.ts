@@ -1,5 +1,6 @@
 import express from "express";
 import cors from "cors";
+import { Command } from "commander";
 import {
   BitcoinContainer,
   ContainerAbstract,
@@ -10,10 +11,12 @@ import configs from "./configs";
 import {
   containersPortInfo,
   listeningPortInfo,
+  parseArgToNumber,
   shutdownContainers,
   startContainers,
 } from "./utils";
 import { generateValidator, sendToAddressValidator } from "./validator/server";
+import { Config } from "./types";
 
 const server = express();
 server.use(cors());
@@ -22,20 +25,17 @@ server.use(express.json());
 // TODO BUG:
 // - that name is already in use -> duplicate container name
 
-async function main() {
+async function regbox(config: Config) {
   const bitcoinContainer = new BitcoinContainer({
-    socketPath: configs.docker.socketPath,
-    printLog: configs.docker.printLog,
+    config,
   });
 
   const electrsContainer = new ElectrsContainer({
-    socketPath: configs.docker.socketPath,
-    printLog: configs.docker.printLog,
+    config,
   });
 
   const explorerContainer = new ExplorerContainer({
-    socketPath: configs.docker.socketPath,
-    printLog: configs.docker.printLog,
+    config,
   });
 
   // this should be in order
@@ -113,6 +113,70 @@ async function main() {
       ...containersPortInfo(containers),
     ]);
   });
+}
+
+function main() {
+  const program = new Command();
+
+  program
+    .name("east-regbox")
+    .description("East bitcoin regtest box")
+    .version("0.0.1");
+
+  program
+    .command("start")
+    .description("Start the regbox")
+    .option(
+      "-s, --socket <path>",
+      "the docker socket path",
+      "/var/run/docker.sock",
+    )
+    .option("-l, --log", "print containers logs", false)
+    .option("--bitcoin-rpc-port <number>", "bitcoin rpc port", "18443")
+    .option("--bitcoin-peer-port <port>", "bitcoin peer port", "18444")
+    .option("--electrs-rpc-port <port>", "electrs rpc port (electrum)", "60401")
+    .option(
+      "--electrs-rest-port <port>",
+      "electrs rest port (blockstream rest)",
+      "3002",
+    )
+    .option("--explorer-port <port>", "explorer port", "3000")
+    .action((opts) => {
+      const config = {
+        server: {
+          port: "8080",
+        },
+        container: {
+          socketPath: opts.socket as string,
+          printLog: opts.log as boolean,
+          network: "east_regbox",
+        },
+        bitcoin: {
+          name: "east_bitcoin_node",
+          image: "docker.io/ruimarinho/bitcoin-core:24",
+          user: "east",
+          password: "east",
+          wallet: "east",
+          rpcPort: parseArgToNumber(opts.bitcoinRpcPort).toString(),
+          peerPort: parseArgToNumber(opts.bitcoinPeerPort).toString(),
+        },
+        electrs: {
+          name: "east_electrs",
+          image: "docker.io/eastbluehq/blockstream-electrs:v1.0.1",
+          rpcPort: parseArgToNumber(opts.electrsRpcPort).toString(),
+          restPort: parseArgToNumber(opts.electrsRestPort).toString(),
+        },
+        explorer: {
+          name: "east_explorer",
+          image: "docker.io/eastbluehq/janoside-btc-rpc-explorer:v3.4.0",
+          port: parseArgToNumber(opts.explorerPort).toString(),
+        },
+      };
+
+      regbox(config);
+    });
+
+  program.parse();
 }
 
 main();
