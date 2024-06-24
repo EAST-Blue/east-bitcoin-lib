@@ -58,16 +58,25 @@ export abstract class ContainerAbstract {
     });
   }
 
-  protected async connectNetwork() {
+  private async getNetworkId(): Promise<string | undefined> {
+    if (!this.container) {
+      return undefined;
+    }
+
+    const networks = await this.docker.listNetworks();
+    let networkId = networks.find(
+      (network) => network.Name === this.networkName,
+    )?.Id;
+
+    return networkId;
+  }
+
+  private async connectNetwork() {
     if (!this.container) {
       return;
     }
 
-    const networks = await this.docker.listNetworks();
-
-    let networkId = networks.find(
-      (network) => network.Name === this.networkName,
-    )?.Id;
+    const networkId = await this.getNetworkId();
     let network;
 
     if (networkId) {
@@ -88,7 +97,48 @@ export abstract class ContainerAbstract {
     return;
   }
 
-  protected async pullImage() {
+  private async removeNetwork() {
+    if (!this.container) {
+      return;
+    }
+
+    const networkId = await this.getNetworkId();
+    if (!networkId) {
+      return;
+    }
+
+    const network = this.docker.getNetwork(networkId);
+    await network.remove();
+  }
+
+  private async getContainerId(): Promise<string | undefined> {
+    if (!this.container) {
+      return undefined;
+    }
+
+    const containers = await this.docker.listContainers();
+    let containerId = containers.find((container) =>
+      container.Names.find((name) => name === this.name),
+    )?.Id;
+
+    return containerId;
+  }
+
+  private async removeContainer() {
+    if (!this.container) {
+      return;
+    }
+
+    const containerId = await this.getContainerId();
+    if (!containerId) {
+      return;
+    }
+
+    const container = this.docker.getContainer(containerId);
+    await container.remove();
+  }
+
+  private async pullImage() {
     this.logger(`info.pulling image ${this.image}`);
     const logStream = createLogStream({ printLog: this.printLog });
     const stream = await this.docker.pull(this.image);
@@ -102,8 +152,7 @@ export abstract class ContainerAbstract {
     });
   }
 
-  // hacky trick to check image exist or not
-  protected async imageExist() {
+  private async imageExist() {
     const image = this.docker.getImage(this.image);
     try {
       await image.inspect();
@@ -116,7 +165,7 @@ export abstract class ContainerAbstract {
     }
   }
 
-  protected async checkImage() {
+  private async checkImage() {
     const exist = await this.imageExist();
     if (exist) {
       this.logger(`use exising image ${this.image}`);
@@ -136,10 +185,10 @@ export abstract class ContainerAbstract {
   }
 
   async cleanUp() {
-    // TODO:
-    // - remove network
-    // - remove container
-    // - remove image (optional)
+    this.logger(`cleaning up ${this.name}`);
+
+    await this.removeContainer();
+    await this.removeNetwork();
   }
 
   async start() {

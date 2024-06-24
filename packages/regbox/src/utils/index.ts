@@ -59,6 +59,12 @@ export async function shutdownContainers(containers: ContainerAbstract[]) {
   }
 }
 
+export async function cleanUpContainers(containers: ContainerAbstract[]) {
+  for (let i = 0; i < containers.length; i++) {
+    await containers[i]?.cleanUp();
+  }
+}
+
 export function containersPortInfo(containers: ContainerAbstract[]) {
   return containers.map((container) => {
     return {

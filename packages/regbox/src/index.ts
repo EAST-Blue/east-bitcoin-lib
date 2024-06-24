@@ -7,6 +7,7 @@ import {
 } from "./containers";
 import { ExplorerContainer } from "./containers/explorer";
 import {
+  cleanUpContainers,
   containersPortInfo,
   listeningPortInfo,
   shutdownContainers,
@@ -39,13 +40,15 @@ export async function regbox(config: Config) {
     explorerContainer,
   ];
 
-  process.on("SIGINT", async function () {
+  process.on("SIGINT", async function() {
     await shutdownContainers(containers);
+    await cleanUpContainers(containers);
 
     process.exit(0);
   });
 
   try {
+    await cleanUpContainers(containers);
     await startContainers(containers);
 
     server.post("/generate", async (req, res) => {
