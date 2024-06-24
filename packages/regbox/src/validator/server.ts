@@ -8,3 +8,7 @@ export const sendToAddressValidator = yup.object({
   address: yup.string().required(),
   amount: yup.number().required(),
 });
+
+export const sendRawTransactionValidator = yup.object({
+  hex: yup.string().required(),
+});

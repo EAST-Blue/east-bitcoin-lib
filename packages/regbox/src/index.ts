@@ -13,7 +13,7 @@ import {
   shutdownContainers,
   startContainers,
 } from "./utils/utils";
-import { generateValidator, sendToAddressValidator } from "./validator/server";
+import { generateValidator, sendRawTransactionValidator, sendToAddressValidator } from "./validator/server";
 
 const server = express();
 server.use(cors());
@@ -81,6 +81,18 @@ async function main() {
         const amount = req.body.amount as number;
 
         const result = await bitcoinContainer.sendToAddress(address, amount);
+        res.send(result);
+      } catch (error) {
+        res.status(500).send(error);
+      }
+    });
+
+    server.post("/sendrawtransaction", async (req, res) => {
+      try {
+        await sendRawTransactionValidator.validate(req.body, { strict: true });
+        const hex = req.body.hex;
+
+        const result = await bitcoinContainer.sendRawTransaction(hex);
         res.send(result);
       } catch (error) {
         res.status(500).send(error);

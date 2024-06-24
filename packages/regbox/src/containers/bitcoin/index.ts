@@ -56,6 +56,12 @@ export class BitcoinContainer extends ContainerAbstract {
     }
   }
 
+  private async seedPreloadAddresses() {
+    for (const address of configs?.preloadAddresses) {
+      await this.sendToAddress(address, 1)
+    }
+  }
+
   async generateBlocks(nblocks: number) {
     const result = await this.execBitcoinCli(["-generate", nblocks.toString()]);
     return JSON.parse(result) as GenerateAddress;
@@ -70,6 +76,11 @@ export class BitcoinContainer extends ContainerAbstract {
     await this.execBitcoinCli(["sendtoaddress", address, amount.toString()]);
   }
 
+  async sendRawTransaction(hex: string) {
+    const result = await this.execBitcoinCli(['sendrawtransaction', hex])
+    return result
+  }
+
   async waitUntilReady() {
     await this.checkNodeUntilReady();
 
@@ -80,5 +91,9 @@ export class BitcoinContainer extends ContainerAbstract {
     // this should give 50 * 10 BTC to the wallet.
     console.info(`info.generating first 110 blocks`);
     await this.generateBlocks(110);
+
+    // send to Alice, Bob addresses
+    await this.seedPreloadAddresses()
+    await this.generateBlocks(1)
   }
 }
