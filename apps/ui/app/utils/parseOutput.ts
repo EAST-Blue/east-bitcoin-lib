@@ -2,6 +2,7 @@ import { Output } from "@east-bitcoin-lib/sdk/dist/psbt/types";
 import { PSBTOutput } from "../types/OutputContextType";
 import { Address, Script } from "@east-bitcoin-lib/sdk";
 import { parseScript } from "./parseOpcode";
+import { OpReturn } from "@east-bitcoin-lib/sdk/dist/addresses/opReturn";
 
 export const parseOutput = (outputs: PSBTOutput[]): Output[] => {
   const newOutputs: Output[] = [];
@@ -15,7 +16,7 @@ export const parseOutput = (outputs: PSBTOutput[]): Output[] => {
     } else if (output.script) {
       const bufferScript = parseScript(output.script);
       newOutputs.push({
-        output: { type: "op_return", script: Script.compile(bufferScript) },
+        output: new OpReturn({ script: Script.compile(bufferScript) }),
         value: output.value,
       });
     }

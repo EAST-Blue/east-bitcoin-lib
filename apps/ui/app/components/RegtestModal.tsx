@@ -61,10 +61,21 @@ const RegtestModal = ({
                   </label>
                   <input
                     className="w-1/2 bg-transparent rounded-md text-sm border-gray-700"
+                    value={host}
                     onChange={(e) => {
                       setHost(e.target.value);
                     }}
                   />
+                  <label className="block text-sm font-medium leading-6 text-gray-200 -mt-1">
+                    <span
+                      onClick={() => {
+                        setHost("http://localhost:3002");
+                      }}
+                      className="underline hover:cursor-pointer"
+                    >
+                      localhost
+                    </span>
+                  </label>
                 </div>
               </div>
               <div className="flex flex-row">

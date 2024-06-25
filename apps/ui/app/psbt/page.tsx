@@ -48,36 +48,65 @@ import { UnlockScriptContextType } from "../types/UnlockScriptContextType";
 import { parseScript } from "../utils/parseOpcode";
 import { useLockScriptContext } from "../contexts/LockScriptContext";
 import { LockScriptContextType } from "../types/LockScriptContextType";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Page(): JSX.Element {
   const { key, keyOption, setKey, setKeyOption } = useKeyContext() as any;
   const { network, networkOption, setNetwork, setNetworkOption } =
     useNetworkContext() as any;
-  const { utxos } = useInputContext() as InputContextType;
-  const { outputs } = useOutputContext() as OutputContextType;
+  const { utxos, saveUtxos } = useInputContext() as InputContextType;
+  const { outputs, saveOutputs } = useOutputContext() as OutputContextType;
   const { unlockScript, saveUnlockScript } =
     useUnlockScriptContext() as UnlockScriptContextType;
   const { lockScript, saveLockScript } =
     useLockScriptContext() as LockScriptContextType;
 
-  const unlockRef = useRef<HTMLDivElement>(null);
-  const unlockEditorRef = useRef<PrismEditor>();
-  const lockRef = useRef<HTMLDivElement>(null);
-  const lockEditorRef = useRef<PrismEditor>();
+  const toastMine = () =>
+    toast(
+      <p>
+        Successfully mined 6 new blocks.{" "}
+        <a
+          className="underline text-gray-300"
+          target="_blank"
+          href="http://localhost:3000"
+        >
+          View
+        </a>
+      </p>,
+      { autoClose: 1000 }
+    );
+  const toastBroadcast = (txid: string) =>
+    toast(
+      <p>
+        Tx Successfully broadcasted.
+        <a
+          className="underline text-gray-300"
+          target="_blank"
+          href={`http://localhost:3000/tx/${txid}`}
+        >
+          View
+        </a>
+      </p>,
+      { autoClose: 2000 }
+    );
+
   const [openInputModal, setOpenInputModal] = useState(false);
   const [openOutputModal, setOpenOutputModal] = useState(false);
   const [openImportWif, setOpenImportWif] = useState(false);
   const [openRegtestModal, setOpenRegtestModal] = useState(false);
   const [viewInput, setViewInput] = useState<BitcoinUTXO | null>(null);
   const [viewOutput, setViewOutput] = useState<PSBTOutput | null>(null);
-  const [mineBlock, setMineBlock] = useState<string[]>([]);
+  const [isMining, setIsMining] = useState(false);
 
   const mine = async () => {
+    setIsMining(true);
     const result = await axios.post(`http://localhost:8080/generate`, {
       nblocks: 6,
     });
-    setMineBlock(result.data?.blocks || []);
+    toastMine();
 
+    setIsMining(false);
     return;
   };
 
@@ -185,19 +214,10 @@ export default function Page(): JSX.Element {
         hex,
       }
     );
+    toastBroadcast(result.data);
     console.log(result.data);
+
     return;
-  };
-
-  const onSaveScript = () => {
-    const lockScriptValue = lockEditorRef.current?.value;
-    const unlockScriptValue = unlockEditorRef.current?.value;
-
-    if (!lockScriptValue) return;
-    if (!unlockScriptValue) return;
-
-    saveLockScript(lockScriptValue);
-    saveUnlockScript(unlockScriptValue);
   };
 
   return (
@@ -372,7 +392,7 @@ export default function Page(): JSX.Element {
                 ))}
               </div>
             </div>
-            <div className="flex flex-row">
+            {/* <div className="flex flex-row">
               <div className="border-b border-gray-900/10 pb-6">
                 <label className="block text-sm font-medium leading-6 text-gray-200">
                   Locktime
@@ -385,7 +405,7 @@ export default function Page(): JSX.Element {
                   />
                 </div>
               </div>
-            </div>
+            </div> */}
 
             <div className="flex flex-row">
               <div className="border-b border-gray-900/10 pb-4">
@@ -399,11 +419,10 @@ export default function Page(): JSX.Element {
                   </button>
                   <button
                     onClick={() => {
-                      setKey(null);
-                      setKeyOption(null);
+                      saveUtxos([]);
+                      saveOutputs([]);
                     }}
                     className={`${key === null && "opacity-30"} rounded-sm shadow-sm bg-[#880642] hover:bg-[#881642] text-gray-200 text-sm font-bold py-2 px-4`}
-                    disabled={key === null}
                   >
                     Reset Form
                   </button>
@@ -417,6 +436,7 @@ export default function Page(): JSX.Element {
                   <button
                     className="w-full flex flex-cols gap-x-4 rounded-sm shadow-sm bg-[#504227] hover:bg-[#3d372b] text-gray-200 text-sm py-2 px-36"
                     onClick={mine}
+                    disabled={isMining}
                   >
                     <IconMine size={20} color="#ffffff" className="" />
                     Mine Block
@@ -424,14 +444,11 @@ export default function Page(): JSX.Element {
                 </div>
               </div>
             </div>
-            {mineBlock.length > 0 && (
-              <p className="text-gray-400 text-sm">
-                Sucessfully mined {mineBlock.length} block
-              </p>
-            )}
           </div>
         </div>
       </main>
+
+      <ToastContainer hideProgressBar={true} theme="dark" />
 
       <ImportWifModal
         isOpen={openImportWif}

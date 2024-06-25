@@ -277,6 +277,11 @@ const InputModal = ({
                     Choose UTXO :
                   </label>
                   <select
+                    disabled={
+                      addressType === "" ||
+                      (addressType === "p2sh" &&
+                        lockEditorRef.current?.value === "")
+                    }
                     className="w-11/12 bg-[#0F111B] hover:bg-[#0F171B] rounded-md text-sm hover:cursor-pointer"
                     onChange={(e) =>
                       setSelectedInput(JSON.parse(e.target.value))

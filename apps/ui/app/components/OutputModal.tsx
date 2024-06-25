@@ -132,6 +132,36 @@ const OutputModal = ({
                     onChange={(e) => setValue(parseInt(e.target.value))}
                     className="bg-transparent rounded-md text-sm border-gray-700"
                   />
+                  {outputType === "address" && (
+                    <label className="block text-sm font-medium leading-6 text-gray-200 -mt-1">
+                      <span
+                        onClick={() => {
+                          setValue(5000);
+                        }}
+                        className="underline hover:cursor-pointer"
+                      >
+                        5,000
+                      </span>
+                      {", "}
+                      <span
+                        onClick={() => {
+                          setValue(10000);
+                        }}
+                        className="underline hover:cursor-pointer"
+                      >
+                        10,000
+                      </span>
+                      {", "}
+                      <span
+                        onClick={() => {
+                          setValue(20000);
+                        }}
+                        className="underline hover:cursor-pointer"
+                      >
+                        20,000
+                      </span>
+                    </label>
+                  )}
                 </div>
               </div>
 
