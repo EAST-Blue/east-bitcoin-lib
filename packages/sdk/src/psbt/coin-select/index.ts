@@ -102,7 +102,7 @@ export class CoinSelect {
       case "p2sh":
         if (!data?.redeemScript || !data?.unlockScript) {
           throw new Error(
-            "errors.redeemScript & unlockScript is required when calculating p2sh input",
+            "errors.redeemScript & unlockScript is required when calculating p2sh input"
           );
         }
         bytes +=
@@ -140,7 +140,9 @@ export class CoinSelect {
         bytes += FEE_TX_OUTPUT_TAPROOT;
         break;
       case "op_return":
-        throw new Error("errors.fee output op_return is not implemented yet");
+        bytes += FEE_TX_OUTPUT_TAPROOT;
+        break;
+      // throw new Error("errors.fee output op_return is not implemented yet");
 
       default:
         throw new Error("errors.fee output is not implemented yet");
@@ -166,7 +168,7 @@ export class CoinSelect {
       }, 0) +
       this.outputs.reduce(
         (prev, output) => prev + this.outputBytes(output.output.type),
-        0,
+        0
       )
     );
   }
@@ -185,7 +187,7 @@ export class CoinSelect {
     }
 
     const utxos = await this.autoUtxo.api.bitcoin.getUTXOs(
-      this.autoUtxo.from.address.address,
+      this.autoUtxo.from.address.address
     );
 
     for (const utxo of utxos) {
@@ -236,7 +238,7 @@ export class CoinSelect {
           this.inputs.push({
             utxo: await P2pkhUtxo.fromBitcoinUTXO(
               this.autoUtxo.api.bitcoin,
-              utxo,
+              utxo
             ),
             value: utxo.value,
           });
@@ -262,7 +264,7 @@ export class CoinSelect {
           this.inputs.push({
             utxo: await P2trUtxo.fromBitcoinUTXO(
               utxo,
-              this.autoUtxo.from.tapInternalKey,
+              this.autoUtxo.from.tapInternalKey
             ),
             value: utxo.value,
           });

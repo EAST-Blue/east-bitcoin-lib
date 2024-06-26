@@ -9,6 +9,7 @@ import {
   Script,
   Wallet,
 } from "@east-bitcoin-lib/sdk";
+import { payments } from "bitcoinjs-lib";
 
 const bitcoinaApi = new BElectrsAPI({
   network: "regtest",
