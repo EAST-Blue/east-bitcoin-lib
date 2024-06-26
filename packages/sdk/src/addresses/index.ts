@@ -1,7 +1,7 @@
 import { getAddressType } from "../utils";
 import { AddressType } from "./types";
 
-export type AddressUtxoArgs = {
+export type AddressUtxoParams = {
   txid: string;
   vout: number;
 };
@@ -12,24 +12,24 @@ export abstract class AddressUtxo {
   txid: string;
   vout: number;
 
-  constructor({ txid, vout }: AddressUtxoArgs) {
+  constructor({ txid, vout }: AddressUtxoParams) {
     this.txid = txid;
     this.vout = vout;
   }
 }
 
-export type AddressAutoUtxoArgs = {
+export type AddressAutoUtxoParams = {
   address: string;
 };
 
 export abstract class AddressAutoUtxo {
   address: Address;
-  constructor({ address }: AddressAutoUtxoArgs) {
+  constructor({ address }: AddressAutoUtxoParams) {
     this.address = Address.fromString(address);
   }
 }
 
-export type AddressArgs = {
+export type AddressParams = {
   address: string;
 };
 
@@ -37,7 +37,7 @@ export class Address {
   address: string;
   type: AddressType;
 
-  constructor({ address }: AddressArgs) {
+  constructor({ address }: AddressParams) {
     this.address = address;
     this.type = getAddressType(address);
   }
