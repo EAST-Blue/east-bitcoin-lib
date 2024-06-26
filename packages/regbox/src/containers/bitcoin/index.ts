@@ -76,11 +76,6 @@ export class BitcoinContainer extends ContainerAbstract {
     await this.execBitcoinCli(["sendtoaddress", address, amount.toString()]);
   }
 
-  async sendRawTransaction(hex: string) {
-    const result = await this.execBitcoinCli(['sendrawtransaction', hex])
-    return result
-  }
-
   async waitUntilReady() {
     await this.checkNodeUntilReady();
 
