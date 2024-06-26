@@ -6,33 +6,31 @@ import {
   ElectrsContainer,
 } from "./containers";
 import { ExplorerContainer } from "./containers/explorer";
-import configs from "./configs";
 import {
+  cleanUpContainers,
   containersPortInfo,
   listeningPortInfo,
   shutdownContainers,
   startContainers,
-} from "./utils/utils";
+} from "./utils";
 import { generateValidator, sendToAddressValidator } from "./validator/server";
+import { Config } from "./types";
 
 const server = express();
 server.use(cors());
 server.use(express.json());
 
-async function main() {
+export async function regbox(config: Config) {
   const bitcoinContainer = new BitcoinContainer({
-    socketPath: configs.docker.socketPath,
-    printLog: configs.docker.printLog,
+    config,
   });
 
   const electrsContainer = new ElectrsContainer({
-    socketPath: configs.docker.socketPath,
-    printLog: configs.docker.printLog,
+    config,
   });
 
   const explorerContainer = new ExplorerContainer({
-    socketPath: configs.docker.socketPath,
-    printLog: configs.docker.printLog,
+    config,
   });
 
   // this should be in order
@@ -44,11 +42,13 @@ async function main() {
 
   process.on("SIGINT", async function() {
     await shutdownContainers(containers);
+    await cleanUpContainers(containers);
 
     process.exit(0);
   });
 
   try {
+    await cleanUpContainers(containers);
     await startContainers(containers);
 
     server.post("/generate", async (req, res) => {
@@ -93,7 +93,7 @@ async function main() {
     process.exit(1);
   }
 
-  const listen = server.listen(configs.server.port);
+  const listen = server.listen(config.server.port);
   listen.on("error", async (error) => {
     console.error(error);
 
@@ -105,13 +105,13 @@ async function main() {
     listeningPortInfo([
       {
         name: "server",
-        ports: [configs.server.port],
+        ports: [config.server.port],
       },
       ...containersPortInfo(containers),
     ]);
   });
 }
 
-main();
-
 export * from "./containers";
+export * from "./utils";
+export * from "./types";

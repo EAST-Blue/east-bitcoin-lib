@@ -1,9 +1,9 @@
 import {
   AddressAutoUtxo,
-  AddressAutoUtxoArgs,
+  AddressAutoUtxoParams,
   AddressType,
   AddressUtxo,
-  AddressUtxoArgs,
+  AddressUtxoParams,
 } from ".";
 import { BitcoinUTXO } from "../repositories/bitcoin/types";
 
@@ -13,7 +13,7 @@ export type TapLeafScript = {
   script: Buffer;
 };
 
-export type P2trUtxoArgs = AddressUtxoArgs & {
+export type P2trUtxoParams = AddressUtxoParams & {
   witness: {
     script: Buffer;
     value: number;
@@ -37,7 +37,7 @@ export class P2trUtxo extends AddressUtxo {
     witness,
     tapInternalKey,
     tapLeafScript,
-  }: P2trUtxoArgs) {
+  }: P2trUtxoParams) {
     super({ txid, vout });
     this.witness = witness;
     this.tapInternalKey = tapInternalKey;
@@ -60,13 +60,13 @@ export class P2trUtxo extends AddressUtxo {
   }
 }
 
-export type P2trAutoUtxoArgs = AddressAutoUtxoArgs & {
+export type P2trAutoUtxoParams = AddressAutoUtxoParams & {
   tapInternalKey: Buffer;
 };
 
 export class P2trAutoUtxo extends AddressAutoUtxo {
   tapInternalKey: Buffer;
-  constructor({ address, tapInternalKey }: P2trAutoUtxoArgs) {
+  constructor({ address, tapInternalKey }: P2trAutoUtxoParams) {
     super({ address });
     this.tapInternalKey = tapInternalKey;
   }

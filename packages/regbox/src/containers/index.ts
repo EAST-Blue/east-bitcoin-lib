@@ -1,21 +1,6 @@
 import Docker, { Container } from "dockerode";
-import { createLogStream } from "../utils/utils";
-
-export type PortMapping = {
-  host: string;
-  container: string;
-};
-
-export type ContainerAbstractArgs = {
-  socketPath?: string;
-  name: string;
-  image: string;
-  cmd: string[];
-  env: string[];
-  networkName: string;
-  portMappings: PortMapping[];
-  printLog: boolean;
-};
+import { createLogStream } from "../utils";
+import { ContainerAbstractParams, PortMapping } from "./types";
 
 export abstract class ContainerAbstract {
   name: string;
@@ -38,7 +23,7 @@ export abstract class ContainerAbstract {
     networkName,
     portMappings,
     printLog,
-  }: ContainerAbstractArgs) {
+  }: ContainerAbstractParams) {
     this.name = name;
     this.image = image;
     this.cmd = cmd;
@@ -59,7 +44,7 @@ export abstract class ContainerAbstract {
       printLog: true,
     });
 
-    console.info(`info.attaching log for ${this.name}`);
+    this.logger(`attaching log for ${this.name}`);
     const stream = await this.container.logs({
       follow: true,
       stderr: true,
@@ -73,29 +58,38 @@ export abstract class ContainerAbstract {
     });
   }
 
-  protected async connectNetwork() {
+  private async getNetworkId(): Promise<string | undefined> {
+    if (!this.container) {
+      return undefined;
+    }
+
+    const networks = await this.docker.listNetworks();
+    let networkId = networks.find(
+      (network) => network.Name === this.networkName,
+    )?.Id;
+
+    return networkId;
+  }
+
+  private async connectNetwork() {
     if (!this.container) {
       return;
     }
 
-    const networks = await this.docker.listNetworks();
-
-    let networkId = networks.find(
-      (network) => network.Name === this.networkName,
-    )?.Id;
+    const networkId = await this.getNetworkId();
     let network;
 
     if (networkId) {
-      console.info(`info.use exising network ${this.networkName}`);
+      this.logger(`use exising network ${this.networkName}`);
       network = this.docker.getNetwork(networkId);
     } else {
-      console.info(`info.creating network ${this.networkName}`);
+      this.logger(`creating network ${this.networkName}`);
       network = await this.docker.createNetwork({
         Name: this.networkName,
       });
     }
 
-    console.info(`info.connecting network into ${this.name}`);
+    this.logger(`connecting network into ${this.name}`);
     await network.connect({
       Container: this.container.id,
     });
@@ -103,8 +97,49 @@ export abstract class ContainerAbstract {
     return;
   }
 
-  protected async pullImage() {
-    console.info(`info.pulling image ${this.image}`);
+  private async removeNetwork() {
+    if (!this.container) {
+      return;
+    }
+
+    const networkId = await this.getNetworkId();
+    if (!networkId) {
+      return;
+    }
+
+    const network = this.docker.getNetwork(networkId);
+    await network.remove();
+  }
+
+  private async getContainerId(): Promise<string | undefined> {
+    if (!this.container) {
+      return undefined;
+    }
+
+    const containers = await this.docker.listContainers();
+    let containerId = containers.find((container) =>
+      container.Names.find((name) => name === this.name),
+    )?.Id;
+
+    return containerId;
+  }
+
+  private async removeContainer() {
+    if (!this.container) {
+      return;
+    }
+
+    const containerId = await this.getContainerId();
+    if (!containerId) {
+      return;
+    }
+
+    const container = this.docker.getContainer(containerId);
+    await container.remove();
+  }
+
+  private async pullImage() {
+    this.logger(`info.pulling image ${this.image}`);
     const logStream = createLogStream({ printLog: this.printLog });
     const stream = await this.docker.pull(this.image);
     stream.pipe(logStream);
@@ -117,8 +152,7 @@ export abstract class ContainerAbstract {
     });
   }
 
-  // hacky trick to check image exist or not
-  protected async imageExist() {
+  private async imageExist() {
     const image = this.docker.getImage(this.image);
     try {
       await image.inspect();
@@ -131,10 +165,10 @@ export abstract class ContainerAbstract {
     }
   }
 
-  protected async checkImage() {
+  private async checkImage() {
     const exist = await this.imageExist();
     if (exist) {
-      console.info(`info.use exising image ${this.image}`);
+      this.logger(`use exising image ${this.image}`);
     } else {
       await this.pullImage();
     }
@@ -145,15 +179,22 @@ export abstract class ContainerAbstract {
       return;
     }
 
-    console.info(`info.shutting down ${this.name}`);
+    this.logger(`shutting down ${this.name}`);
     await this.container.stop();
     await this.container.remove();
   }
 
+  async cleanUp() {
+    this.logger(`cleaning up ${this.name}`);
+
+    await this.removeContainer();
+    await this.removeNetwork();
+  }
+
   async start() {
     try {
-      console.info(`info.starting ${this.name}`);
-      console.info(`info.checking image ${this.image}`);
+      this.logger(`starting ${this.name}`);
+      this.logger(`checking image ${this.image}`);
 
       await this.checkImage();
       const exposedPortsObj = this.portMappings.reduce((prev, portMapping) => {
@@ -195,7 +236,7 @@ export abstract class ContainerAbstract {
 
       await this.waitUntilReady();
 
-      console.info(`info.${this.name} is ready`);
+      this.logger(`${this.name} is ready`);
       return this.container;
     } catch (error) {
       this.shutdown();
@@ -250,6 +291,7 @@ export abstract class ContainerAbstract {
     });
   }
 
+  abstract logger(log: string): void;
   abstract waitUntilReady(): Promise<void>;
 }
 

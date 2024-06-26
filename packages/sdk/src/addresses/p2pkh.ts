@@ -1,8 +1,13 @@
-import { AddressAutoUtxo, AddressType, AddressUtxo, AddressUtxoArgs } from ".";
+import {
+  AddressAutoUtxo,
+  AddressType,
+  AddressUtxo,
+  AddressUtxoParams,
+} from ".";
 import { BitcoinAPIAbstract } from "../repositories";
 import { BitcoinUTXO } from "../repositories/bitcoin/types";
 
-export type P2pkhUtxoArgs = AddressUtxoArgs & {
+export type P2pkhUtxoParams = AddressUtxoParams & {
   transaction: Buffer;
 };
 
@@ -10,7 +15,7 @@ export class P2pkhUtxo extends AddressUtxo {
   type: AddressType = "p2pkh";
   transaction: Buffer;
 
-  constructor({ txid, vout, transaction }: P2pkhUtxoArgs) {
+  constructor({ txid, vout, transaction }: P2pkhUtxoParams) {
     super({ txid, vout });
     this.transaction = transaction;
   }
@@ -30,4 +35,4 @@ export class P2pkhUtxo extends AddressUtxo {
   }
 }
 
-export class P2pkhAutoUtxo extends AddressAutoUtxo {}
+export class P2pkhAutoUtxo extends AddressAutoUtxo { }

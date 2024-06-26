@@ -1,20 +1,20 @@
 import {
   AddressAutoUtxo,
-  AddressAutoUtxoArgs,
+  AddressAutoUtxoParams,
   AddressType,
   AddressUtxo,
-  AddressUtxoArgs,
+  AddressUtxoParams,
 } from ".";
 import { BitcoinAPIAbstract } from "../repositories";
 import { BitcoinUTXO } from "../repositories/bitcoin/types";
 
-export type P2shUtxoArgs = AddressUtxoArgs & {
+export type P2shUtxoParams = AddressUtxoParams & {
   transaction: Buffer;
   redeemScript: Buffer;
   unlockScript: Buffer;
 };
 
-export type P2shFromBitcoinUTXOArgs = {
+export type P2shFromBitcoinUTXOParams = {
   bitcoinAPI: BitcoinAPIAbstract;
   bitcoinUTXO: BitcoinUTXO;
   redeemScript: Buffer;
@@ -33,7 +33,7 @@ export class P2shUtxo extends AddressUtxo {
     transaction,
     redeemScript,
     unlockScript,
-  }: P2shUtxoArgs) {
+  }: P2shUtxoParams) {
     super({ txid, vout });
     this.transaction = transaction;
     this.redeemScript = redeemScript;
@@ -45,7 +45,7 @@ export class P2shUtxo extends AddressUtxo {
     bitcoinUTXO,
     redeemScript,
     unlockScript,
-  }: P2shFromBitcoinUTXOArgs) {
+  }: P2shFromBitcoinUTXOParams) {
     const txHex = await bitcoinAPI.getTransactionHex(bitcoinUTXO.txid);
     const txBuffer = Buffer.from(txHex, "hex");
 
@@ -59,7 +59,7 @@ export class P2shUtxo extends AddressUtxo {
   }
 }
 
-export type P2shAutoUtxoArgs = AddressAutoUtxoArgs & {
+export type P2shAutoUtxoParams = AddressAutoUtxoParams & {
   redeemScript: Buffer;
   unlockScript: Buffer;
 };
@@ -67,7 +67,7 @@ export type P2shAutoUtxoArgs = AddressAutoUtxoArgs & {
 export class P2shAutoUtxo extends AddressAutoUtxo {
   redeemScript: Buffer;
   unlockScript: Buffer;
-  constructor({ address, redeemScript, unlockScript }: P2shAutoUtxoArgs) {
+  constructor({ address, redeemScript, unlockScript }: P2shAutoUtxoParams) {
     super({ address });
     this.redeemScript = redeemScript;
     this.unlockScript = unlockScript;
