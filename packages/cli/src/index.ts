@@ -49,6 +49,54 @@ function main() {
   const globalOptions = program.opts();
 
   program
+    .command("call")
+    .description("Call function on a smart index")
+    .argument("<smart_index_address>")
+    .argument("<function_name>")
+    .argument("[args...]")
+    .action(async (smartIndexAddress, functionName, args) => {
+      const client = new Client({
+        network: globalOptions.network,
+        rpcUrl: globalOptions.rpcUrl,
+      });
+
+      const publicKey = await client.requestSignIn(globalOptions.privateKey);
+
+      const action: Action = {
+        kind: "call",
+        function_name: functionName,
+        args: args,
+      }
+
+      const txId = await client.mutate(
+        {
+          signer: publicKey,
+          receiver: smartIndexAddress,
+          actions: [action]
+        }
+      )
+
+      console.log("Broadcasted! Tx Hash:", txId);
+
+      await retry(
+        async () => {
+          const check = await client.query({
+            function_name: "get_transaction",
+            receiver: "",
+            args: [txId],
+          });
+          console.log(check)
+        },
+        {
+          retries: 50,
+        }
+      );
+
+
+
+    });
+
+  program
     .command("deploy")
     .description("Deploy smart index")
     .argument("<file>", "WASM file to be deployed")
@@ -58,7 +106,7 @@ function main() {
         rpcUrl: globalOptions.rpcUrl,
       });
 
-      const wasmFile = utf8ToHex(await fs.readFile(file, "ascii"));
+      const wasmFile = await fs.readFile(file, "hex");
 
       const publicKey = await client.requestSignIn(globalOptions.privateKey);
 
@@ -99,13 +147,13 @@ function main() {
           if (check.result.result == wasmFile) {
             console.log("Smart Index Address: ", smartIndexAddress);
           } else {
-            throw new Error("Tx not finished processing")
+            throw new Error("Tx not finished processing");
           }
-        }, {
-          retries: 50
+        },
+        {
+          retries: 50,
         }
-      )
-      
+      );
     });
 
   program.parse();
