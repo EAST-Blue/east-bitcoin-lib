@@ -22,6 +22,14 @@ function utf8ToHex(str: string) {
     .join("");
 }
 
+function hexToUtf8(hexStr: string) {
+    var s = ''
+    for (var i = 0; i < hexStr.length; i+=2) {
+        s += String.fromCharCode(parseInt(hexStr.substr(i, 2), 16))
+    }
+    return decodeURIComponent(escape(s))
+}
+
 function main() {
   const program = new Command();
 
@@ -85,13 +93,14 @@ function main() {
             receiver: "",
             args: [txId],
           });
-          console.log(check)
+          if (check.result.result) {
+            console.log("Transaction: ", JSON.parse(hexToUtf8(check.result.result)))
+          }
         },
         {
           retries: 50,
         }
       );
-
 
 
     });
