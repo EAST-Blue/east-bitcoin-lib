@@ -27,7 +27,7 @@ export const borshTransactionSchema = {
   },
 };
 
-const borshActionSchema = {
+export const borshActionSchema = {
   struct: {
     kind: "string",
     function_name: "string",
