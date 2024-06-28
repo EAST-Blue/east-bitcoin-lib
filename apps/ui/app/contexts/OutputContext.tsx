@@ -22,9 +22,14 @@ export const OutputContextProvider = ({
     setOutputs(newOutputs);
   };
 
+  const removeOutputByScript = (script: string) => {
+    const newOutputs = outputs.filter((i) => i.script !== script)
+    setOutputs(newOutputs)
+  }
+
   return (
     <OutputContext.Provider
-      value={{ outputs, saveOutputs, removeOutputByAddress }}
+      value={{ outputs, saveOutputs, removeOutputByAddress, removeOutputByScript }}
     >
       {children}
     </OutputContext.Provider>

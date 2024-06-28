@@ -65,7 +65,7 @@ export default function Page(): JSX.Element {
   const toastMine = () =>
     toast(
       <p>
-        Successfully mined 6 new blocks.{" "}
+        Successfully mined a new block.{" "}
         <a
           className="underline text-gray-300"
           target="_blank"
@@ -102,7 +102,7 @@ export default function Page(): JSX.Element {
   const mine = async () => {
     setIsMining(true);
     const result = await axios.post(`http://localhost:8080/generate`, {
-      nblocks: 6,
+      nblocks: 1,
     });
     toastMine();
 

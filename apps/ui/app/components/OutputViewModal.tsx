@@ -15,10 +15,15 @@ const OutputViewModal = ({
   title: string;
   output: PSBTOutput;
 }) => {
-  const { removeOutputByAddress } = useOutputContext() as OutputContextType;
+  const { removeOutputByAddress, removeOutputByScript } =
+    useOutputContext() as OutputContextType;
 
   const onDelete = () => {
-    removeOutputByAddress(output.address);
+    if (output.address) {
+      removeOutputByAddress(output.address!);
+    } else {
+      removeOutputByScript(output.script!);
+    }
     setIsOpen(false);
   };
 
@@ -65,16 +70,29 @@ const OutputViewModal = ({
             </div>
             <div className="flex flex-col p-4">
               <div className="flex flex-row">
-                <div className="w-full my-2">
-                  <label className="block text-sm font-medium leading-6 text-gray-200">
-                    Address:
-                  </label>
-                  <input
-                    disabled
-                    value={output.address}
-                    className="w-full bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
-                  />
-                </div>
+                {output?.address ? (
+                  <div className="w-full my-2">
+                    <label className="block text-sm font-medium leading-6 text-gray-200">
+                      Address:
+                    </label>
+                    <input
+                      disabled
+                      value={output.address}
+                      className="w-full bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
+                    />
+                  </div>
+                ) : (
+                  <div className="w-full my-2">
+                    <label className="block text-sm font-medium leading-6 text-gray-200">
+                      Script:
+                    </label>
+                    <textarea
+                      disabled
+                      value={output.script}
+                      className="w-full bg-transparent rounded-md text-sm hover:cursor-not-allowed border-gray-700"
+                    />
+                  </div>
+                )}
               </div>
               <div className="flex flex-row">
                 <div className="w-full my-2">
