@@ -61,7 +61,8 @@ export class BitcoinContainer extends ContainerAbstract {
   }
 
   private async seedPreloadAddresses() {
-    for (const address of configs?.preloadAddresses) {
+    const preloadAddresses = this.config.preloadAddresses || []
+    for (const address of preloadAddresses) {
       await this.sendToAddress(address, 1)
     }
   }
