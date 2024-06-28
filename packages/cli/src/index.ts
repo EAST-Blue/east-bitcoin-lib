@@ -49,12 +49,36 @@ function main() {
     )
     .addOption(
       new Option(
-        "-p, --private-key [PRIVATE_KEY]",
+        "-p, --private-key <PRIVATE_KEY>",
         "Bitcoin private key, (env: BITCOIN_PRIVATE_KEY)"
       ).env("BITCOIN_PRIVATE_KEY")
     );
 
   const globalOptions = program.opts();
+
+  program
+    .command("view")
+    .description("View function on a smart index")
+    .argument("<smart_index_address>")
+    .argument("<function_name>")
+    .argument("[args...]")
+    .action(async (smartIndexAddress, functionName, args) => {
+      const client = new Client({
+        network: globalOptions.network,
+        rpcUrl: globalOptions.rpcUrl,
+      });
+
+      const result = await client.query(
+        {
+          receiver: smartIndexAddress,
+          function_name: "view_function",
+          args: [functionName, ...args]
+        }
+      )
+
+      console.log(hexToUtf8(result.result.result))
+    })
+
 
   program
     .command("call")
