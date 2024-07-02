@@ -1,0 +1,44 @@
+## Installation
+```bash copy
+npm install east-bitcoin-lib
+```
+
+## How to Use
+
+### Import
+```js copy
+import * from east-bitcoin-lib
+```
+
+### Load wallet from mnemonic
+```js copy
+import { Wallet, Script } from east-bitcoin-lib
+
+const mnemonic = Wallet.generateMnemonic() // generate random mnemonic
+
+const wallet = new Wallet({
+    mnemonic,
+    network: "regtest" // regtest | testnet | mainnet
+})
+
+const index = 0 // index key
+
+const p2pkh = wallet.p2pkh(index) // load P2PKH wallet 
+const p2wpkh = wallet.p2wpkh(index) // load P2WPKH wallet 
+const p2tr = wallet.p2tr(index) // load P2TR wallet 
+
+// load P2SH with lockscript
+const lockScripts = [
+    Script.encodeNumber(1),
+    Script.OP_ADD,
+    Script.encodeNumber(2),
+    Script.OP_EQUAL,
+];
+const p2sh = wallet.p2sh(lockScripts);
+```
+
+
+### Load wallet from mnemonic
+```js copy
+
+```

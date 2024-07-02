@@ -1,6 +1,5 @@
 {
   "index": "Introduction",
-  "prerequisites": "Prerequisites",
-  "installation": "Installation",
-  "usage": "Usage"
+  "eastsdk": "East SDK",
+  "eastpsbtui": "East PSBT Builder"
 }
