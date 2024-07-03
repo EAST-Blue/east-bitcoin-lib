@@ -112,23 +112,15 @@ export abstract class ContainerAbstract {
   }
 
   private async getContainerId(): Promise<string | undefined> {
-    if (!this.container) {
-      return undefined;
-    }
-
-    const containers = await this.docker.listContainers();
-    let containerId = containers.find((container) =>
-      container.Names.find((name) => name === this.name),
+    const containers = await this.docker.listContainers({ all: true });
+    let containerId = containers.find(
+      (container) => container.Image === this.image,
     )?.Id;
 
     return containerId;
   }
 
   private async removeContainer() {
-    if (!this.container) {
-      return;
-    }
-
     const containerId = await this.getContainerId();
     if (!containerId) {
       return;
