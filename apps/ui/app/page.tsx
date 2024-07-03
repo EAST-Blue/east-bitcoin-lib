@@ -32,6 +32,7 @@ import "prism-code-editor/languages/asm";
 import { Input, Output } from "@east-bitcoin-lib/sdk/dist/psbt/types";
 import { parseScript } from "./utils/parseOpcode";
 import { OpReturn } from "@east-bitcoin-lib/sdk/dist/addresses/opReturn";
+import HistorySidebar from "./components/HitsorySidebar";
 
 export default function Page(): JSX.Element {
   const { accounts } = useAccountContext() as AccountContextType;
@@ -45,6 +46,7 @@ export default function Page(): JSX.Element {
   const [addressOutput, setAddressOutput] = useState<string>("");
   const [amount, setAmount] = useState<number>(0);
   const [hex, setHex] = useState<string>("");
+  const [transactions, setTransactions] = useState([]);
 
   const scriptRef = useRef<HTMLDivElement>(null);
   const scriptEditorRef = useRef<PrismEditor>();
@@ -160,15 +162,66 @@ export default function Page(): JSX.Element {
     }
 
     // Finalize Tx
-    const hex = psbt.extractTransaction().toHex();
-    console.log({ hex });
+    const _hex = psbt.extractTransaction().toHex();
+    setHex(_hex);
   };
 
-  const onBroadcast = async () => {};
+  const onBroadcast = async () => {
+    if (!uri) return;
+
+    try {
+      const response = await fetch("api/broadcast", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ uri, hex }),
+      });
+      if (!response.ok) {
+        throw new Error(`error broadcast`);
+      }
+      const result = await response.json();
+
+      // Save to db
+      const responseSaveDb = await fetch("api/transaction", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ address, network, hex, amount, txid: result }),
+      });
+      if (!responseSaveDb.ok) {
+        throw new Error(`error broadcast`);
+      }
+      const resultSaveDb = await responseSaveDb.json();
+      console.log(resultSaveDb);
+    } catch (error) {
+      console.error(error);
+    }
+  };
+
+  const getTransactionHistory = async () => {
+    if (!network) return;
+
+    try {
+      const response = await fetch("api/transaction", {
+        method: "GET",
+        headers: { "Content-Type": "application/json" },
+      });
+      if (!response.ok) {
+        throw new Error(`Error fetching transaction data`);
+      }
+
+      const data = await response.json();
+      setTransactions(data);
+    } catch (error) {
+      console.error(error);
+    }
+  };
 
   useEffect(() => {
     getUtxoByAddress();
-  }, [mnemonic]);
+  }, [address]);
+
+  useEffect(() => {
+    getTransactionHistory();
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex overflow-hidden">
@@ -239,22 +292,19 @@ export default function Page(): JSX.Element {
                     color: "#e5e7eb",
                   }),
                 }}
-                options={[
-                  {
-                    label: "p2wpkh",
-                    options: accounts.map((item) => ({
-                      value: `${item.mnemonic}:${item.p2wpkh}`,
-                      label: `${item.p2wpkh} (P2WPKH)`,
-                    })),
-                  },
-                  {
-                    label: "p2tr",
-                    options: accounts.map((item) => ({
-                      value: `${item.mnemonic}:${item.p2tr}`,
-                      label: `${item.p2tr} (P2TR)`,
-                    })),
-                  },
-                ]}
+                options={accounts.map((account, i) => ({
+                  label: `Account ${i + 1}`,
+                  options: [
+                    {
+                      value: `${account.mnemonic}:${account.p2wpkh}`,
+                      label: `${account.p2wpkh} (P2WPKH)`,
+                    },
+                    {
+                      value: `${account.mnemonic}:${account.p2tr}`,
+                      label: `${account.p2tr} (P2TR)`,
+                    },
+                  ],
+                }))}
               />
             </div>
 
@@ -283,7 +333,7 @@ export default function Page(): JSX.Element {
                 onChange={(e) => setOutputType(e.target.value)}
                 className="w-full px-3 py-2 bg-gray-700 rounded"
               >
-                <option disabled selected={true} value={""}>
+                <option disabled selected={true}>
                   -- Address/Script --
                 </option>
                 <option value={"address"}>Address</option>
@@ -315,23 +365,25 @@ export default function Page(): JSX.Element {
               <label className="block mb-2">Amount</label>
               <input
                 value={amount}
-                onChange={(e) => setAmount(parseFloat(e.target.value))}
-                type="text"
+                onChange={(e) => setAmount(parseInt(e.target.value))}
+                type="number"
                 className="w-full px-3 py-2 bg-gray-700 rounded"
               />
             </div>
             <div className="flex space-x-2">
               <button
                 disabled={!outputType}
+                onClick={onSignTransaction}
                 type="button"
-                className="w-full py-2 bg-teal-500 rounded"
+                className="w-full py-2 bg-teal-500 disabled:bg-teal-700 rounded"
               >
                 Sign Transaction
               </button>
               <button
                 disabled={hex === ""}
+                onClick={onBroadcast}
                 type="button"
-                className="w-full py-2 bg-teal-500 rounded"
+                className="w-full py-2 bg-teal-500 disabled:bg-teal-700 rounded"
               >
                 Broadcast
               </button>
@@ -341,28 +393,7 @@ export default function Page(): JSX.Element {
       </main>
 
       {/* History Sidebar */}
-      <aside className="w-1/4 bg-gray-800 p-4 overflow-y-auto h-screen">
-        <h2 className="text-lg font-bold mb-4">History</h2>
-        <ul className="space-y-2">
-          {Array(20)
-            .fill("")
-            .map((_, index) => (
-              <div
-                key={index}
-                className="flex space-x-4 justify-between items-center bg-gray-700 px-4 py-2 rounded"
-              >
-                <span>1Ub12...i12nmab</span>
-                <span>2024-07-01 09:51:42.235</span>
-                <button className="text-blue-400">
-                  <i className="fas fa-sync-alt"></i>
-                </button>
-                <button className="text-blue-400">
-                  <i className="fa-regular fa-share-from-square"></i>
-                </button>
-              </div>
-            ))}
-        </ul>
-      </aside>
+      <HistorySidebar transactions={transactions} />
     </div>
   );
 }

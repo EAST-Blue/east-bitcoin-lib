@@ -7,7 +7,7 @@ import {
   useEffect,
   useState,
 } from "react";
-import { Account, AccountContextType } from "../types/Account";
+import { AccountType, AccountContextType } from "../types/Account";
 
 const AccountContext = createContext({});
 
@@ -16,7 +16,7 @@ export const AccountContextProvider = ({
 }: {
   children: ReactNode;
 }) => {
-  const [accounts, setAccounts] = useState<Account[]>([]);
+  const [accounts, setAccounts] = useState<AccountType[]>([]);
 
   const fetchAccounts = async () => {
     try {

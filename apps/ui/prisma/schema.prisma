@@ -20,3 +20,13 @@ model Network {
   uri String
   explorer String
 }
+
+model Transaction {
+  id Int @id @default(autoincrement())
+  address String
+  network String
+  hex String
+  txid String
+  amount Int
+  createdAt BigInt
+}
