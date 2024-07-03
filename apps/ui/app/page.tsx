@@ -1,30 +1,80 @@
 "use client";
 
 import { useState } from "react";
-import InputModal from "./components/InputModal";
-import Sidebar from "./components/Sidebar";
 import Leftbar from "./components/Leftbar";
-import Network from "./components/Network";
+import NetworkSection from "./components/Network";
+import { useAccountContext } from "./contexts/AccountContext";
+import { AccountContextType } from "./types/Account";
+import { useConfigContext } from "./contexts/ConfigContext";
+import { NetworkConfigType } from "./types/ConfigType";
+import { BElectrsAPI, Network, Wallet } from "@east-bitcoin-lib/sdk";
 
 export default function Page(): JSX.Element {
-  const [openInputModal, setOpenInputModal] = useState(false);
+  const { accounts } = useAccountContext() as AccountContextType;
+  const { network, uri } = useConfigContext() as NetworkConfigType;
+
+  const [mnemonic, setMnemonic] = useState<string>("");
+
+  const getUtxoByAddress = async () => {
+    if (mnemonic === "") return;
+    if (!uri) return;
+
+    const wallet = new Wallet({
+      network: network as Network,
+      mnemonic,
+    });
+    const bitcoinApi = new BElectrsAPI({
+      network: network as Network,
+      apiUrl: {
+        [network]: uri,
+      },
+    });
+
+    const p2wpkh = wallet.p2wpkh(0);
+    const p2tr = wallet.p2tr(0);
+
+    const [p2wpkhUtxo, p2trUtxo] = await Promise.all([
+      bitcoinApi.getUTXOs(p2wpkh.address),
+      bitcoinApi.getUTXOs(p2tr.address),
+    ]);
+    const mergedUtxos = [...p2wpkhUtxo, ...p2trUtxo];
+    const filteredUtxos =
+      mergedUtxos.filter((utxo) => utxo.status.confirmed === true) || [];
+  };
 
   return (
     <div className="min-h-screen bg-gray-900 text-white flex overflow-hidden">
       <Leftbar active="transaction" />
 
-      {/* Main Content */}
       <main className="flex-1 p-4 overflow-auto">
-        <Network title="Transactions" />
+        <NetworkSection title="Transactions" />
 
-        {/* Transaction Builder */}
         <div className="bg-gray-800 p-4 rounded-lg">
           <h2 className="text-lg font-bold mb-4">Transaction Builder</h2>
           <form className="space-y-4">
             <div>
               <label className="block mb-2">Signer</label>
-              <select className="w-full px-3 py-2 bg-gray-700 rounded">
-                <option>Select Account</option>
+              <select
+                onChange={(e) => setMnemonic(e.target.value)}
+                className="w-full px-3 py-2 bg-gray-700 rounded"
+              >
+                <option disabled selected={true} value={""}>
+                  {" "}
+                  -- Select Signer --{" "}
+                </option>
+                {accounts.map((account, i) => (
+                  // <>
+                  //   <option key={i} value={account.p2wpkh}>
+                  //     Account {i + 1} - (P2WPKH) {account.p2wpkh}
+                  //   </option>
+                  //   <option key={i + 1} value={account.p2tr}>
+                  //     Account {i + 1} - (P2TR) {account.p2tr}
+                  //   </option>
+                  // </>
+                  <option key={i} value={account.mnemonic}>
+                    Account {i + 1}
+                  </option>
+                ))}
               </select>
             </div>
             <div>
@@ -90,4 +140,5 @@ export default function Page(): JSX.Element {
       </aside>
     </div>
   );
+  ("");
 }

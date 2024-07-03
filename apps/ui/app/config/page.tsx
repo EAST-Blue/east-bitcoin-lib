@@ -2,12 +2,12 @@
 
 import { useEffect, useState } from "react";
 import Leftbar from "../components/Leftbar";
-import Network from "../components/Network";
 import { useConfigContext } from "../contexts/ConfigContext";
 import { NetworkConfigType } from "../types/ConfigType";
 import { isValidHttpUrl } from "../utils/isValidHttpUrl";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import NetworkSection from "../components/Network";
 
 export default function Page(): JSX.Element {
   const { network, uri, explorer, fetchConfig } =
@@ -60,7 +60,7 @@ export default function Page(): JSX.Element {
 
       {/* Main Content */}
       <main className="flex-1 p-4 overflow-auto">
-        <Network title="Config" />
+        <NetworkSection title="Config" />
 
         {/* Transaction Builder */}
         <div className="w-2/3 bg-gray-800 p-4 rounded-lg">

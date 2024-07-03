@@ -2,13 +2,14 @@
 
 import { useEffect, useState } from "react";
 import Leftbar from "../components/Leftbar";
-import Network from "../components/Network";
-import prisma from "../../db";
 import { Wallet } from "@east-bitcoin-lib/sdk";
 import ImportAccountModal from "../components/ImportAccount";
 import * as bip39 from "bip39";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import { useAccountContext } from "../contexts/AccountContext";
+import { AccountContextType } from "../types/Account";
+import NetworkSection from "../components/Network";
 
 type AccountType = {
   mnemonic: string;
@@ -17,10 +18,11 @@ type AccountType = {
 };
 
 const Account = () => {
+  const { accounts, fetchAccounts } = useAccountContext() as AccountContextType;
+
   const [isImportAccountModalOpen, setIsImportAccountModalOpen] =
     useState<boolean>(false);
   const [showOptions, setShowOptions] = useState<AccountType | null>(null);
-  const [accounts, setAccounts] = useState<AccountType[]>([]);
 
   const toastInvalidMnemonic = () => {
     toast.error(<p>Mnemonic Invalid</p>, { autoClose: 1500 });
@@ -43,21 +45,7 @@ const Account = () => {
     }
 
     await saveMnemonic(mnemonic);
-    await fetchAccounts();
-  };
-
-  const fetchAccounts = async () => {
-    try {
-      const response = await fetch("/api/account");
-      if (!response.ok) {
-        throw new Error("Failed to fetch account count");
-      }
-      const data = await response.json();
-      setAccounts(data);
-    } catch (error) {
-      console.error("Error fetching account count:", error);
-      alert(error);
-    }
+    fetchAccounts();
   };
 
   const saveMnemonic = async (importMnemonic?: string | undefined) => {
@@ -79,7 +67,7 @@ const Account = () => {
       }),
     });
 
-    await fetchAccounts();
+    fetchAccounts();
   };
 
   const removeAccount = async (mnemonic: string) => {
@@ -91,7 +79,7 @@ const Account = () => {
       }),
     });
 
-    await fetchAccounts();
+    fetchAccounts();
   };
 
   useEffect(() => {
@@ -103,7 +91,7 @@ const Account = () => {
       <Leftbar active="accounts" />
 
       <main className="flex-1 p-4 overflow-auto">
-        <Network title="Accounts" />
+        <NetworkSection title="Accounts" />
 
         <div className="flex space-x-4 mb-4">
           <button

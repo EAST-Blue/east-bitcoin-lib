@@ -2,7 +2,7 @@ import Link from "next/link";
 import { useConfigContext } from "../contexts/ConfigContext";
 import { NetworkConfigType } from "../types/ConfigType";
 
-const Network = ({ title }: { title: string }) => {
+const NetworkSection = ({ title }: { title: string }) => {
   const { network, uri } = useConfigContext() as NetworkConfigType;
 
   return (
@@ -29,4 +29,4 @@ const Network = ({ title }: { title: string }) => {
   );
 };
 
-export default Network;
+export default NetworkSection;

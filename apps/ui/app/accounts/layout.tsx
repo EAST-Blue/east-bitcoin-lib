@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Inter } from "next/font/google";
 import "../global.css";
+import { AccountContextProvider } from "../contexts/AccountContext";
 
 const inter = Inter({ subsets: ["latin"] });
 
@@ -16,7 +17,9 @@ export default function RootLayout({
 }): JSX.Element {
   return (
     <html className="bg-[#0F111B]" lang="en">
-      <body className={inter.className}>{children}</body>
+      <body className={inter.className}>
+        <AccountContextProvider>{children}</AccountContextProvider>
+      </body>
     </html>
   );
 }
