@@ -3,8 +3,9 @@
 .prism-code-editor {
 	caret-color: #fff;
 	font-family: Consolas, Monaco, "Andale Mono", "Ubuntu Mono", monospace;
-	--editor__bg: #0F111B;
-	--widget__border: #0F111B;
+	--editor__bg: #303a49;
+	--editor__border: #555c6a;
+	--widget__border: #555c6a;
 	--widget__bg: #f2f2f2;
 	--widget__color: #444;
 	--widget__color-active: #000;
@@ -16,7 +17,6 @@
 	--search__bg-find: #ea5c0054;
 	--widget__bg-error: #f2dede;
 	--widget__error-ring: #be1100;
-	/* --editor__border-highlight: 2px solid #eee; */
 	--editor__bg-selection-match: #add6ff80;
 	--editor__line-number: #53abc6;
 	--editor__bg-scrollbar: 0, 0%, 25%;
@@ -31,7 +31,7 @@
 
 /* Selection */
 .prism-code-editor textarea::selection {
-	background: #264f78;
+	background: #303a49;
 	color: #0000;
 }
 
