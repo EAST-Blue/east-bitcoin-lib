@@ -5,15 +5,17 @@ import {
   OrdAPI,
   P2shAutoUtxo,
   P2trAutoUtxo,
+  P2wpkhAutoUtxo,
   PSBT,
   Script,
   Wallet,
 } from "@east-bitcoin-lib/sdk";
+import { OpReturn } from "@east-bitcoin-lib/sdk/dist/addresses/opReturn";
 
 const bitcoinaApi = new BElectrsAPI({
   network: "regtest",
   apiUrl: {
-    regtest: "http://13.229.210.197:3000",
+    regtest: "http://localhost:3002",
   },
 });
 const api = new API({
@@ -102,9 +104,56 @@ async function psbtBuilderP2sh() {
   console.log({ hex });
 }
 
+async function psbtBuilderP2wpkhOpReturn() {
+  const wallet = new Wallet({
+    network: "regtest",
+    mnemonic:
+      "final chat okay post increase install picnic library modify legend soap cube",
+  });
+
+  const p2wpkh = wallet.p2wpkh(0);
+  console.log({ address: p2wpkh.address });
+
+  const opReturnOutput = new OpReturn({
+    dataScripts: [
+      Script.encodeUTF8("HELLO_MOTHER_FVCKNG_WORLD_3000000000000000000"),
+    ],
+  });
+
+  // TODO: add minimum input and output value
+  const p = new PSBT({
+    network: "regtest",
+    inputs: [],
+    outputs: [
+      {
+        output: Address.fromString("2N8ruoh7CGSycEnSx1nhi9C2UVYdUf89T7C"),
+        value: 0.5 * 10 ** 8,
+      },
+      {
+        output: opReturnOutput,
+        value: 0,
+      },
+    ],
+    feeRate: 1,
+    changeOutput: Address.fromString(p2wpkh.address),
+    autoUtxo: {
+      api,
+      from: new P2wpkhAutoUtxo(p2wpkh),
+    },
+  });
+
+  await p.build();
+  const psbt = p.toPSBT();
+
+  psbt.signAllInputs(p2wpkh.keypair);
+  const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
+  console.log({ hex });
+}
+
 async function main() {
   // psbtBuilderP2tr();
-  psbtBuilderP2sh();
+  // psbtBuilderP2sh();
+  psbtBuilderP2wpkhOpReturn();
 }
 
 main();
