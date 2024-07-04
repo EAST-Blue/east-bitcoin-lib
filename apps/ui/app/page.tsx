@@ -207,6 +207,7 @@ export default function Page(): JSX.Element {
       console.log(resultSaveDb);
 
       getTransactionHistory();
+      resetState();
 
       toastBroadcastedTransaction();
     } catch (error) {
@@ -231,6 +232,17 @@ export default function Page(): JSX.Element {
     } catch (error) {
       console.error(error);
     }
+  };
+
+  const resetState = () => {
+    setMnemonic("");
+    setAddress("");
+    setInputs([]);
+    setUtxo(null);
+    setOutputType("");
+    setAddressOutput("");
+    setAmount(0);
+    setHex("");
   };
 
   useEffect(() => {
