@@ -27,5 +27,5 @@ export type Config = {
     image: string;
     port: string;
   };
-  preloadAddresses?: string[]
+  preloadAddresses?: string[];
 };

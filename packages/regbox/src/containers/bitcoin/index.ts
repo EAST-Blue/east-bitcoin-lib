@@ -56,14 +56,14 @@ export class BitcoinContainer extends ContainerAbstract {
       try {
         await this.execBitcoinCli(["getrpcinfo"]);
         return;
-      } catch { }
+      } catch {}
     }
   }
 
   private async seedPreloadAddresses() {
-    const preloadAddresses = this.config.preloadAddresses || []
+    const preloadAddresses = this.config.preloadAddresses || [];
     for (const address of preloadAddresses) {
-      await this.sendToAddress(address, 1)
+      await this.sendToAddress(address, 1);
     }
   }
 
@@ -97,7 +97,7 @@ export class BitcoinContainer extends ContainerAbstract {
     await this.generateBlocks(110);
 
     // send to Alice, Bob addresses
-    await this.seedPreloadAddresses()
-    await this.generateBlocks(1)
+    await this.seedPreloadAddresses();
+    await this.generateBlocks(1);
   }
 }
