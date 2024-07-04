@@ -68,6 +68,7 @@ export default function Page(): JSX.Element {
     if (mnemonic === "") return;
     if (address === "") return;
     if (!uri) return;
+    if (!network) return;
 
     const bitcoinApi = new BElectrsAPI({
       network: network as Network,
@@ -168,6 +169,7 @@ export default function Page(): JSX.Element {
 
   const onBroadcast = async () => {
     if (!uri) return;
+    if (!network) return;
 
     try {
       const response = await fetch("api/broadcast", {

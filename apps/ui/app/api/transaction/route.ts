@@ -6,9 +6,9 @@ export async function GET(
   res: NextResponse<number | { error: string }>
 ) {
   try {
-    const count = await prisma.transaction.findMany({ skip: 0, take: 100 });
+    const data = await prisma.transaction.findMany({ skip: 0, take: 100 });
 
-    return NextResponse.json(count, { status: 200 });
+    return NextResponse.json(data, { status: 200 });
   } catch (error) {
     console.error("Error fetching transactions:", error);
     NextResponse.json({ error }, { status: 500 });

@@ -28,7 +28,7 @@ export const AccountContextProvider = ({
       setAccounts(data);
     } catch (error) {
       console.error("Error fetching account count:", error);
-      alert(error);
+      // alert(error);
     }
   };
 
