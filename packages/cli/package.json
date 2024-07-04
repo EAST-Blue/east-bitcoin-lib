@@ -1,0 +1,26 @@
+{
+  "name": "@east-bitcoin-lib/cli",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "bin": {
+    "east-cli": "./dist/index.js"
+  },
+  "scripts": {
+    "build": "tsc -b ./tsconfig.build.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@aws-crypto/sha256-browser": "^5.2.0",
+    "@east-bitcoin-lib/sdk": "*",
+    "async-retry": "^1.3.3",
+    "borsh": "^2.0.0",
+    "ecpair": "^2.1.0"
+  },
+  "devDependencies": {
+    "@east-bitcoin-lib/eslint-config": "*",
+    "@east-bitcoin-lib/typescript-config": "*",
+    "@types/async-retry": "^1.4.8"
+  }
+}
