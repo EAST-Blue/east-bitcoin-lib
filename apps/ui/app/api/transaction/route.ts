@@ -6,7 +6,11 @@ export async function GET(
   res: NextResponse<number | { error: string }>
 ) {
   try {
-    const data = await prisma.transaction.findMany({ skip: 0, take: 100 });
+    const data = await prisma.transaction.findMany({
+      skip: 0,
+      take: 100,
+      orderBy: { id: "desc" },
+    });
 
     return NextResponse.json(data, { status: 200 });
   } catch (error) {

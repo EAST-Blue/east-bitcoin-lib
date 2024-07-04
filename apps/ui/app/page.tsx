@@ -33,6 +33,8 @@ import { Input, Output } from "@east-bitcoin-lib/sdk/dist/psbt/types";
 import { parseScript } from "./utils/parseOpcode";
 import { OpReturn } from "@east-bitcoin-lib/sdk/dist/addresses/opReturn";
 import HistorySidebar from "./components/HitsorySidebar";
+import { ToastContainer, toast } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 
 export default function Page(): JSX.Element {
   const { accounts } = useAccountContext() as AccountContextType;
@@ -47,6 +49,14 @@ export default function Page(): JSX.Element {
   const [amount, setAmount] = useState<number>(0);
   const [hex, setHex] = useState<string>("");
   const [transactions, setTransactions] = useState([]);
+
+  const toastSignedTransaction = () => {
+    toast.info(<p>Transaction Signed. Please broadcast the transaction.</p>);
+  };
+
+  const toastBroadcastedTransaction = () => {
+    toast.success(<p>Transaction broadcasted successfully.</p>);
+  };
 
   const scriptRef = useRef<HTMLDivElement>(null);
   const scriptEditorRef = useRef<PrismEditor>();
@@ -165,6 +175,8 @@ export default function Page(): JSX.Element {
     // Finalize Tx
     const _hex = psbt.extractTransaction().toHex();
     setHex(_hex);
+
+    toastSignedTransaction();
   };
 
   const onBroadcast = async () => {
@@ -193,6 +205,10 @@ export default function Page(): JSX.Element {
       }
       const resultSaveDb = await responseSaveDb.json();
       console.log(resultSaveDb);
+
+      getTransactionHistory();
+
+      toastBroadcastedTransaction();
     } catch (error) {
       console.error(error);
     }
@@ -396,6 +412,8 @@ export default function Page(): JSX.Element {
 
       {/* History Sidebar */}
       <HistorySidebar transactions={transactions} />
+
+      <ToastContainer hideProgressBar={true} theme="light" />
     </div>
   );
 }
