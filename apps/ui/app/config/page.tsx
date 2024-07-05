@@ -55,7 +55,7 @@ export default function Page(): JSX.Element {
   };
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex overflow-hidden">
+    <div className="min-h-screen bg-black text-white flex overflow-hidden">
       <Leftbar active="config" />
 
       {/* Main Content */}

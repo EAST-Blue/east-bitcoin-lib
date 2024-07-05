@@ -4,11 +4,20 @@ export const prettyTruncate = (str = "", len = 8, type?: string) => {
       if (str.length !== len + 1) {
         const front = Math.ceil(len / 2);
         const back = str.length - (len - front);
-        return `${str.slice(0, front)}...${str.slice(back)}`;
+        return `${str.slice(0, front)}•••${str.slice(back)}`;
       }
       return str;
     }
-    return `${str.slice(0, len)}...`;
+    return `${str.slice(0, len)}•••`;
   }
   return str;
+};
+
+export const formatDateTime = (dateTime: any) => {
+  const dt = new Date(dateTime);
+
+  const day = dt.toLocaleString("en-US", { day: "numeric" });
+  const month = dt.toLocaleString("en-US", { month: "short" });
+  const time = dt.toLocaleString("en-GB", { timeStyle: "medium" });
+  return `${month} ${day}, ${time}`;
 };

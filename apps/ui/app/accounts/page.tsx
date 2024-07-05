@@ -85,7 +85,7 @@ const Account = () => {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex overflow-hidden">
+    <div className="min-h-screen bg-black text-white flex overflow-hidden">
       <Leftbar active="accounts" />
 
       <main className="flex-1 p-4 overflow-auto">
