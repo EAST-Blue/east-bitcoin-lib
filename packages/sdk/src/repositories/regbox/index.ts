@@ -1,16 +1,11 @@
-import { Network } from "../../types";
-
 export type RegboxAPIParams = {
-  network: Network;
   url: string;
 };
 
 export class RegboxAPI {
-  protected readonly network: Network;
   protected readonly url: string;
 
-  constructor({ network, url }: RegboxAPIParams) {
-    this.network = network;
+  constructor({ url }: RegboxAPIParams) {
     this.url = url;
   }
 
