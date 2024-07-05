@@ -13,6 +13,9 @@ import NetworkSection from "../components/Network";
 import { useConfigContext } from "../contexts/ConfigContext";
 import { NetworkConfigType } from "../types/ConfigType";
 import AccountCard from "../components/AccountCard";
+import IconSign from "../icons/iconSign";
+import IconPlus from "../icons/IconPlus";
+import IconImport from "../icons/IconImport";
 
 const Account = () => {
   const { accounts, fetchAccounts } = useAccountContext() as AccountContextType;
@@ -89,21 +92,36 @@ const Account = () => {
       <Leftbar active="accounts" />
 
       <main className="flex-1 p-4 overflow-auto">
-        <NetworkSection title="Accounts" />
+        <NetworkSection />
 
-        <div className="flex space-x-4 mb-4">
-          <button
-            onClick={() => saveMnemonic()}
-            className="py-2 px-4 bg-teal-500 rounded"
-          >
-            Generate Account
-          </button>
-          <button
-            onClick={() => setIsImportAccountModalOpen(true)}
-            className="py-2 px-4 bg-teal-500 rounded"
-          >
-            Import Account
-          </button>
+        <div className="mt-2 bg-black-1 p-2 rounded-lg w-full flex items-center justify-between">
+          <h2 className="text-xl font-bold">Accounts</h2>
+          <div className="flex justify-end space-x-4">
+            <button
+              onClick={() => saveMnemonic()}
+              type="button"
+              className="flex px-4 items-center py-2 rounded-lg bg-gradient-to-b from-white-2 to-white-1"
+            >
+              <div>
+                <IconPlus size={20} color="rgba(255,255,255,0.7)" />
+              </div>
+              <p className="pl-1 whitespace-nowrap font-semibold text-sm">
+                Generate Account
+              </p>
+            </button>
+            <button
+              onClick={() => setIsImportAccountModalOpen(true)}
+              type="button"
+              className="flex px-4 items-center py-2 rounded-lg bg-gradient-to-b from-white-2 to-white-1"
+            >
+              <div>
+                <IconImport size={20} color="rgba(255,255,255,0.7)" />
+              </div>
+              <p className="pl-1 whitespace-nowrap font-semibold text-sm">
+                Import Account
+              </p>
+            </button>
+          </div>
         </div>
 
         {accounts.map((account, i) => (

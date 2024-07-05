@@ -5,6 +5,31 @@ import { AccountType } from "../types/Account";
 import { useConfigContext } from "../contexts/ConfigContext";
 import { NetworkConfigType } from "../types/ConfigType";
 
+const ButtonCopy = ({ onClick }: { onClick: () => void }) => {
+  const [isCopying, setIsCopying] = useState(false);
+
+  const copy = () => {
+    setIsCopying(true);
+    onClick();
+    setTimeout(() => {
+      setIsCopying(false);
+    }, 1000);
+  };
+
+  return (
+    <button
+      disabled={isCopying}
+      onClick={() => copy()}
+      type="button"
+      className="flex items-center justify-center py-1 w-16 rounded-lg bg-gradient-to-b from-white-2 to-white-1 disabled:opacity-50"
+    >
+      <p className="whitespace-nowrap font-semibold text-xs">
+        {isCopying ? "COPIED" : "COPY"}
+      </p>
+    </button>
+  );
+};
+
 const AccountCard = ({
   index,
   account,
@@ -56,7 +81,7 @@ const AccountCard = ({
 
   return (
     <div className="space-y-4 my-4">
-      <div className="bg-gray-800 p-4 rounded-lg">
+      <div className="bg-white-1 p-4 rounded-lg">
         <div className="flex flex-row justify-between items-center">
           <h2 className="text-lg font-bold mb-2">Account {index + 1}</h2>
           <div className="relative">
@@ -86,21 +111,26 @@ const AccountCard = ({
             )}
           </div>
         </div>
-        <br />
+        <div className="grid grid-cols-5 font-semibold text-white-7">
+          <div className="col-span-3">
+            <p>Address</p>
+          </div>
+          <div className="col-span-1">
+            <p>Type</p>
+          </div>
+          <div className="col-span-1">
+            <p>Balance</p>
+          </div>
+        </div>
 
         <div className="grid grid-cols-5 my-2">
           <div className="col-span-3">
             <div className="flex items-center space-x-2">
-              <span>{account.p2wpkh}</span>
-              <button
-                onClick={() => copyToClipboard(account.p2wpkh)}
-                className="text-gray-500"
-              >
-                <i className="fas fa-copy"></i>
-              </button>
+              <ButtonCopy onClick={() => copyToClipboard(account.p2wpkh)} />
+              <span className="font-code">{account.p2wpkh}</span>
             </div>
           </div>
-          <div>
+          <div className="">
             <span className="font-bold">P2WPKH</span>
           </div>
           <div className="flex flex-row gap-x-4">
@@ -112,16 +142,12 @@ const AccountCard = ({
             </span>
           </div>
         </div>
+
         <div className="grid grid-cols-5 my-2">
           <div className="col-span-3">
             <div className="flex items-center space-x-2">
-              <span>{account.p2tr}</span>
-              <button
-                onClick={() => copyToClipboard(account.p2tr)}
-                className="text-gray-500"
-              >
-                <i className="fas fa-copy"></i>
-              </button>
+              <ButtonCopy onClick={() => copyToClipboard(account.p2tr)} />
+              <span className="font-code">{account.p2tr}</span>
             </div>
           </div>
           <div>

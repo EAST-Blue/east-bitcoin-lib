@@ -267,7 +267,7 @@ export default function Page(): JSX.Element {
             <div className="bg-white-1 p-3 rounded-lg">
               <h2 className="text-xl font-bold">Transaction Builder</h2>
             </div>
-            <form className="mt-2 ">
+            <form className="mt-2">
               <div className="bg-white-1 p-3 rounded-lg space-y-4">
                 <div>
                   <label className="block mb-2 text-white-7 font-semibold text-sm tracking-wide">
@@ -429,9 +429,7 @@ export default function Page(): JSX.Element {
                     disabled={!outputType}
                     onClick={onSignTransaction}
                     type="button"
-                    className="flex px-4 items-center py-2 disabled:cursor-not-allowed rounded-lg
-                    shadow-[inset_0_0_4px_rgba(255,255,255,0.25)]
-                    border-white-2 border bg-gradient-to-b from-white-2 to-[rgba(0,0,0,0.2)]"
+                    className="flex px-4 items-center py-2 disabled:cursor-not-allowed rounded-lg bg-gradient-to-b from-white-2 to-white-1 disabled:opacity-50"
                   >
                     <div>
                       <IconSign size={20} color="rgba(255,255,255,0.7)" />
@@ -444,9 +442,7 @@ export default function Page(): JSX.Element {
                     disabled={hex === ""}
                     onClick={onBroadcast}
                     type="button"
-                    className="flex px-4 items-center py-2 disabled:cursor-not-allowed rounded-lg
-                    shadow-[inset_0_0_4px_rgba(255,255,255,0.25)]
-                    border-white-1 border bg-gradient-to-b from-white-2 to-[rgba(0,0,0,0.2)]"
+                    className="flex px-4 items-center py-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1"
                   >
                     <div>
                       <IconBroadcast size={24} color="rgba(255,255,255,0.7)" />
