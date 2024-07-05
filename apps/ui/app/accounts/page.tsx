@@ -94,7 +94,7 @@ const Account = () => {
       <main className="flex-1 p-4 overflow-auto">
         <NetworkSection />
 
-        <div className="mt-2 bg-black-1 p-2 rounded-lg w-full flex items-center justify-between">
+        <div className="mt-2 bg-black-1 px-3 py-2 rounded-lg w-full flex items-center justify-between">
           <h2 className="text-xl font-bold">Accounts</h2>
           <div className="flex justify-end space-x-4">
             <button
