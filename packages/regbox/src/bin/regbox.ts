@@ -64,13 +64,13 @@ function main() {
           peerPort: parseArgToNumber(opts.bitcoinPeerPort).toString(),
         },
         electrs: {
-          name: "east_electrs",
+          name: "east_bitcoin_electrs",
           image: "docker.io/eastbluehq/blockstream-electrs:v1.0.1",
           rpcPort: parseArgToNumber(opts.electrsRpcPort).toString(),
           restPort: parseArgToNumber(opts.electrsRestPort).toString(),
         },
         explorer: {
-          name: "east_explorer",
+          name: "east_bitcoin_explorer",
           image: "docker.io/eastbluehq/janoside-btc-rpc-explorer:v3.4.0",
           port: parseArgToNumber(opts.explorerPort).toString(),
         },

@@ -33,6 +33,12 @@ export class BitcoinContainer extends ContainerAbstract {
           container: "18444/tcp",
         },
       ],
+      volumeMappings: [
+        {
+          source: `${config.bitcoin.name}_data`,
+          target: "/home/bitcoin/.bitcoin",
+        },
+      ],
       socketPath: config.container.socketPath,
       printLog: config.container.printLog,
     });
@@ -93,6 +99,25 @@ export class BitcoinContainer extends ContainerAbstract {
     await this.execBitcoinCli(["sendtoaddress", address, amount.toString()]);
   }
 
+  private async loadWallet() {
+    const walletDir = JSON.parse(
+      await this.execBitcoinCli(["listwalletdir"]),
+    ) as {
+      wallets: { name: string }[];
+    };
+    const isWalletExist = walletDir.wallets.find((wallet) => {
+      return wallet.name === this.config.bitcoin.wallet;
+    });
+
+    if (isWalletExist) {
+      this.logger(`use exising wallet: ${this.config.bitcoin.wallet}`);
+      await this.execBitcoinCli(["loadwallet", this.config.bitcoin.wallet]);
+    } else {
+      this.logger(`creating new  wallet: ${this.config.bitcoin.wallet}`);
+      await this.execBitcoinCli(["createwallet", this.config.bitcoin.wallet]);
+    }
+  }
+
   logger(log: string) {
     console.log(chalk.yellow(log));
   }
@@ -100,8 +125,7 @@ export class BitcoinContainer extends ContainerAbstract {
   async waitUntilReady() {
     await this.checkNodeUntilReady();
 
-    this.logger(`creating initial wallet: ${this.config.bitcoin.wallet}`);
-    await this.execBitcoinCli(["createwallet", this.config.bitcoin.wallet]);
+    await this.loadWallet();
 
     // miner should wait until the next 100 block to spend the balance.
     // this should give 50 * 10 BTC to the wallet.

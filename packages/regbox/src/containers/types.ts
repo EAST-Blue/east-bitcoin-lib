@@ -3,6 +3,11 @@ export type PortMapping = {
   container: string;
 };
 
+export type VolumeMapping = {
+  source: string;
+  target: string;
+};
+
 export type ContainerAbstractParams = {
   socketPath?: string;
   name: string;
@@ -11,5 +16,6 @@ export type ContainerAbstractParams = {
   env: string[];
   networkName: string;
   portMappings: PortMapping[];
+  volumeMappings: VolumeMapping[];
   printLog: boolean;
 };
