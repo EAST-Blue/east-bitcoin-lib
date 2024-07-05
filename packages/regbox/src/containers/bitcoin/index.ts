@@ -6,6 +6,7 @@ import { Config } from "../../types";
 
 export class BitcoinContainer extends ContainerAbstract {
   config: Config;
+  execQueue?: any;
 
   constructor({ config }: BitcoinContainerParams) {
     super({
@@ -40,13 +41,21 @@ export class BitcoinContainer extends ContainerAbstract {
   }
 
   private async execBitcoinCli(cmd: string[]) {
-    return this.execCommand([
-      "bitcoin-cli",
-      "-regtest",
-      `-rpcuser=${this.config.bitcoin.user}`,
-      `-rpcpassword=${this.config.bitcoin.password}`,
-      ...cmd,
-    ]) as Promise<string>;
+    // TODO: tech debt, this package (regbox) should be esm type
+    if (!this.execQueue) {
+      const PQueue = await import("p-queue");
+      this.execQueue = new PQueue.default({ concurrency: 1 });
+    }
+
+    return (await this.execQueue.add(() => {
+      return this.execCommand([
+        "bitcoin-cli",
+        "-regtest",
+        `-rpcuser=${this.config.bitcoin.user}`,
+        `-rpcpassword=${this.config.bitcoin.password}`,
+        ...cmd,
+      ]);
+    })) as Promise<string>;
   }
 
   private async checkNodeUntilReady() {
@@ -56,7 +65,7 @@ export class BitcoinContainer extends ContainerAbstract {
       try {
         await this.execBitcoinCli(["getrpcinfo"]);
         return;
-      } catch {}
+      } catch { }
     }
   }
 
@@ -68,16 +77,19 @@ export class BitcoinContainer extends ContainerAbstract {
   }
 
   async generateBlocks(nblocks: number) {
+    this.logger(`generating ${nblocks} blocks`);
     const result = await this.execBitcoinCli(["-generate", nblocks.toString()]);
     return JSON.parse(result) as GenerateAddress;
   }
 
   async getBalance() {
+    this.logger(`getting the balance`);
     const result = await this.execBitcoinCli(["getbalance"]);
     return parseInt(result, 10);
   }
 
   async sendToAddress(address: string, amount: number) {
+    this.logger(`send ${amount} btc to ${address}`);
     await this.execBitcoinCli(["sendtoaddress", address, amount.toString()]);
   }
 

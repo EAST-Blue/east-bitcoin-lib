@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 
 import { Command } from "commander";
-import { regbox } from "..";
+import { Config, regbox } from "..";
 import { parseArgToNumber } from "../utils";
 
 function main() {
@@ -25,15 +25,29 @@ function main() {
     .option("--bitcoin-peer-port <port>", "bitcoin peer port", "18444")
     .option("--electrs-rpc-port <port>", "electrs rpc port (electrum)", "60401")
     .option(
+      "--server-max-btc-to-send <number>",
+      "server maximum btc to send (faucet)",
+      "0.1",
+    )
+    .option(
+      "--server-auto-mine-interval <number>",
+      "server auto mine interval (generate new block) in second",
+      "10",
+    )
+    .option("--server-rate-limit", "set server rate limit for the apis", false)
+    .option(
       "--electrs-rest-port <port>",
       "electrs rest port (blockstream rest)",
       "3002",
     )
     .option("--explorer-port <port>", "explorer port", "3000")
     .action((opts) => {
-      const config = {
+      const config: Config = {
         server: {
           port: "8080",
+          maxBTCToSend: parseArgToNumber(opts.serverMaxBtcToSend),
+          autoMineInterval: parseArgToNumber(opts.serverAutoMineInterval),
+          rateLimit: opts.serverRateLimit as boolean,
         },
         container: {
           socketPath: opts.socket as string,
