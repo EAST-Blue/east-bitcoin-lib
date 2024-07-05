@@ -24,3 +24,8 @@ export type Output = {
 export type InputType = AddressType;
 
 export type OutputType = AddressType | OpReturnType;
+
+export type SignedInputInfo = {
+  signedIndexes: number[];
+  notSignedIndexes: number[];
+};
