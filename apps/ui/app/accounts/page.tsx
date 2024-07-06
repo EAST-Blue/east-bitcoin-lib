@@ -100,7 +100,7 @@ const Account = () => {
             <button
               onClick={() => saveMnemonic()}
               type="button"
-              className="flex px-4 items-center py-2 rounded-lg bg-gradient-to-b from-white-2 to-white-1"
+              className="flex px-4 items-center py-2 rounded-lg bg-gradient-to-b hover:from-white-1  from-white-2 to-white-1"
             >
               <div>
                 <IconPlus size={20} color="rgba(255,255,255,0.7)" />
@@ -112,7 +112,7 @@ const Account = () => {
             <button
               onClick={() => setIsImportAccountModalOpen(true)}
               type="button"
-              className="flex px-4 items-center py-2 rounded-lg bg-gradient-to-b from-white-2 to-white-1"
+              className="flex px-4 items-center py-2 rounded-lg bg-gradient-to-b hover:from-white-1 from-white-2 to-white-1"
             >
               <div>
                 <IconImport size={20} color="rgba(255,255,255,0.7)" />

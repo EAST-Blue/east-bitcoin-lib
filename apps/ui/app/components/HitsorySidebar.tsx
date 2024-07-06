@@ -1,6 +1,5 @@
 import Link from "next/link";
 import { formatDateTime, prettyTruncate } from "../utils/prettyTruncate";
-import { format } from "timeago.js";
 import { useConfigContext } from "../contexts/ConfigContext";
 import { NetworkConfigType } from "../types/ConfigType";
 
@@ -13,8 +12,8 @@ const HistorySidebar = ({ transactions }: { transactions: any }) => {
         <div className="bg-white-1 p-3 rounded-lg">
           <h2 className="text-xl font-bold">History</h2>
         </div>
-        <div className="flex-1 max-h-96 mt-2 items-stretch bg-white-1 p-3 rounded-lg overflow-y-auto">
-          <div className="flex font-semibold text-white-7 items-center justify-between">
+        <div className="flex-1 max-h-[80vh] mt-2 items-stretch bg-white-1 rounded-lg overflow-y-auto">
+          <div className="sticky top-0 bg-black-1 flex p-3 font-semibold text-white-7 items-center justify-between">
             <div className="w-5/12">
               <p>TxID</p>
             </div>
@@ -25,7 +24,7 @@ const HistorySidebar = ({ transactions }: { transactions: any }) => {
               <p>Actions</p>
             </div>
           </div>
-          <ul className="space-y-2">
+          <ul className="px-3 space-y-2">
             {transactions.length === 0 && (
               <div className="flex items-center justify-center">
                 <p className="text-white-3 text-lg p-4 font-semibold">
@@ -34,7 +33,7 @@ const HistorySidebar = ({ transactions }: { transactions: any }) => {
               </div>
             )}
             {transactions.map((transaction: any, i: number) => (
-              <div key={i} className="flex space-x-4 items-center py-2 rounded">
+              <div key={i} className="flex items-center py-1 rounded">
                 <div className="w-5/12">
                   <span className="font-code font-semibold">
                     {prettyTruncate(transaction.txid, 10, "address")}
@@ -45,16 +44,23 @@ const HistorySidebar = ({ transactions }: { transactions: any }) => {
                     {formatDateTime(transaction.createdAt)}
                   </div>
                 </div>
-                <div className="w-3/12">
-                  <button className="text-blue-400 p-1">
+                <div className="w-3/12 flex items-center space-x-2">
+                  <button
+                    type="button"
+                    className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-b from-white-2 to-white-1 disabled:opacity-50 hover:from-white-1"
+                  >
                     <i className="fas fa-sync-alt"></i>
                   </button>
                   <Link
                     href={`${explorer}/tx/${transaction.txid}`}
                     target="_blank"
-                    className="text-blue-400 p-1"
                   >
-                    <i className="fa-regular fa-share-from-square"></i>
+                    <button
+                      type="button"
+                      className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-b from-white-2 to-white-1 disabled:opacity-50 hover:from-white-1"
+                    >
+                      <i className="fa-regular fa-share-from-square"></i>
+                    </button>
                   </Link>
                 </div>
               </div>

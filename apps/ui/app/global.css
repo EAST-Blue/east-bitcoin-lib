@@ -16,3 +16,7 @@
 body {
   font-family: "Inter";
 }
+
+input:disabled {
+  @apply opacity-50 cursor-not-allowed;
+}

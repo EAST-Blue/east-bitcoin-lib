@@ -37,6 +37,7 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import IconSign from "./icons/iconSign";
 import IconBroadcast from "./icons/IconBroadcast";
+import { SelectStyles, TX_OUTPUT_OPTIONS } from "./utils/constant";
 
 export default function Page(): JSX.Element {
   const { accounts } = useAccountContext() as AccountContextType;
@@ -347,35 +348,31 @@ export default function Page(): JSX.Element {
 
                 <div>
                   <label className="block mb-2">Input</label>
-                  <select
-                    disabled={address === ""}
-                    className="w-full px-3 py-2 bg-gray-700 rounded"
-                    onChange={(e) => setUtxo(JSON.parse(e.target.value))}
-                  >
-                    <option disabled selected={true}>
-                      -- Select Input --
-                    </option>
-                    {inputs.map((_utxo, i) => (
-                      <option key={i} value={JSON.stringify(_utxo)}>
-                        {_utxo.txid} - {_utxo.value} sats
-                      </option>
-                    ))}
-                  </select>
+                  <Select
+                    isDisabled={address === ""}
+                    onChange={(e: any) => setUtxo(JSON.parse(e.value))}
+                    className="cursor-pointer"
+                    placeholder="-- Select Input --"
+                    isSearchable={false}
+                    styles={SelectStyles}
+                    options={inputs.map((_utxo) => ({
+                      label: `${_utxo.txid} - ${_utxo.value} sats`,
+                      value: JSON.stringify(_utxo),
+                    }))}
+                  />
                 </div>
 
                 <div>
                   <label className="block mb-2">Output</label>
-                  <select
-                    disabled={!utxo}
-                    onChange={(e) => setOutputType(e.target.value)}
-                    className="w-full px-3 py-2 bg-gray-700 rounded"
-                  >
-                    <option disabled selected={true}>
-                      -- Address/Script --
-                    </option>
-                    <option value={"address"}>Address</option>
-                    <option value={"script"}>Script</option>
-                  </select>
+                  <Select
+                    isDisabled={!utxo}
+                    onChange={(e: any) => setOutputType(e.value)}
+                    className="cursor-pointer"
+                    placeholder="-- Address/Script --"
+                    isSearchable={false}
+                    styles={SelectStyles}
+                    options={TX_OUTPUT_OPTIONS}
+                  />
                 </div>
                 {outputType === "address" && (
                   <div>
@@ -401,10 +398,11 @@ export default function Page(): JSX.Element {
                 <div>
                   <label className="block mb-2">Amount</label>
                   <input
+                    disabled={outputType === ""}
                     value={amount}
                     onChange={(e) => setAmount(parseInt(e.target.value))}
                     type="number"
-                    className="w-full px-3 py-2 bg-gray-700 rounded"
+                    className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
                   />
                 </div>
               </div>
@@ -429,7 +427,7 @@ export default function Page(): JSX.Element {
                     disabled={!outputType}
                     onClick={onSignTransaction}
                     type="button"
-                    className="flex px-4 items-center py-2 disabled:cursor-not-allowed rounded-lg bg-gradient-to-b from-white-2 to-white-1 disabled:opacity-50"
+                    className="flex px-4 items-center py-2 disabled:cursor-not-allowed rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 disabled:opacity-50"
                   >
                     <div>
                       <IconSign size={20} color="rgba(255,255,255,0.7)" />
@@ -442,7 +440,7 @@ export default function Page(): JSX.Element {
                     disabled={hex === ""}
                     onClick={onBroadcast}
                     type="button"
-                    className="flex px-4 items-center py-2 disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1"
+                    className="flex px-4 items-center py-2 disabled:select-none disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1"
                   >
                     <div>
                       <IconBroadcast size={24} color="rgba(255,255,255,0.7)" />
