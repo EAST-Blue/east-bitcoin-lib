@@ -34,6 +34,12 @@ export class ElectrsContainer extends ContainerAbstract {
           container: "60401/tcp",
         },
       ],
+      volumeMappings: [
+        {
+          source: `${config.electrs.name}_data`,
+          target: "/data/db",
+        },
+      ],
       socketPath: config.container.socketPath,
       printLog: config.container.printLog,
     });

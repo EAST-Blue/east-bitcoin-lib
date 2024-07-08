@@ -23,6 +23,7 @@ export class ExplorerContainer extends ContainerAbstract {
           container: "3002/tcp",
         },
       ],
+      volumeMappings: [],
       socketPath: config.container.socketPath,
       printLog: config.container.printLog,
     });

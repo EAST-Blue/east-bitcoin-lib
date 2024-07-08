@@ -1,6 +1,6 @@
 import Docker, { Container } from "dockerode";
 import { createLogStream } from "../utils";
-import { ContainerAbstractParams, PortMapping } from "./types";
+import { ContainerAbstractParams, PortMapping, VolumeMapping } from "./types";
 
 export abstract class ContainerAbstract {
   name: string;
@@ -9,6 +9,7 @@ export abstract class ContainerAbstract {
   env: string[];
   networkName: string;
   portMappings: PortMapping[];
+  volumeMappings: VolumeMapping[];
   printLog: boolean;
 
   docker: Docker;
@@ -22,6 +23,7 @@ export abstract class ContainerAbstract {
     env,
     networkName,
     portMappings,
+    volumeMappings,
     printLog,
   }: ContainerAbstractParams) {
     this.name = name;
@@ -30,6 +32,7 @@ export abstract class ContainerAbstract {
     this.env = env;
     this.networkName = networkName;
     this.portMappings = portMappings;
+    this.volumeMappings = volumeMappings;
     this.printLog = printLog;
 
     this.docker = new Docker({ socketPath });
@@ -206,6 +209,15 @@ export abstract class ContainerAbstract {
         };
       }, {});
 
+      const mounts = this.volumeMappings.map((volumeMapping) => {
+        return {
+          Target: volumeMapping.target,
+          Source: volumeMapping.source,
+          Type: "volume" as Docker.MountType,
+          ReadOnly: false,
+        };
+      });
+
       const container = await this.docker.createContainer({
         name: this.name,
         Image: this.image,
@@ -213,9 +225,9 @@ export abstract class ContainerAbstract {
         ExposedPorts: exposedPortsObj,
         HostConfig: {
           PortBindings: portBindings,
+          Mounts: mounts,
         },
         Env: this.env,
-        NetworkingConfig: {},
       });
       this.container = container;
       await this.connectNetwork();
