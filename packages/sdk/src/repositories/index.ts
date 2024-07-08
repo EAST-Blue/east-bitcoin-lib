@@ -4,14 +4,14 @@ import { OrdAPI } from "./ord";
 
 export type APIParams = {
   network: Network;
-  ord: OrdAPI;
+  ord?: OrdAPI
   bitcoin: BitcoinAPIAbstract;
 };
 
 // Construct the BitcoinAPI and OrdAPI
 export class API {
   protected network: Network;
-  ord: OrdAPI;
+  ord?: OrdAPI;
   bitcoin: BitcoinAPIAbstract;
 
   constructor(params: APIParams) {
@@ -30,3 +30,4 @@ export class API {
 export * from "./types";
 export * from "./bitcoin";
 export * from "./ord";
+export * from "./regbox";

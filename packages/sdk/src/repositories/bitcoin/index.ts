@@ -26,7 +26,7 @@ export abstract class BitcoinAPIAbstract {
 
   abstract getTransactionHex(txId: string): Promise<string>;
 
-  abstract brodcastTx(txHex: string): Promise<void>;
+  abstract brodcastTx(txHex: string): Promise<string>;
   abstract recommendedFee(): Promise<void>;
 }
 

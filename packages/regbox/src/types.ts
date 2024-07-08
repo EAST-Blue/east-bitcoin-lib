@@ -1,6 +1,9 @@
 export type Config = {
   server: {
     port: string;
+    maxBTCToSend: number;
+    autoMineInterval: number;
+    rateLimit: boolean;
   };
   container: {
     socketPath: string;

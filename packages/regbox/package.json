@@ -18,6 +18,8 @@
     "cors": "^2.8.5",
     "dockerode": "^4.0.2",
     "express": "^4.19.2",
+    "express-rate-limit": "^7.3.1",
+    "p-queue": "^8.0.1",
     "yup": "^1.4.0"
   },
   "devDependencies": {
