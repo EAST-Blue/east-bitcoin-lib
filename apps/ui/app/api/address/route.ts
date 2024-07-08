@@ -11,8 +11,7 @@ export async function GET(
     const address = searchParams.get("address");
 
     const response = await fetch(`${uri}/address/${address}`, {
-      method: "GET",
-      headers: { "Content-Type": "application/json" },
+      cache: "no-cache",
     });
     const data = await response.json();
 

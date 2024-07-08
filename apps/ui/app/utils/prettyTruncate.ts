@@ -4,11 +4,11 @@ export const prettyTruncate = (str = "", len = 8, type?: string) => {
       if (str.length !== len + 1) {
         const front = Math.ceil(len / 2);
         const back = str.length - (len - front);
-        return `${str.slice(0, front)}•••${str.slice(back)}`;
+        return `${str.slice(0, front)}...${str.slice(back)}`;
       }
       return str;
     }
-    return `${str.slice(0, len)}•••`;
+    return `${str.slice(0, len)}...`;
   }
   return str;
 };

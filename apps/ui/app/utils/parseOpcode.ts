@@ -1,3 +1,4 @@
+import { Script } from "@east-bitcoin-lib/sdk";
 import { script, opcodes } from "bitcoinjs-lib";
 
 export const parseScript = (plaintext: string): any => {
@@ -10,7 +11,7 @@ export const parseScript = (plaintext: string): any => {
     } else if (opcodes[component]) {
       return opcodes[component];
     } else {
-      return Buffer.from(component, "utf8");
+      return Script.encodeUTF8(component);
     }
   });
 

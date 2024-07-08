@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import Leftbar from "../components/Leftbar";
-import { Wallet } from "@east-bitcoin-lib/sdk";
+import { RegboxAPI, Wallet } from "@east-bitcoin-lib/sdk";
 import ImportAccountModal from "../components/ImportAccount";
 import * as bip39 from "bip39";
 import { ToastContainer, toast } from "react-toastify";
@@ -19,7 +19,7 @@ import IconImport from "../icons/IconImport";
 
 const Account = () => {
   const { accounts, fetchAccounts } = useAccountContext() as AccountContextType;
-  const { uri } = useConfigContext() as NetworkConfigType;
+  const { uri, regbox } = useConfigContext() as NetworkConfigType;
 
   const [isImportAccountModalOpen, setIsImportAccountModalOpen] =
     useState<boolean>(false);
@@ -27,6 +27,11 @@ const Account = () => {
 
   const toastInvalidMnemonic = () => {
     toast.error(<p>Mnemonic Invalid</p>, { autoClose: 1500 });
+  };
+  const toastOnFaucet = () => {
+    toast.success(<p>Faucet sent. Wait for automatic confirmation</p>, {
+      autoClose: 1500,
+    });
   };
 
   const copyToClipboard = (text: string) => {
@@ -83,6 +88,20 @@ const Account = () => {
     fetchAccounts();
   };
 
+  const onFaucet = async (addresses: string[]) => {
+    const regboxApi = new RegboxAPI({ url: regbox! });
+    if (addresses.length < 1) return;
+
+    for (const address of addresses) {
+      regboxApi.getFaucet(address, 0.01);
+    }
+
+    await regboxApi.generateBlock(1);
+    fetchAccounts();
+    toastOnFaucet();
+    setShowOptions(null);
+  };
+
   useEffect(() => {
     fetchAccounts();
   }, []);
@@ -132,6 +151,7 @@ const Account = () => {
             setShowOptions={setShowOptions}
             removeAccount={removeAccount}
             copyToClipboard={copyToClipboard}
+            onFaucet={onFaucet}
           />
         ))}
       </main>

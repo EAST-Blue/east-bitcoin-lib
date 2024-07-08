@@ -21,7 +21,7 @@ export async function PUT(
   res: NextResponse<number | { error: string }>
 ) {
   try {
-    const { network, uri, explorer } = await req.json();
+    const { network, uri, explorer, regbox } = await req.json();
     if (!isValidHttpUrl(uri)) {
       NextResponse.json({ error: "URI Invalid" }, { status: 500 });
     }
@@ -31,8 +31,8 @@ export async function PUT(
 
     await prisma.network.upsert({
       where: { id: 1 },
-      update: { network, uri, explorer },
-      create: { network, uri, explorer },
+      update: { network, uri, explorer, regbox },
+      create: { network, uri, explorer, regbox },
     });
 
     return NextResponse.json({ network, uri, explorer }, { status: 200 });

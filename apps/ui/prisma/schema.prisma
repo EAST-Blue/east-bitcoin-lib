@@ -19,6 +19,7 @@ model Network {
   network String
   uri String
   explorer String
+  regbox String
 }
 
 model Transaction {

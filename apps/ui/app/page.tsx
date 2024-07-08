@@ -15,11 +15,12 @@ import {
   P2trUtxo,
   P2wpkhUtxo,
   PSBT,
+  RegboxAPI,
   Script,
   Wallet,
   getAddressType,
 } from "@east-bitcoin-lib/sdk";
-import Select from "react-select";
+import Select, { MultiValue, NonceProvider } from "react-select";
 import { BitcoinUTXO } from "@east-bitcoin-lib/sdk/dist/repositories/bitcoin/types";
 import { PSBTOutput } from "./types/OutputContextType";
 import { PrismEditor, createEditor } from "prism-code-editor";
@@ -38,6 +39,8 @@ import "react-toastify/dist/ReactToastify.css";
 import IconSign from "./icons/iconSign";
 import IconBroadcast from "./icons/IconBroadcast";
 import { SelectStyles, TX_OUTPUT_OPTIONS } from "./utils/constant";
+import { prettyTruncate } from "./utils/prettyTruncate";
+import IconPlus from "./icons/IconPlus";
 
 export default function Page(): JSX.Element {
   const { accounts } = useAccountContext() as AccountContextType;
@@ -46,9 +49,10 @@ export default function Page(): JSX.Element {
   const [mnemonic, setMnemonic] = useState<string>("");
   const [address, setAddress] = useState<string>("");
   const [inputs, setInputs] = useState<BitcoinUTXO[]>([]);
-  const [utxo, setUtxo] = useState<BitcoinUTXO | null>(null);
+  const [utxos, setUtxos] = useState<BitcoinUTXO[]>([]);
   const [outputType, setOutputType] = useState<string>("");
   const [addressOutput, setAddressOutput] = useState<string>("");
+  const [outputs, setOutputs] = useState<PSBTOutput[]>([]);
   const [amount, setAmount] = useState<number>(0);
   const [hex, setHex] = useState<string>("");
   const [transactions, setTransactions] = useState([]);
@@ -98,7 +102,7 @@ export default function Page(): JSX.Element {
   };
 
   const onSignTransaction = async () => {
-    if (!utxo) return;
+    if (utxos.length < 1) return;
     if (outputType === "address" && amount <= 0) return;
     if (outputType === "address" && addressOutput === "") return;
     if (outputType === "script" && !scriptEditorRef.current?.value) return;
@@ -110,47 +114,53 @@ export default function Page(): JSX.Element {
     });
 
     // Prepare inputs
-    const inputs: Input[] = [];
-    const addressType: AddressType = getAddressType(utxo.address);
-    switch (addressType) {
-      case "p2wpkh":
-        const p2wpkhUtxo = await P2wpkhUtxo.fromBitcoinUTXO(utxo);
-        inputs.push({ utxo: p2wpkhUtxo, value: utxo.value });
-        break;
+    const psbtInputs: Input[] = [];
+    for (const utxo of utxos) {
+      const addressType: AddressType = getAddressType(utxo.address);
+      switch (addressType) {
+        case "p2wpkh":
+          const p2wpkhUtxo = await P2wpkhUtxo.fromBitcoinUTXO(utxo);
+          psbtInputs.push({ utxo: p2wpkhUtxo, value: utxo.value });
+          break;
 
-      case "p2tr":
-        const p2tr = wallet.p2tr(0);
-        const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
-          utxo,
-          p2tr.tapInternalKey
-        );
-        inputs.push({ utxo: p2trUtxo, value: utxo.value });
-        break;
+        case "p2tr":
+          const p2tr = wallet.p2tr(0);
+          const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
+            utxo,
+            p2tr.tapInternalKey
+          );
+          psbtInputs.push({ utxo: p2trUtxo, value: utxo.value });
+          break;
 
-      default:
-        break;
+        default:
+          break;
+      }
     }
 
     // Prepare outputs
-    const outputs: Output[] = [];
-    if (outputType === "address") {
-      outputs.push({
-        output: Address.fromString(addressOutput!),
-        value: amount,
-      });
-    } else if (outputType === "script") {
-      const bufferScript = parseScript(scriptEditorRef.current?.value!);
-      outputs.push({
-        output: new OpReturn({ script: Script.compile(bufferScript) }),
-        value: 546, // hardcoded value
-      });
+    const pbstOutputs: Output[] = [];
+    for (const output of outputs) {
+      if (output.address) {
+        pbstOutputs.push({
+          output: Address.fromString(output.address!),
+          value: output.value,
+        });
+      } else if (output.script) {
+        const bufferScript = output.script.split("OP_RETURN ");
+        pbstOutputs.push({
+          output: new OpReturn({
+            dataScripts: [Script.encodeUTF8(bufferScript[1]!)],
+          }),
+          value: 546, // hardcoded value
+        });
+      }
     }
 
     // Build PSBT
     const p = new PSBT({
       network: network as Network,
-      inputs: inputs,
-      outputs: outputs,
+      inputs: psbtInputs,
+      outputs: pbstOutputs,
       feeRate: 1,
       changeOutput: Address.fromString(address),
     });
@@ -207,7 +217,6 @@ export default function Page(): JSX.Element {
         throw new Error(`error broadcast`);
       }
       const resultSaveDb = await responseSaveDb.json();
-      console.log(resultSaveDb);
 
       getTransactionHistory();
       resetState();
@@ -241,11 +250,12 @@ export default function Page(): JSX.Element {
     setMnemonic("");
     setAddress("");
     setInputs([]);
-    setUtxo(null);
+    setUtxos([]);
     setOutputType("");
     setAddressOutput("");
     setAmount(0);
     setHex("");
+    setOutputs([]);
   };
 
   useEffect(() => {
@@ -255,6 +265,40 @@ export default function Page(): JSX.Element {
   useEffect(() => {
     getTransactionHistory();
   }, []);
+
+  const handleChange = (
+    selectedOptions: MultiValue<{
+      label: string;
+      value: string;
+    }>
+  ) => {
+    const selectedUtxo = selectedOptions
+      ? selectedOptions.map((option) => JSON.parse(option.value))
+      : [];
+    setUtxos(selectedUtxo);
+  };
+
+  const onSaveOutput = () => {
+    if (outputType === "address" && addressOutput === "") return;
+    if (outputType === "script" && !scriptEditorRef.current?.value) return;
+
+    if (outputType === "address") {
+      setOutputs([...outputs, ...[{ address: addressOutput, value: amount }]]);
+      setAddressOutput("");
+      setAmount(0);
+    } else if (outputType === "script") {
+      setOutputs([
+        ...outputs,
+        ...[{ script: scriptEditorRef.current?.value, value: 564 }],
+      ]);
+    }
+
+    setOutputType("");
+  };
+
+  const onRemoveOutput = (index: number) => {
+    setOutputs((output) => output.filter((_, i) => i !== index));
+  };
 
   return (
     <div className="flex min-h-screen bg-black text-white overflow-hidden">
@@ -271,7 +315,7 @@ export default function Page(): JSX.Element {
             <form className="mt-2">
               <div className="bg-white-1 p-3 rounded-lg space-y-4">
                 <div>
-                  <label className="block mb-2 text-white-7 font-semibold text-sm tracking-wide">
+                  <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
                     Signer
                   </label>
                   <Select
@@ -347,25 +391,34 @@ export default function Page(): JSX.Element {
                 </div>
 
                 <div>
-                  <label className="block mb-2">Input</label>
+                  <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                    Input
+                  </label>
                   <Select
-                    isDisabled={address === ""}
-                    onChange={(e: any) => setUtxo(JSON.parse(e.value))}
+                    isMulti
+                    isDisabled={false}
+                    isSearchable={false}
+                    onChange={handleChange}
                     className="cursor-pointer"
                     placeholder="-- Select Input --"
-                    isSearchable={false}
                     styles={SelectStyles}
                     options={inputs.map((_utxo) => ({
                       label: `${_utxo.txid} - ${_utxo.value} sats`,
+                      value: JSON.stringify(_utxo),
+                    }))}
+                    value={utxos.map((_utxo) => ({
+                      label: `${prettyTruncate(_utxo.txid, 32, "address")} - ${_utxo.value} sats`,
                       value: JSON.stringify(_utxo),
                     }))}
                   />
                 </div>
 
                 <div>
-                  <label className="block mb-2">Output</label>
+                  <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                    Output
+                  </label>
                   <Select
-                    isDisabled={!utxo}
+                    isDisabled={!utxos}
                     onChange={(e: any) => setOutputType(e.value)}
                     className="cursor-pointer"
                     placeholder="-- Address/Script --"
@@ -374,37 +427,100 @@ export default function Page(): JSX.Element {
                     options={TX_OUTPUT_OPTIONS}
                   />
                 </div>
-                {outputType === "address" && (
-                  <div>
-                    <label className="block mb-2">Input Address</label>
-                    <input
-                      value={addressOutput}
-                      onChange={(e) => setAddressOutput(e.target.value)}
-                      type="text"
-                      className="w-full px-3 py-2 bg-gray-700 rounded"
-                    />
-                  </div>
-                )}
-                {outputType === "script" && (
-                  <div>
-                    <label className="block mb-2">Custom Script</label>
-                    <div
-                      ref={scriptRef}
-                      className="w-full rounded-sm border border-gray-700 overflow-auto break-words"
-                    />
+
+                {outputType !== "" && (
+                  <div className="bg-[rgba(255,255,255,0.05)] rounded-md p-2">
+                    {outputType === "address" && (
+                      <>
+                        <div>
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Input Address
+                          </label>
+                          <input
+                            value={addressOutput}
+                            onChange={(e) => setAddressOutput(e.target.value)}
+                            type="text"
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                        <div className="mt-1">
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Amount
+                          </label>
+                          <input
+                            value={amount}
+                            onChange={(e) =>
+                              setAmount(parseInt(e.target.value))
+                            }
+                            type="number"
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                      </>
+                    )}
+                    {outputType === "script" && (
+                      <div>
+                        <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                          Custom Script
+                        </label>
+                        <div
+                          ref={scriptRef}
+                          className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                        />
+                      </div>
+                    )}
+                    <div className="mt-1">
+                      <button
+                        onClick={onSaveOutput}
+                        type="button"
+                        className="flex px-2 mt-2 items-center py-1 disabled:cursor-not-allowed rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 disabled:opacity-50"
+                      >
+                        <IconPlus size={15} color="rgba(255,255,255,0.7)" />
+                        <p className="pl-1 text-sm whitespace-nowrap font-semibold">
+                          Save
+                        </p>
+                      </button>
+                    </div>
                   </div>
                 )}
 
-                <div>
-                  <label className="block mb-2">Amount</label>
-                  <input
-                    disabled={outputType === ""}
-                    value={amount}
-                    onChange={(e) => setAmount(parseInt(e.target.value))}
-                    type="number"
-                    className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
-                  />
-                </div>
+                {outputs.map((_output, i) => (
+                  <div className="flex items-center justify-end ml-auto gap-x-2">
+                    <p className="text-sm mt-2 text-[rgba(255,255,255,0.5)]">
+                      Output {i + 1}
+                    </p>
+                    <button
+                      onClick={() => onRemoveOutput(i)}
+                      type="button"
+                      className=" flex gap-x-2 px-2 mt-2 items-center py-1 disabled:cursor-not-allowed rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 disabled:opacity-50"
+                    >
+                      {_output.address && (
+                        <>
+                          <p className="text-sm italic whitespace-nowrap">
+                            {_output.value} sats
+                          </p>
+                          <p className="text-sm whitespace-nowrap">to </p>
+                          <p className="text-sm font-bold whitespace-nowrap">
+                            {prettyTruncate(_output.address, 12, "address")}
+                          </p>
+                          <i className="fa-solid fa-trash ml-2 text-sm whitespace-nowrap font-semibold"></i>
+                        </>
+                      )}
+
+                      {_output.script && (
+                        <>
+                          <p className="text-sm whitespace-nowrap">
+                            Custom Script
+                          </p>
+                          <p className="text-sm font-bold whitespace-nowrap">
+                            {prettyTruncate(_output.script, 32)}
+                          </p>
+                          <i className="fa-solid fa-trash ml-2 text-sm whitespace-nowrap font-semibold"></i>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                ))}
               </div>
 
               <div className="mt-2 flex items-center bg-white-1 p-3 rounded-lg space-x-2">
@@ -424,7 +540,7 @@ export default function Page(): JSX.Element {
                 </div>
                 <div className="w-2/3 flex justify-end space-x-4">
                   <button
-                    disabled={!outputType}
+                    disabled={outputs.length < 1}
                     onClick={onSignTransaction}
                     type="button"
                     className="flex px-4 items-center py-2 disabled:cursor-not-allowed rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 disabled:opacity-50"

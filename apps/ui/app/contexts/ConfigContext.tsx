@@ -19,6 +19,7 @@ export const ConfigContextProvider = ({
     network: "regtest",
     uri: null,
     explorer: null,
+    regbox: null,
   });
 
   const fetchConfig = async () => {
@@ -47,6 +48,7 @@ export const ConfigContextProvider = ({
         network: config.network,
         uri: config.uri,
         explorer: config.explorer,
+        regbox: config.regbox,
         fetchConfig,
       }}
     >

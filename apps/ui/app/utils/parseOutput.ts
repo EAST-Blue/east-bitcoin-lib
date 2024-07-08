@@ -16,7 +16,7 @@ export const parseOutput = (outputs: PSBTOutput[]): Output[] => {
     } else if (output.script) {
       const bufferScript = parseScript(output.script);
       newOutputs.push({
-        output: new OpReturn({ script: Script.compile(bufferScript) }),
+        output: new OpReturn({ dataScripts: [Script.compile(bufferScript)] }),
         value: output.value,
       });
     }

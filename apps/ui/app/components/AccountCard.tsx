@@ -37,6 +37,7 @@ const AccountCard = ({
   setShowOptions,
   removeAccount,
   copyToClipboard,
+  onFaucet,
 }: {
   index: number;
   account: AccountType;
@@ -44,6 +45,7 @@ const AccountCard = ({
   setShowOptions: (args: any) => void;
   removeAccount: (mnemonic: string) => void;
   copyToClipboard: (address: string) => void;
+  onFaucet: (addresses: string[]) => void;
 }) => {
   const { uri } = useConfigContext() as NetworkConfigType;
   const [p2wpkhBalance, setP2wpkhBalance] = useState<number>(0);
@@ -53,14 +55,8 @@ const AccountCard = ({
     if (!uri) return;
 
     const [p2wpkh, p2tr] = await Promise.all([
-      fetch(`api/address?uri=${uri}&address=${account.p2wpkh}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      }),
-      fetch(`api/address?uri=${uri}&address=${account.p2tr}`, {
-        method: "GET",
-        headers: { "Content-Type": "application/json" },
-      }),
+      fetch(`api/address?uri=${uri}&address=${account.p2wpkh}`),
+      fetch(`api/address?uri=${uri}&address=${account.p2tr}`),
     ]);
 
     const dataP2wpkh = await p2wpkh.json();
@@ -76,7 +72,13 @@ const AccountCard = ({
   };
 
   useEffect(() => {
-    getBalanceByAddress();
+    const timer = setInterval(() => {
+      getBalanceByAddress();
+    }, 1000);
+
+    return () => {
+      clearInterval(timer);
+    };
   }, [account]);
 
   return (
@@ -98,7 +100,12 @@ const AccountCard = ({
                 <button className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500">
                   Export Private Key
                 </button>
-                <button className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500">
+                <button
+                  className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500"
+                  onClick={() => {
+                    onFaucet([account.p2wpkh, account.p2tr]);
+                  }}
+                >
                   Faucet
                 </button>
                 <button

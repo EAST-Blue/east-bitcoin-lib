@@ -13,12 +13,13 @@ import { NETWORK_MODE_OPTIONS, SelectStyles } from "../utils/constant";
 import IconSave from "../icons/IconSave";
 
 export default function Page(): JSX.Element {
-  const { network, uri, explorer, fetchConfig } =
+  const { network, uri, explorer, regbox, fetchConfig } =
     useConfigContext() as NetworkConfigType;
 
   const [_network, setNetwork] = useState<string>(network);
   const [_uri, setUri] = useState<string | null>(uri);
   const [_explorer, setExplorer] = useState<string | null>(explorer);
+  const [_regbox, setRegbox] = useState<string | null>(regbox);
 
   const toastInvalidHttp = () => {
     toast.error(<p>Invalid HTTP format</p>, { autoClose: 1500 });
@@ -29,11 +30,11 @@ export default function Page(): JSX.Element {
   };
 
   const saveConfig = async () => {
-    if (!isValidHttpUrl(_uri!)) {
+    if (!uri && !isValidHttpUrl(_uri!)) {
       toastInvalidHttp();
       return;
     }
-    if (!isValidHttpUrl(_explorer!)) {
+    if (!explorer && !isValidHttpUrl(_explorer!)) {
       toastInvalidHttp();
       return;
     }
@@ -46,6 +47,7 @@ export default function Page(): JSX.Element {
           network: _network,
           uri: _uri,
           explorer: _explorer,
+          regbox: _regbox,
         }),
       });
 
@@ -115,6 +117,20 @@ export default function Page(): JSX.Element {
                     value={_explorer || explorer || ""}
                     onChange={(e) => {
                       setExplorer(e.target.value);
+                    }}
+                  />
+                </div>
+                <div>
+                  <label className="block mb-2 text-white-7 font-semibold text-sm tracking-wide">
+                    Regbox URI
+                  </label>
+                  <input
+                    type="text"
+                    className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                    placeholder="https://regbox.explorer.eastlayer.io"
+                    value={_regbox || regbox || ""}
+                    onChange={(e) => {
+                      setRegbox(e.target.value);
                     }}
                   />
                 </div>
