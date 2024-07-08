@@ -1,0 +1,28 @@
+
+## Setup your own bitcoin regtest
+
+Here's how : 
+1. Clone the regbox package
+```bash
+git clone https://github.com/EAST-Blue/east-bitcoin-lib.git regbox & cd regbox
+```
+
+2. Checkout develop branch
+```bash
+git checkout develop
+```
+
+3. Pull latest changes
+```bash
+git pull origin develop
+```
+
+4. Build and run regbox
+```bash
+yarn workspace @east-bitcoin-lib/regbox build && ./packages/regbox/dist/bin/regbox.js start
+```
+
+5. Run this command to make sure the regtest is running
+```bash
+bitcoin-cli -regtest -rpcuser=east -rpcpassword=east getbalance
+```
