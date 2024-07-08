@@ -53,6 +53,14 @@ export class BElectrsAPI extends BitcoinAPIAbstract {
     return await res.text();
   }
 
-  async brodcastTx(txHex: string): Promise<void> { }
-  async recommendedFee(): Promise<void> { }
+  async brodcastTx(txHex: string): Promise<string> {
+    const res = await fetch(`${this.url}/tx`, {
+      method: "POST",
+      headers: { "Content-Type": "text/plain" },
+      body: txHex
+    });
+    return await res.text()
+  }
+
+  async recommendedFee(): Promise<void> {}
 }
