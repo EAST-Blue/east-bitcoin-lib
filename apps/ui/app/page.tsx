@@ -35,6 +35,9 @@ import { OpReturn } from "@east-bitcoin-lib/sdk/dist/addresses/opReturn";
 import HistorySidebar from "./components/HitsorySidebar";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
+import IconSign from "./icons/iconSign";
+import IconBroadcast from "./icons/IconBroadcast";
+import { SelectStyles, TX_OUTPUT_OPTIONS } from "./utils/constant";
 
 export default function Page(): JSX.Element {
   const { accounts } = useAccountContext() as AccountContextType;
@@ -254,176 +257,206 @@ export default function Page(): JSX.Element {
   }, []);
 
   return (
-    <div className="min-h-screen bg-gray-900 text-white flex overflow-hidden">
+    <div className="flex min-h-screen bg-black text-white overflow-hidden">
       <Leftbar active="transaction" />
 
-      <main className="flex-1 p-4 overflow-auto">
-        <NetworkSection title="Transactions" />
+      <main className="flex-1 flex-row p-4">
+        <NetworkSection />
 
-        <div className="bg-gray-800 p-4 rounded-lg">
-          <h2 className="text-lg font-bold mb-4">Transaction Builder</h2>
-          <form className="space-y-4">
-            <div>
-              <label className="block mb-2">Signer</label>
-              {/* <select
-                onChange={(e) => setMnemonic(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-700 rounded"
-              >
-                <option disabled selected={true} value={""}>
-                  {" "}
-                  -- Select Signer --{" "}
-                </option>
-                {accounts.map((account, i) => (
-                  <option key={i} value={account.mnemonic}>
-                    Account {i + 1}
-                  </option>
-                ))}
-              </select> */}
-              <Select
-                onChange={(e: any) => {
-                  const [mnemonic, address] = e.value?.split(":");
-                  setMnemonic(mnemonic);
-                  setAddress(address);
-                }}
-                className="cursor-pointer"
-                placeholder="Select Address"
-                styles={{
-                  placeholder: (provided: any) => ({
-                    ...provided,
-                    color: "#bdbfc3",
-                  }),
-                  control: (provided: any, state: any) => ({
-                    ...provided,
-                    cursor: "pointer",
-                    backgroundColor: "#303a49",
-                    borderColor: "#6b7280",
-                    color: "#e5e7eb",
-                    "&:hover": {
-                      borderColor: "#305a49",
-                    },
-                  }),
-                  singleValue: (provided: any) => ({
-                    ...provided,
-                    color: "#e5e7eb",
-                  }),
-                  menu: (provided: any) => ({
-                    ...provided,
-                    backgroundColor: "#111827",
-                    color: "#e5e7eb",
-                  }),
-                  option: (provided: any, state: any) => ({
-                    ...provided,
-                    backgroundColor: state.isSelected
-                      ? "bg-gray-600"
-                      : "bg-gray-800",
-                    "&:hover": {
-                      backgroundColor: "#14b8a6",
-                    },
-                    color: "#e5e7eb",
-                  }),
-                }}
-                options={accounts.map((account, i) => ({
-                  label: `Account ${i + 1}`,
-                  options: [
-                    {
-                      value: `${account.mnemonic}:${account.p2wpkh}`,
-                      label: `${account.p2wpkh} (P2WPKH)`,
-                    },
-                    {
-                      value: `${account.mnemonic}:${account.p2tr}`,
-                      label: `${account.p2tr} (P2TR)`,
-                    },
-                  ],
-                }))}
-              />
+        <div className="flex w-full">
+          <div className="w-2/3 pr-4">
+            <div className="bg-white-1 p-3 rounded-lg">
+              <h2 className="text-xl font-bold">Transaction Builder</h2>
             </div>
+            <form className="mt-2">
+              <div className="bg-white-1 p-3 rounded-lg space-y-4">
+                <div>
+                  <label className="block mb-2 text-white-7 font-semibold text-sm tracking-wide">
+                    Signer
+                  </label>
+                  <Select
+                    onChange={(e: any) => {
+                      const [mnemonic, address] = e.value?.split(":");
+                      setMnemonic(mnemonic);
+                      setAddress(address);
+                    }}
+                    className="cursor-pointer"
+                    placeholder="Select Address"
+                    styles={{
+                      placeholder: (provided: any) => ({
+                        ...provided,
+                        color: "rgba(255,255,255,0.6)",
+                      }),
+                      input: (provided: any) => ({
+                        ...provided,
+                        color: "rgba(255,255,255,0.8)",
+                      }),
+                      control: (provided: any, state: any) => ({
+                        ...provided,
+                        cursor: "pointer",
+                        backgroundColor: "rgba(255,255,255,0.05)",
+                        borderColor: "rgba(255,255,255,0.1)",
+                        borderRadius: "0.5rem",
+                        boxShadow: "none !important",
+                        "*": {
+                          boxShadow: "none !important",
+                          fontWeight: "semibold",
+                        },
+                        "&:hover": {
+                          borderColor: "rgba(255,255,255,0.4)",
+                        },
+                      }),
+                      singleValue: (provided: any) => ({
+                        ...provided,
+                        color: "#e5e7eb",
+                      }),
+                      menu: (provided: any) => ({
+                        ...provided,
+                        backgroundColor: "var(--black-2)",
+                        color: "#e5e7eb",
+                      }),
+                      option: (provided: any, state: any) => ({
+                        ...provided,
+                        fontWeight: "semibold",
+                        backgroundColor: state.isSelected
+                          ? "var(--black-3)"
+                          : "",
+                        color: state.isSelected
+                          ? "rgba(255,255,255,1)"
+                          : "rgba(255,255,255,0.7)",
+                        "&:hover": {
+                          backgroundColor: "var(--black-3)",
+                          color: "rgba(255,255,255,1)",
+                        },
+                      }),
+                    }}
+                    options={accounts.map((account, i) => ({
+                      label: `Account ${i + 1}`,
+                      options: [
+                        {
+                          value: `${account.mnemonic}:${account.p2wpkh}`,
+                          label: `${account.p2wpkh} (P2WPKH)`,
+                        },
+                        {
+                          value: `${account.mnemonic}:${account.p2tr}`,
+                          label: `${account.p2tr} (P2TR)`,
+                        },
+                      ],
+                    }))}
+                  />
+                </div>
 
-            <div>
-              <label className="block mb-2">Input</label>
-              <select
-                disabled={address === ""}
-                className="w-full px-3 py-2 bg-gray-700 rounded"
-                onChange={(e) => setUtxo(JSON.parse(e.target.value))}
-              >
-                <option disabled selected={true}>
-                  -- Select Input --
-                </option>
-                {inputs.map((_utxo, i) => (
-                  <option key={i} value={JSON.stringify(_utxo)}>
-                    {_utxo.txid} - {_utxo.value} sats
-                  </option>
-                ))}
-              </select>
-            </div>
+                <div>
+                  <label className="block mb-2">Input</label>
+                  <Select
+                    isDisabled={address === ""}
+                    onChange={(e: any) => setUtxo(JSON.parse(e.value))}
+                    className="cursor-pointer"
+                    placeholder="-- Select Input --"
+                    isSearchable={false}
+                    styles={SelectStyles}
+                    options={inputs.map((_utxo) => ({
+                      label: `${_utxo.txid} - ${_utxo.value} sats`,
+                      value: JSON.stringify(_utxo),
+                    }))}
+                  />
+                </div>
 
-            <div>
-              <label className="block mb-2">Output</label>
-              <select
-                disabled={!utxo}
-                onChange={(e) => setOutputType(e.target.value)}
-                className="w-full px-3 py-2 bg-gray-700 rounded"
-              >
-                <option disabled selected={true}>
-                  -- Address/Script --
-                </option>
-                <option value={"address"}>Address</option>
-                <option value={"script"}>Script</option>
-              </select>
-            </div>
-            {outputType === "address" && (
-              <div>
-                <label className="block mb-2">Input Address</label>
-                <input
-                  value={addressOutput}
-                  onChange={(e) => setAddressOutput(e.target.value)}
-                  type="text"
-                  className="w-full px-3 py-2 bg-gray-700 rounded"
-                />
+                <div>
+                  <label className="block mb-2">Output</label>
+                  <Select
+                    isDisabled={!utxo}
+                    onChange={(e: any) => setOutputType(e.value)}
+                    className="cursor-pointer"
+                    placeholder="-- Address/Script --"
+                    isSearchable={false}
+                    styles={SelectStyles}
+                    options={TX_OUTPUT_OPTIONS}
+                  />
+                </div>
+                {outputType === "address" && (
+                  <div>
+                    <label className="block mb-2">Input Address</label>
+                    <input
+                      value={addressOutput}
+                      onChange={(e) => setAddressOutput(e.target.value)}
+                      type="text"
+                      className="w-full px-3 py-2 bg-gray-700 rounded"
+                    />
+                  </div>
+                )}
+                {outputType === "script" && (
+                  <div>
+                    <label className="block mb-2">Custom Script</label>
+                    <div
+                      ref={scriptRef}
+                      className="w-full rounded-sm border border-gray-700 overflow-auto break-words"
+                    />
+                  </div>
+                )}
+
+                <div>
+                  <label className="block mb-2">Amount</label>
+                  <input
+                    disabled={outputType === ""}
+                    value={amount}
+                    onChange={(e) => setAmount(parseInt(e.target.value))}
+                    type="number"
+                    className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                  />
+                </div>
               </div>
-            )}
-            {outputType === "script" && (
-              <div>
-                <label className="block mb-2">Custom Script</label>
-                <div
-                  ref={scriptRef}
-                  className="w-full rounded-sm border border-gray-700 overflow-auto break-words"
-                />
-              </div>
-            )}
 
-            <div>
-              <label className="block mb-2">Amount</label>
-              <input
-                value={amount}
-                onChange={(e) => setAmount(parseInt(e.target.value))}
-                type="number"
-                className="w-full px-3 py-2 bg-gray-700 rounded"
-              />
-            </div>
-            <div className="flex space-x-2">
-              <button
-                disabled={!outputType}
-                onClick={onSignTransaction}
-                type="button"
-                className="w-full py-2 bg-teal-500 disabled:bg-teal-700 rounded"
-              >
-                Sign Transaction
-              </button>
-              <button
-                disabled={hex === ""}
-                onClick={onBroadcast}
-                type="button"
-                className="w-full py-2 bg-teal-500 disabled:bg-teal-700 rounded"
-              >
-                Broadcast
-              </button>
-            </div>
-          </form>
+              <div className="mt-2 flex items-center bg-white-1 p-3 rounded-lg space-x-2">
+                <div className="w-1/3 flex font-semibold text-white-7">
+                  <div className="w-[120px]">
+                    <p>Rate</p>
+                    <p>Gas Fee</p>
+                  </div>
+                  <div>
+                    <p>
+                      <span className="text-white-9">100</span> Sats/vByte
+                    </p>
+                    <p>
+                      <span className="text-white-9">100,000</span> Sats
+                    </p>
+                  </div>
+                </div>
+                <div className="w-2/3 flex justify-end space-x-4">
+                  <button
+                    disabled={!outputType}
+                    onClick={onSignTransaction}
+                    type="button"
+                    className="flex px-4 items-center py-2 disabled:cursor-not-allowed rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 disabled:opacity-50"
+                  >
+                    <div>
+                      <IconSign size={20} color="rgba(255,255,255,0.7)" />
+                    </div>
+                    <p className="pl-1 whitespace-nowrap font-semibold">
+                      Sign Transaction
+                    </p>
+                  </button>
+                  <button
+                    disabled={hex === ""}
+                    onClick={onBroadcast}
+                    type="button"
+                    className="flex px-4 items-center py-2 disabled:select-none disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1"
+                  >
+                    <div>
+                      <IconBroadcast size={24} color="rgba(255,255,255,0.7)" />
+                    </div>
+                    <p className="pl-1 whitespace-nowrap font-semibold">
+                      Broadcast
+                    </p>
+                  </button>
+                </div>
+              </div>
+            </form>
+          </div>
+
+          <HistorySidebar transactions={transactions} />
         </div>
       </main>
-
-      {/* History Sidebar */}
-      <HistorySidebar transactions={transactions} />
 
       <ToastContainer hideProgressBar={true} theme="light" />
     </div>
