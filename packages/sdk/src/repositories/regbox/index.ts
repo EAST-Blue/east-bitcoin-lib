@@ -18,7 +18,7 @@ export class RegboxAPI {
       body: JSON.stringify({ address, amount }),
     });
 
-    return await res.json();
+    return;
   }
 
   async generateBlock(nblocks: number): Promise<void> {
