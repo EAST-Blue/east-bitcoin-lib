@@ -9,7 +9,7 @@ module.exports = withNextra({
       {
         source: '/',
         destination: '/eastlayer',
-        permanent: true
+        permanent: false
       }
     ]
   }
