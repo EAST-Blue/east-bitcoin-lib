@@ -1,4 +1,6 @@
 {
     "index": "Introduction",
-    "setup_your_bitcoin_regtest": ""
+    "run_your_own_node": "Run your own node",
+    "architecture": "Architecture",
+    "solution": "Solution"
 }

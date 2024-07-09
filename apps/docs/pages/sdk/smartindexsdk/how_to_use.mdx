@@ -1,0 +1,78 @@
+# How to use
+
+## Setup
+
+First you need to create your AssemblyScript project.
+
+On your project directory, do
+
+```sh
+npm init
+npm install --save-dev assemblyscript
+npx asinit .
+npm install --save-dev @east-bitcoin-lib/smartindex-sdk
+```
+
+## Imports
+
+On your assembly/index.ts file, imports all the functions and classes required
+
+```ts
+import {
+  valueReturn,
+  Column,
+  ptrToString,
+  getResultFromJson,
+  getTxUTXOByBlockHeight,
+  Table,
+  getUTXOByTransactionHash,
+} from "east-wasm-sdk/assembly";
+export { allocate } from "east-wasm-sdk/assembly/external";
+```
+
+## Using the Table class
+
+Unlike other smart contract, on Smart Index you can use abstracted SQL table.
+
+```ts
+const transactionsTable = new Table("transactions", [
+  new Column("coin", "string"),
+  new Column("from", "string"),
+  new Column("to", "string"),
+  new Column("amount", "int64"),
+]);
+
+// create the table
+transactionsTable.init("");
+
+// insert new data
+transactionsTable.insert([
+  new Column("coin", coinName),
+  new Column("from", ""),
+  new Column("to", from),
+  new Column("amount", amount),
+]);
+
+// retrieve data
+const coinName: string = getResultFromJson(
+  transactionsTable.select([new Column("to", "...")]),
+  "coinName",
+  "string"
+);
+```
+
+## Getting bitcoin data
+
+By block height
+
+```ts
+const blockHeight = 100;
+const utxos = getTxUTXOByBlockHeight(blockHeight);
+```
+
+By transaction hash
+
+```ts
+const txHash = "...";
+const utxos = getUTXOByTransactionHash(txHash);
+```
