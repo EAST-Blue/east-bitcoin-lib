@@ -1,7 +1,10 @@
 {
   "name": "@east-bitcoin-lib/api",
   "version": "0.0.1",
-  "private": true,
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
   "scripts": {

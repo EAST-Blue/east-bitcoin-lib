@@ -1,6 +1,6 @@
 {
   "name": "@east-bitcoin-lib/cli",
-  "version": "0.0.1",
+  "version": "0.0.3",
   "private": false,
   "publishConfig": {
     "access": "public"
@@ -17,8 +17,10 @@
   "dependencies": {
     "@aws-crypto/sha256-browser": "^5.2.0",
     "@east-bitcoin-lib/sdk": "*",
+    "@east-bitcoin-lib/api": "*",
     "async-retry": "^1.3.3",
     "borsh": "^2.0.0",
+    "commander": "^12.1.0",
     "ecpair": "^2.1.0"
   },
   "devDependencies": {
