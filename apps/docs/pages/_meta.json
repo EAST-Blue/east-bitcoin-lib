@@ -1,23 +1,14 @@
 {
-  "index": "Introduction",
-  "setup_your_bitcoin_regtest": "",
-  "-- Eastlayer": {
-    "type": "separator",
+  "eastlayer": {
+    "type": "page",
     "title": "Eastlayer"
   },
-  "eastlayer-introduction": "Introduction",
-  "eastlayer-solution": "Solution",
-  "eastlayer-architecture": "Architecture",
-  "eastlayer-runyourownnode": "Run your own node",
-  "-- SDK": {
-    "type": "separator",
+  "sdk": {
+    "type": "page",
     "title": "SDK"
   },
-  "smartindexsdk": "Smart Index SDK",
-  "bitcoinsdk": "Bitcoin SDK",
-  "-- East PSBT Builder": {
-    "type": "separator",
-    "title": "East PSBT Builder"
-  },
-  "eastpsbtui": "Satforge"
+  "satforge": {
+    "type": "page",
+    "title": "Satforge"
+  }
 }
