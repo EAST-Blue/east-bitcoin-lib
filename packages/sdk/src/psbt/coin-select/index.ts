@@ -30,7 +30,7 @@ export const FEE_TX_OUTPUT_SEGWIT = 22;
 export const FEE_TX_OUTPUT_SEGWIT_SCRIPTHASH = 34;
 export const FEE_TX_OUTPUT_TAPROOT = 34;
 
-export type CoinSelectArgs = {
+export type CoinSelectParams = {
   network: Network;
   inputs: Input[];
   outputs: Output[];
@@ -42,6 +42,10 @@ export type CoinSelectArgs = {
 export type InputBytesData = {
   redeemScript?: Buffer;
   unlockScript?: Buffer;
+};
+
+export type OutputBytesData = {
+  script?: Buffer;
 };
 
 // highly inspired by https://github.com/bitcoinjs/coinselect & https://github.com/joundy/bitcoin-utxo-select
@@ -62,7 +66,7 @@ export class CoinSelect {
     feeRate,
     changeOutput,
     autoUtxo,
-  }: CoinSelectArgs) {
+  }: CoinSelectParams) {
     this.network = network;
     this.inputs = inputs;
     this.outputs = outputs;
@@ -123,7 +127,7 @@ export class CoinSelect {
     return bytes;
   }
 
-  private outputBytes(outputType: OutputType) {
+  private outputBytes(outputType: OutputType, data?: OutputBytesData) {
     let bytes = FEE_TX_OUTPUT_BASE;
 
     switch (outputType) {
@@ -140,9 +144,13 @@ export class CoinSelect {
         bytes += FEE_TX_OUTPUT_TAPROOT;
         break;
       case "op_return":
-        bytes += FEE_TX_OUTPUT_TAPROOT;
+        if (!data?.script) {
+          throw new Error(
+            "errors.script is required when calculating op_return output"
+          );
+        }
+        bytes += data.script.byteLength;
         break;
-      // throw new Error("errors.fee output op_return is not implemented yet");
 
       default:
         throw new Error("errors.fee output is not implemented yet");
@@ -166,10 +174,17 @@ export class CoinSelect {
         }
         return prev + this.inputBytes(input.utxo.type);
       }, 0) +
-      this.outputs.reduce(
-        (prev, output) => prev + this.outputBytes(output.output.type),
-        0
-      )
+      this.outputs.reduce((prev, output) => {
+        if (output.output.type === "op_return") {
+          return (
+            prev +
+            this.outputBytes(output.output.type, {
+              script: output.output.script,
+            })
+          );
+        }
+        return prev + this.outputBytes(output.output.type);
+      }, 0)
     );
   }
 
@@ -192,24 +207,14 @@ export class CoinSelect {
 
     for (const utxo of utxos) {
       let utxoBytes;
-      switch (true) {
-        case this.autoUtxo.from instanceof P2pkhAutoUtxo:
-          utxoBytes = this.inputBytes(this.autoUtxo.from.address.type);
-          break;
-        case this.autoUtxo.from instanceof P2shAutoUtxo:
-          utxoBytes = this.inputBytes(this.autoUtxo.from.address.type, {
-            redeemScript: this.autoUtxo.from.redeemScript,
-            unlockScript: this.autoUtxo.from.unlockScript,
-          });
-          break;
-        case this.autoUtxo.from instanceof P2wpkhAutoUtxo:
-          utxoBytes = this.inputBytes(this.autoUtxo.from.address.type);
-          break;
-        case this.autoUtxo.from instanceof P2trAutoUtxo:
-          utxoBytes = this.inputBytes(this.autoUtxo.from.address.type);
-          break;
-        default:
-          throw new Error("errors.select from source is not implemented yet");
+
+      if (this.autoUtxo.from instanceof P2shAutoUtxo) {
+        utxoBytes = this.inputBytes(this.autoUtxo.from.address.type, {
+          redeemScript: this.autoUtxo.from.redeemScript,
+          unlockScript: this.autoUtxo.from.unlockScript,
+        });
+      } else {
+        utxoBytes = this.inputBytes(this.autoUtxo.from.address.type);
       }
 
       const utxoFee = this.feeRate * utxoBytes;

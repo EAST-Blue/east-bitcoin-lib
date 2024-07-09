@@ -13,13 +13,13 @@ import { StackScripts } from "../script";
 
 export type AddressPathType = "legacy" | "nested-segwit" | "segwit" | "taproot";
 
-export type WalletGetPathArgs = {
+export type WalletGetPathParams = {
   type: AddressPathType;
   network: Network;
   index: number;
 };
 
-export type WalletArgs = {
+export type WalletParams = {
   mnemonic?: string;
   network: Network;
 };
@@ -30,7 +30,7 @@ export class Wallet {
 
   masterNode: BIP32Interface;
 
-  constructor({ mnemonic, network }: WalletArgs) {
+  constructor({ mnemonic, network }: WalletParams) {
     if (!mnemonic) {
       mnemonic = Wallet.generateMnemonic();
     }
@@ -46,7 +46,7 @@ export class Wallet {
     return bip39.generateMnemonic();
   }
 
-  static getPath({ type, network, index }: WalletGetPathArgs) {
+  static getPath({ type, network, index }: WalletGetPathParams) {
     let coinType = 1;
     if (network === "mainnet") {
       coinType = 0;

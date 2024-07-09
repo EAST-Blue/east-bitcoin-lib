@@ -1,7 +1,12 @@
-import { AddressAutoUtxo, AddressType, AddressUtxo, AddressUtxoArgs } from ".";
+import {
+  AddressAutoUtxo,
+  AddressType,
+  AddressUtxo,
+  AddressUtxoParams,
+} from ".";
 import { BitcoinUTXO } from "../repositories/bitcoin/types";
 
-export type P2wpkhUtxoArgs = AddressUtxoArgs & {
+export type P2wpkhUtxoParams = AddressUtxoParams & {
   witness: {
     script: Buffer;
     value: number;
@@ -16,7 +21,7 @@ export class P2wpkhUtxo extends AddressUtxo {
     value: number;
   };
 
-  constructor({ txid, vout, witness }: P2wpkhUtxoArgs) {
+  constructor({ txid, vout, witness }: P2wpkhUtxoParams) {
     super({ txid, vout });
     this.witness = witness;
   }
@@ -33,4 +38,4 @@ export class P2wpkhUtxo extends AddressUtxo {
   }
 }
 
-export class P2wpkhAutoUtxo extends AddressAutoUtxo {}
+export class P2wpkhAutoUtxo extends AddressAutoUtxo { }

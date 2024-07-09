@@ -1,0 +1,24 @@
+{
+  "name": "@east-bitcoin-lib/api",
+  "version": "0.0.1",
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+  },
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b ./tsconfig.build.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@east-bitcoin-lib/sdk": "*",
+    "ecpair": "^2.1.0",
+    "@aws-crypto/sha256-browser": "^5.2.0",
+    "borsh": "^2.0.0"
+  },
+  "devDependencies": {
+    "@east-bitcoin-lib/eslint-config": "*",
+    "@east-bitcoin-lib/typescript-config": "*"
+  }
+}

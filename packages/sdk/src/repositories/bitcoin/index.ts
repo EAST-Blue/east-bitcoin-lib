@@ -1,7 +1,7 @@
 import { Network } from "../../types";
 import { APIUrl, BitcoinUTXO } from "./types";
 
-export type BitcoinAPIAbstractArgs = {
+export type BitcoinAPIAbstractParams = {
   network: Network;
   apiUrl: APIUrl;
 };
@@ -10,7 +10,7 @@ export abstract class BitcoinAPIAbstract {
   protected readonly network: Network;
   protected readonly apiUrl: APIUrl;
 
-  constructor({ network, apiUrl }: BitcoinAPIAbstractArgs) {
+  constructor({ network, apiUrl }: BitcoinAPIAbstractParams) {
     this.network = network;
     this.apiUrl = apiUrl;
   }
@@ -26,7 +26,7 @@ export abstract class BitcoinAPIAbstract {
 
   abstract getTransactionHex(txId: string): Promise<string>;
 
-  abstract brodcastTx(txHex: string): Promise<void>;
+  abstract brodcastTx(txHex: string): Promise<string>;
   abstract recommendedFee(): Promise<void>;
 }
 
