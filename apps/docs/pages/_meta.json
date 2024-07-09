@@ -1,15 +1,14 @@
 {
-  "index": "Introduction",
-  "setup_your_bitcoin_regtest": "",
-  "-- SDK": {
-    "type": "separator",
+  "eastlayer": {
+    "type": "page",
+    "title": "Eastlayer"
+  },
+  "sdk": {
+    "type": "page",
     "title": "SDK"
   },
-  "assemblysdk": "Assembly SDK",
-  "bitcoinsdk": "Bitcoin SDK",
-  "-- East PSBT Builder": {
-    "type": "separator",
-    "title": "East PSBT Builder"
-  },
-  "eastpsbtui": "Satforge"
+  "satforge": {
+    "type": "page",
+    "title": "Satforge"
+  }
 }
