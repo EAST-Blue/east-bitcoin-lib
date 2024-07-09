@@ -5,7 +5,8 @@
     "type": "separator",
     "title": "SDK"
   },
-  "eastsdk": "Bitcoin SDK",
+  "assemblysdk": "Assembly SDK",
+  "bitcoinsdk": "Bitcoin SDK",
   "-- East PSBT Builder": {
     "type": "separator",
     "title": "East PSBT Builder"
