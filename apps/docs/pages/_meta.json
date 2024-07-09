@@ -8,11 +8,12 @@
   "eastlayer-introduction": "Introduction",
   "eastlayer-solution": "Solution",
   "eastlayer-architecture": "Architecture",
+  "eastlayer-runyourownnode": "Run your own node",
   "-- SDK": {
     "type": "separator",
     "title": "SDK"
   },
-  "assemblysdk": "Assembly SDK",
+  "smartindexsdk": "Smart Index SDK",
   "bitcoinsdk": "Bitcoin SDK",
   "-- East PSBT Builder": {
     "type": "separator",
