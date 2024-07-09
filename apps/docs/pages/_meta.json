@@ -1,6 +1,13 @@
 {
   "index": "Introduction",
   "setup_your_bitcoin_regtest": "",
+  "-- Eastlayer": {
+    "type": "separator",
+    "title": "Eastlayer"
+  },
+  "eastlayer-introduction": "Introduction",
+  "eastlayer-solution": "Solution",
+  "eastlayer-architecture": "Architecture",
   "-- SDK": {
     "type": "separator",
     "title": "SDK"
