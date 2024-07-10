@@ -22,8 +22,8 @@ const config: DocsThemeConfig = {
   },
   docsRepositoryBase: 'https://github.com',
   footer: {
-    text: '',
-  },
+    component: null
+  }
 }
 
 export default config
