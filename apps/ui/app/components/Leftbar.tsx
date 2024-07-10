@@ -44,7 +44,7 @@ const NavLink = ({
 const Leftbar = ({ active }: { active: string }) => {
   return (
     <aside className="w-[200px] bg-white bg-opacity-10 p-4 rounded-r-lg">
-      <div className="text-2xl font-bold mb-6">Satforge</div>
+      <div className="text-2xl font-bold mb-6">Satsforge</div>
       <nav className="flex flex-col space-y-2 font-semibold">
         <NavLink active={active} name="transaction" href="/">
           Transactions
