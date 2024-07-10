@@ -1,5 +1,5 @@
 {
-  "name": "@east-bitcoin-lib/docs",
+  "name": "@east-bitcoin-lib/ui",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -9,11 +9,22 @@
     "lint": "eslint . --max-warnings 0"
   },
   "dependencies": {
+    "@east-bitcoin-lib/sdk": "*",
+    "@fortawesome/fontawesome-free": "^6.5.2",
+    "@prisma/client": "5.16.1",
+    "@tailwindcss/forms": "^0.5.7",
+    "axios": "^1.7.2",
+    "bip39": "^3.1.0",
+    "bitcoinjs-lib": "^6.1.5",
+    "ecpair": "^2.1.0",
     "next": "^14.1.1",
-    "nextra": "^2.13.4",
-    "nextra-theme-docs": "^2.13.4",
+    "prism-code-editor": "^3.3.1",
     "react": "^18.2.0",
-    "react-dom": "^18.2.0"
+    "react-dom": "^18.2.0",
+    "react-select": "^5.8.0",
+    "react-toastify": "^10.0.5",
+    "sqlite3": "^5.1.7",
+    "timeago.js": "^4.0.2"
   },
   "devDependencies": {
     "@east-bitcoin-lib/eslint-config": "*",
@@ -23,7 +34,10 @@
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.61",
     "@types/react-dom": "^18.2.19",
+    "autoprefixer": "^10.4.19",
     "eslint": "^8.57.0",
+    "postcss": "^8.4.38",
+    "tailwindcss": "^3.4.3",
     "typescript": "^5.3.3"
   }
 }

@@ -1,0 +1,33 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = "file:./dev.db"
+}
+
+model Account {
+  id Int @id @default(autoincrement())
+  mnemonic String @unique
+  p2wpkh String @unique
+  p2tr String @unique
+}
+
+model Network {
+  id Int @id @default(autoincrement())
+  network String
+  uri String
+  explorer String
+  regbox String
+}
+
+model Transaction {
+  id Int @id @default(autoincrement())
+  address String
+  network String
+  hex String
+  txid String
+  amount Int
+  createdAt Float
+}
