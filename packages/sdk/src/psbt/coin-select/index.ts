@@ -106,7 +106,7 @@ export class CoinSelect {
       case "p2sh":
         if (!data?.redeemScript || !data?.unlockScript) {
           throw new Error(
-            "errors.redeemScript & unlockScript is required when calculating p2sh input",
+            "errors.redeemScript & unlockScript is required when calculating p2sh input"
           );
         }
         bytes +=
@@ -146,7 +146,7 @@ export class CoinSelect {
       case "op_return":
         if (!data?.script) {
           throw new Error(
-            "errors.script is required when calculating op_return output",
+            "errors.script is required when calculating op_return output"
           );
         }
         bytes += data.script.byteLength;
@@ -202,7 +202,7 @@ export class CoinSelect {
     }
 
     const utxos = await this.autoUtxo.api.bitcoin.getUTXOs(
-      this.autoUtxo.from.address.address,
+      this.autoUtxo.from.address.address
     );
 
     for (const utxo of utxos) {
@@ -243,7 +243,7 @@ export class CoinSelect {
           this.inputs.push({
             utxo: await P2pkhUtxo.fromBitcoinUTXO(
               this.autoUtxo.api.bitcoin,
-              utxo,
+              utxo
             ),
             value: utxo.value,
           });
@@ -269,7 +269,7 @@ export class CoinSelect {
           this.inputs.push({
             utxo: await P2trUtxo.fromBitcoinUTXO(
               utxo,
-              this.autoUtxo.from.tapInternalKey,
+              this.autoUtxo.from.tapInternalKey
             ),
             value: utxo.value,
           });

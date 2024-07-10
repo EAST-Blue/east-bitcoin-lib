@@ -1,0 +1,47 @@
+## Usage
+
+In this section, you will learn how to use the East PSBT UI Builder.
+
+1. Go to satforge page [satforge.eastblue.io](https://satforge.eastblue.io)
+
+2. Go to the **Config** page to configure Bitcoin Node URL. 
+If you don't have your own node, you can use East Regnet for configuration.
+    - URI : ```https://blockstream-electrs-api.regnet.btc.eastlayer.io```
+    - Explorer: ```https://explorer.regnet.btc.eastlayer.io```
+    - Regbox: ```https://regbox.regnet.btc.eastlayer.io```
+
+3. Create signer account in **Account** page, or you can import your own mnemonic.
+<figure> <img src="/satforge-figure1.png" /> </figure>
+
+4. By default, each new account will have 0 BTC. Click the **Three Dots** on the right side and click **Faucet** to get some BTC. Wait few seconds for the balance to arrive on the account.
+
+5. Go to **Transaction** page to start create PSBT.
+
+6. Choose an address to act as a **Signer**
+<figure> <img src="/satforge-figure2.png" /> </figure>
+
+7. Choose one or multiple **UTXOs** as your input. 
+<figure> <img src="/satforge-figure3.png" /> </figure>
+
+8. There's 2 types of output. **Address** and **Script**. You can have multiple outputs in a single transaction.
+
+9. For output directly to an address, choose **Address** on the **Output** dropdown. 
+Type in the destination address and the amount you want to send.
+Click **Save**.
+<figure> <img src="/satforge-figure4.png" /> </figure>
+
+10. For output to a script, choose **Script** on the **Output** dropdown.
+And a simple code editor will popup. You can write any opcodes for bitcoin transaction there.
+_The image below will show an example on how you create an **OP_RETURN** script_
+<figure> <img src="/satforge-figure5.png" /> </figure>
+
+11. Click the **Sign Transaction** button to actually sign the transaction using the chosen **Signer** key.
+
+12. Now the **Broadcast** will be enabled to send the transaction on to the blockchain.
+<figure> <img src="/satforge-figure6.png" /> </figure>
+
+13. If all went well, new record on **History** should appear. Click the right side button to see transaction on the bitcoin explorer.
+<figure> <img src="/satforge-figure7.png" /> </figure>
+
+14. It should show the detail of the transaction that has been created.
+<figure> <img src="/satforge-figure8.png" /> </figure>

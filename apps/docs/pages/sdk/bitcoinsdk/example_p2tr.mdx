@@ -1,0 +1,123 @@
+## Example P2TR
+This section will cover on how to use the Bitcoin SDK for building a transaction using P2TR address.
+Suppose you already know what every line means, so in this section there will be no comment explaining every single line.
+
+### P2TR PSBT Example
+```js copy
+import { Address, P2trUtxo, BElectrsAPI, PSBT } from east-bitcoin-lib
+
+const main = async () => {
+
+    const bitcoinApi = new BElectrsAPI({
+        network: "regtest",
+        apiUrl: {
+            "regtest": "https://blockstream-electrs-api.regnet.btc.eastlayer.io" // east regtest uri
+        }
+    })
+    const utxos = await bitcoinApi.getUTXOs("your bitcoin address . . . ") // fetch available utxo
+    const confirmedUtxos = utxos.filter((utxo) => utxo.status.confirmed === true) || []; // filter only confirmed
+
+    const utxo = confirmedUtxos[0] // take first confirmed utxo for example purpose
+
+    const p = new PSBT({
+        network: "regtest", // regtest | testnet | mainnet
+        inputs: [
+            {
+                utxo: await P2trUtxo.fromBitcoinUtxo(utxo), // parse bitcoin utxo into P2tr utxo type
+                value: utxo.value
+            }
+        ],
+        ouputs: [
+            {
+                output: Address.fromString("bitcoin address here . . ."), // any bitcoin address to send to
+                value: 100000000 // amount in sats
+            }
+        ],
+        feeRate: 1,
+        changeOutput: Address.fromString("your bitcoin here . . ."), // this address will be used to send the remaining bitcoin
+    })
+
+    await p.build()
+    const psbt = p.toPSBT()
+
+    /** 
+        sign input with your keypair and finalize
+        this is the current best practice to handle multiple inputs signing
+        this can also handle multiple inputs with different address types
+    */
+    for (const [index, psbtInput] of p.inputs.entries()) {
+        switch (true) {
+        case psbtInput.utxo instanceof P2trUtxo:
+            psbt.signInput(index, wallet.p2tr(0).keypair);
+            psbt.finalizeInput(index);
+
+        default:
+            break;
+        }
+    }
+
+
+    const hex = psbt.extractTransaction().toHex() // turn tx into hex
+
+    const txid = await bitcoinApi.broadcastTx(hex) // broadcast transaction
+}
+```
+
+
+### P2TR PSBT Example with Custom Script Output
+```js copy
+import { Address, P2trUtxo, BElectrsAPI, PSBT, OpReturn, Script } from east-bitcoin-lib
+
+const bitcoinApi = new BElectrsAPI({
+    network: "regtest",
+    apiUrl: {
+        "regtest": "https://blockstream-electrs-api.regnet.btc.eastlayer.io" // east regtest uri
+    }
+})
+const utxos = await bitcoinApi.getUTXOs("your bitcoin address . . . ") // fetch available utxo
+const confirmedUtxos = utxos.filter((utxo) => utxo.status.confirmed === true) || []; // filter only confirmed
+
+const utxo = confirmedUtxos[0] // take first confirmed utxo for example purpose
+
+const p = new PSBT({
+    network: "regtest", // regtest | testnet | mainnet
+    inputs: [
+        {
+            utxo: await P2trUtxo.fromBitcoinUtxo(utxo), // parse bitcoin utxo into P2tr utxo type
+            value: utxo.value
+        }
+    ],
+    ouputs: [
+        {
+            output: new OpReturn({ dataScripts: [Script.encodeUTF8("HELLO_WORLD")] }) // this is for OP_RETURN output
+            value: 0 // value can be zero for OP_RETURN
+        }
+    ],
+    feeRate: 1,
+    changeOutput: Address.fromString("your bitcoin here . . ."), // this address will be used to send the remaining bitcoin
+})
+
+await p.build()
+const psbt = p.toPSBT()
+
+/** 
+    sign input with your keypair and finalize
+    this is the current best practice to handle multiple inputs signing
+    this can also handle multiple inputs with different address types
+*/
+for (const [index, psbtInput] of p.inputs.entries()) {
+    switch (true) {
+    case psbtInput.utxo instanceof P2trUtxo:
+        psbt.signInput(index, wallet.p2tr(0).keypair);
+        psbt.finalizeInput(index);
+        break
+
+    default:
+        break;
+    }
+}
+
+const hex = psbt.extractTransaction().toHex() // turn tx into hex
+
+const txid = await bitcoinApi.broadcastTx(hex) // broadcast transaction
+```
