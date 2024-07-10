@@ -6,6 +6,7 @@ import { Config } from "../../types";
 
 export class BitcoinContainer extends ContainerAbstract {
   config: Config;
+  execQueue?: any;
 
   constructor({ config }: BitcoinContainerParams) {
     super({
@@ -32,6 +33,12 @@ export class BitcoinContainer extends ContainerAbstract {
           container: "18444/tcp",
         },
       ],
+      volumeMappings: [
+        {
+          source: `${config.bitcoin.name}_data`,
+          target: "/home/bitcoin/.bitcoin",
+        },
+      ],
       socketPath: config.container.socketPath,
       printLog: config.container.printLog,
     });
@@ -40,13 +47,21 @@ export class BitcoinContainer extends ContainerAbstract {
   }
 
   private async execBitcoinCli(cmd: string[]) {
-    return this.execCommand([
-      "bitcoin-cli",
-      "-regtest",
-      `-rpcuser=${this.config.bitcoin.user}`,
-      `-rpcpassword=${this.config.bitcoin.password}`,
-      ...cmd,
-    ]) as Promise<string>;
+    // TODO: tech debt, this package (regbox) should be esm type
+    if (!this.execQueue) {
+      const PQueue = await import("p-queue");
+      this.execQueue = new PQueue.default({ concurrency: 1 });
+    }
+
+    return (await this.execQueue.add(() => {
+      return this.execCommand([
+        "bitcoin-cli",
+        "-regtest",
+        `-rpcuser=${this.config.bitcoin.user}`,
+        `-rpcpassword=${this.config.bitcoin.password}`,
+        ...cmd,
+      ]);
+    })) as Promise<string>;
   }
 
   private async checkNodeUntilReady() {
@@ -56,7 +71,7 @@ export class BitcoinContainer extends ContainerAbstract {
       try {
         await this.execBitcoinCli(["getrpcinfo"]);
         return;
-      } catch {}
+      } catch { }
     }
   }
 
@@ -68,17 +83,39 @@ export class BitcoinContainer extends ContainerAbstract {
   }
 
   async generateBlocks(nblocks: number) {
+    this.logger(`generating ${nblocks} blocks`);
     const result = await this.execBitcoinCli(["-generate", nblocks.toString()]);
     return JSON.parse(result) as GenerateAddress;
   }
 
   async getBalance() {
+    this.logger(`getting the balance`);
     const result = await this.execBitcoinCli(["getbalance"]);
     return parseInt(result, 10);
   }
 
   async sendToAddress(address: string, amount: number) {
+    this.logger(`send ${amount} btc to ${address}`);
     await this.execBitcoinCli(["sendtoaddress", address, amount.toString()]);
+  }
+
+  private async loadWallet() {
+    const walletDir = JSON.parse(
+      await this.execBitcoinCli(["listwalletdir"]),
+    ) as {
+      wallets: { name: string }[];
+    };
+    const isWalletExist = walletDir.wallets.find((wallet) => {
+      return wallet.name === this.config.bitcoin.wallet;
+    });
+
+    if (isWalletExist) {
+      this.logger(`use exising wallet: ${this.config.bitcoin.wallet}`);
+      await this.execBitcoinCli(["loadwallet", this.config.bitcoin.wallet]);
+    } else {
+      this.logger(`creating new  wallet: ${this.config.bitcoin.wallet}`);
+      await this.execBitcoinCli(["createwallet", this.config.bitcoin.wallet]);
+    }
   }
 
   logger(log: string) {
@@ -88,8 +125,7 @@ export class BitcoinContainer extends ContainerAbstract {
   async waitUntilReady() {
     await this.checkNodeUntilReady();
 
-    this.logger(`creating initial wallet: ${this.config.bitcoin.wallet}`);
-    await this.execBitcoinCli(["createwallet", this.config.bitcoin.wallet]);
+    await this.loadWallet();
 
     // miner should wait until the next 100 block to spend the balance.
     // this should give 50 * 10 BTC to the wallet.

@@ -45,7 +45,7 @@ function main() {
     .option(
       "-r, --rpc-url [RPC_URL]",
       "Eastchain RPC URL",
-      "http://127.0.0.1:3000"
+      "https://rpc.testnet.eastlayer.io",
     )
     .addOption(
       new Option(

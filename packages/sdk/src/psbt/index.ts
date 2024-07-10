@@ -1,8 +1,8 @@
-import { Psbt, payments, script } from "bitcoinjs-lib";
+import { Psbt, Signer, payments, script } from "bitcoinjs-lib";
 import { Address, P2pkhUtxo, P2trUtxo, P2wpkhUtxo } from "../addresses";
 import { bitcoinJsNetwork } from "../utils";
 import { CoinSelect, CoinSelectParams } from "./coin-select";
-import { Input, Output } from "./types";
+import { Input, Output, SignedInputInfo } from "./types";
 import { OpReturn } from "../addresses/opReturn";
 import { P2shUtxo } from "../addresses/p2sh";
 import { StackScripts } from "../script";
@@ -18,7 +18,7 @@ export class PSBT extends CoinSelect {
     outputs,
     feeRate,
     changeOutput,
-    autoUtxo: utxoSelect,
+    autoUtxo,
   }: PSBTParams) {
     super({
       network,
@@ -26,7 +26,7 @@ export class PSBT extends CoinSelect {
       outputs,
       feeRate,
       changeOutput,
-      autoUtxo: utxoSelect,
+      autoUtxo,
     });
 
     this.psbt = new Psbt({
@@ -106,15 +106,64 @@ export class PSBT extends CoinSelect {
     }
   }
 
+  get signedInputsInfo(): SignedInputInfo {
+    const signedIndexes: number[] = [];
+    const notSignedIndexes: number[] = [];
+
+    let i = 0;
+    for (const input of this.psbt.data.inputs) {
+      if (input.partialSig) {
+        signedIndexes.push(i);
+      } else {
+        notSignedIndexes.push(i);
+      }
+      i++;
+    }
+
+    return {
+      signedIndexes,
+      notSignedIndexes,
+    };
+  }
+
+  signAllInputs(signer: Signer, sighashTypes?: number[]) {
+    this.psbt.signAllInputs(signer, sighashTypes);
+  }
+
+  signInput(index: number, signer: Signer, sighashTypes?: number[]) {
+    this.psbt.signInput(index, signer, sighashTypes);
+  }
+
+  finalizeAllInputs() {
+    const signedInputsInfo = this.signedInputsInfo;
+    if (signedInputsInfo.notSignedIndexes.length > 0) {
+      throw new Error(
+        `errors.not all inputs are signed, indexes: ${signedInputsInfo.notSignedIndexes}`,
+      );
+    }
+
+    this.psbt.finalizeAllInputs();
+  }
+
+  finalizeScriptInput(index: number, unlockScript: StackScripts) {
+    this.psbt.finalizeInput(index, PSBT.finalScript(unlockScript));
+  }
+
   toPSBT() {
     return this.psbt;
   }
 
-  toHex() {
+  toHex(extractTx = true) {
+    if (extractTx) {
+      this.psbt.extractTransaction();
+    }
     return this.psbt.toHex();
   }
 
-  toBase64() {
+  toBase64(extractTx = true) {
+    if (extractTx) {
+      this.psbt.extractTransaction();
+    }
     return this.psbt.toBase64();
   }
 

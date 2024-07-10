@@ -1,0 +1,51 @@
+# Core Components
+Eastlayer aims to be a future-proof solution for managing and interacting with Bitcoin data.
+
+## Consensus
+Eastlayer utilizes a Byzantine Fault Tolerant (BFT)-based consensus mechanism, which is further reinforced by the Bitcoin Network. As part of the block proposal stage, Eastlayer stores the latest Bitcoin hash in the block header. This integration ensures that all nodes maintain the latest Bitcoin state, thereby guaranteeing data integrity across both Eastlayer and Bitcoin.
+<br />
+
+<figure>
+    <img src="/eastlayer-figure1.png" />
+    <figcaption><center>**Figure 1** BFT consensus with block header contains latest Bitcoin hash</center></figcaption>
+</figure>
+
+This design choice also provides an additional layer of protection, particularly against potential block reorganizations from Bitcoin. In such cases, the network can resolve the issue by rolling back the state to the latest known Bitcoin hash on Eastlayer, ensuring the continuous integrity and consistency of the data.
+<br />
+
+<figure>
+    <img src="/eastlayer-figure2.png" />
+    <figcaption><center>**Figure 2** Eastlayer is able to handle to Bitcoin reorgs</center></figcaption>
+</figure>
+
+## Bitcoin Light Client
+Eastnode, the node implementation for Eastlayer, runs a Bitcoin light client. Eastnode connects to the Bitcoin network in a trustless manner, ensuring that all interactions are secure and verifiable. The Bitcoin data is then stored in an SQL database, facilitating fast retrieval and enabling custom queries necessary for advanced indexing logic. This approach ensures that developers can efficiently access and utilize Bitcoin data within the Eastlayer ecosystem.
+
+<figure>
+    <img src="/eastlayer-figure3.png" />
+    <figcaption><center>**Figure 3** Eastnode runs Bitcoin Light Client</center></figcaption>
+</figure>
+
+## WASM
+Eastlayer leverages WebAssembly (WASM) to provide a flexible and powerful runtime environment. Developers can write custom indexing logic and create custom metaprotocols using WASM. The pull-based architecture of Eastlayer ensures that more generalized actions and transactions can occur, encompassing data indexing and the management of virtual states. This flexibility allows for the creation of highly specialized applications and services within the Eastlayer framework.
+
+<figure>
+    <img src="/eastlayer-figure4.png" />
+    <figcaption><center>**Figure 4** Pull-based architecture for custom data indexing</center></figcaption>
+</figure>
+
+## Database
+The use of SQL in Eastlayer is a strategic choice, given its popularity and effectiveness in managing structured data. SQL's ability to handle complex queries and its standardized language make it ideal for applications requiring robust data management capabilities. Eastlayer's database is using Prolly Trees (Probabilistic B-Trees) as the basis of a version controlled system SQL database that operates similar to git, allowing data to be reverted easily to any previous state. 
+
+<figure>
+    <img src="/eastlayer-figure5.png" />
+    <figcaption><center>**Figure 5** Eastlayer decouple the blockchain and database engine</center></figcaption>
+</figure>
+
+## Gateway
+The Eastlayer Gateway facilitates communication between clients and the network. It operates via Remote Procedure Call (RPC), acting as an interface that allows multiple clients to interact with Eastlayer's states and Bitcoin data.
+
+<figure>
+    <img src="/eastlayer-figure6.png" />
+    <figcaption><center>**Figure 6** Query transaction with WASM interface via RPC</center></figcaption>
+</figure>

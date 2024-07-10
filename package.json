@@ -8,6 +8,7 @@
     "format": "prettier --write \"**/*.{ts,tsx,md}\""
   },
   "devDependencies": {
+    "@changesets/cli": "^2.27.7",
     "@east-bitcoin-lib/eslint-config": "*",
     "@east-bitcoin-lib/typescript-config": "*",
     "prettier": "^3.2.5",

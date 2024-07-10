@@ -51,11 +51,10 @@ async function psbtBuilderP2tr() {
   });
 
   await p.build();
-  const psbt = p.toPSBT();
+  p.signAllInputs(p2tr.keypair);
+  p.finalizeAllInputs();
 
-  psbt.signAllInputs(p2tr.keypair);
-  const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
-  console.log({ hex });
+  console.log({ hex: p.toHex(true) });
 }
 
 async function psbtBuilderP2sh() {
@@ -95,13 +94,8 @@ async function psbtBuilderP2sh() {
   });
 
   await p.build();
-  const psbt = p.toPSBT();
-
-  const hex = psbt
-    .finalizeInput(0, PSBT.finalScript(unlockScripts))
-    .extractTransaction()
-    .toHex();
-  console.log({ hex });
+  p.finalizeScriptInput(0, unlockScripts);
+  console.log({ hex: p.toHex(true) });
 }
 
 async function psbtBuilderP2wpkhOpReturn() {
@@ -143,11 +137,10 @@ async function psbtBuilderP2wpkhOpReturn() {
   });
 
   await p.build();
-  const psbt = p.toPSBT();
+  p.signAllInputs(p2wpkh.keypair);
+  p.finalizeAllInputs();
 
-  psbt.signAllInputs(p2wpkh.keypair);
-  const hex = psbt.finalizeAllInputs().extractTransaction().toHex();
-  console.log({ hex });
+  console.log({ hex: p.toHex(true) });
 }
 
 async function main() {

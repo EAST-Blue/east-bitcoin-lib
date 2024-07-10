@@ -77,7 +77,7 @@ export function containersPortInfo(containers: ContainerAbstract[]) {
 }
 
 export function parseArgToNumber(arg: string): number {
-  const result = parseInt(arg, 10);
+  const result = parseFloat(arg);
   if (isNaN(result)) {
     throw new Error(`errors.argument ${arg} is  not a number`);
   }

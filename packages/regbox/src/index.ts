@@ -1,4 +1,5 @@
 import express from "express";
+import { rateLimit } from "express-rate-limit";
 import cors from "cors";
 import {
   BitcoinContainer,
@@ -51,6 +52,23 @@ export async function regbox(config: Config) {
     await cleanUpContainers(containers);
     await startContainers(containers);
 
+    // auto mine/generate
+    if (config.server.autoMineInterval > 0) {
+      setInterval(async () => {
+        try {
+          await bitcoinContainer.generateBlocks(1);
+        } catch { }
+      }, config.server.autoMineInterval * 1000);
+    }
+
+    const serverLimiter = rateLimit({
+      windowMs: 1 * 60 * 1000, // 1 minute
+      limit: 10, // Limit each IP to 10 requests per `window` (here, per 1 minute).
+    });
+    if (config.server.rateLimit) {
+      server.use(serverLimiter);
+    }
+
     server.post("/generate", async (req, res) => {
       try {
         await generateValidator.validate(req.body, { strict: true });
@@ -79,6 +97,15 @@ export async function regbox(config: Config) {
         await sendToAddressValidator.validate(req.body, { strict: true });
         const address = req.body.address as string;
         const amount = req.body.amount as number;
+
+        if (amount > config.server.maxBTCToSend) {
+          res
+            .status(400)
+            .send(
+              `the amount value should be less than ${config.server.maxBTCToSend}`,
+            );
+          return;
+        }
 
         const result = await bitcoinContainer.sendToAddress(address, amount);
         res.send(result);

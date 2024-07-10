@@ -1,0 +1,14 @@
+{
+  "eastlayer": {
+    "type": "page",
+    "title": "Eastlayer"
+  },
+  "sdk": {
+    "type": "page",
+    "title": "SDK"
+  },
+  "satforge": {
+    "type": "page",
+    "title": "Satforge"
+  }
+}
