@@ -2,6 +2,17 @@ import React from 'react'
 import { DocsThemeConfig } from 'nextra-theme-docs'
 
 const config: DocsThemeConfig = {
+  useNextSeoProps() {
+    return {
+      titleTemplate: '%s - East'
+    }
+  },
+  feedback: {
+    content: null
+  },
+  editLink: {
+    component: null
+  },
   logo: <span>EAST</span>,
   project: {
     link: 'https://github.com',
@@ -11,7 +22,7 @@ const config: DocsThemeConfig = {
   },
   docsRepositoryBase: 'https://github.com',
   footer: {
-    text: 'Credit to Nextra Docs Template',
+    text: '',
   },
 }
 
