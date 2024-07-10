@@ -12,5 +12,9 @@ module.exports = withNextra({
         permanent: false
       }
     ]
+  },
+  output: 'export',
+  images: {
+    unoptimized: true
   }
 })
