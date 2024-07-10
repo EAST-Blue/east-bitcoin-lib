@@ -1,11 +1,11 @@
 {
-  "eastlayer": {
+  "learn": {
     "type": "page",
-    "title": "Eastlayer"
+    "title": "Learn"
   },
-  "sdk": {
+  "build": {
     "type": "page",
-    "title": "SDK"
+    "title": "Build"
   },
   "satsforge": {
     "type": "page",
