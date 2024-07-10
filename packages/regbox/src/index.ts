@@ -74,6 +74,11 @@ export async function regbox(config: Config) {
         await generateValidator.validate(req.body, { strict: true });
         const nblocks = req.body.nblocks as number;
 
+        if (config.server.rateLimit && nblocks > 1) {
+          res.status(400).send(`the nblocks value should be less than 1`);
+          return;
+        }
+
         const result = await bitcoinContainer.generateBlocks(nblocks);
         res.send(result);
       } catch (error) {
@@ -98,7 +103,7 @@ export async function regbox(config: Config) {
         const address = req.body.address as string;
         const amount = req.body.amount as number;
 
-        if (amount > config.server.maxBTCToSend) {
+        if (config.server.rateLimit && amount > config.server.maxBTCToSend) {
           res
             .status(400)
             .send(
