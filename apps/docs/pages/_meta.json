@@ -10,5 +10,9 @@
   "satsforge": {
     "type": "page",
     "title": "Satsforge"
+  },
+  "regnet": {
+    "type": "page",
+    "title": "RegNet"
   }
 }
