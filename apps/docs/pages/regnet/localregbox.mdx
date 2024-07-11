@@ -1,0 +1,64 @@
+# Using local Regbox
+
+There are number of reasons why developing locally is preferred (more customizable, confidential reasons, etc). If you intend to utilize RegNet on your personal machine, you should use the regbox. Ensure that **Docker** is installed on your machine beforehand.
+
+## Installing regbox
+
+```bash copy
+npm i -g @east-bitcoin-lib/regbox
+```
+
+## Running regbox
+
+```bash copy
+regbox start
+```
+
+### Output
+
+```bash
+$ regbox start
+cleaning up east_bitcoin_node
+cleaning up east_bitcoin_electrs
+cleaning up east_bitcoin_explorer
+starting east_bitcoin_node
+checking image docker.io/ruimarinho/bitcoin-core:24
+use exising image docker.io/ruimarinho/bitcoin-core:24
+creating network east_regbox
+connecting network into east_bitcoin_node
+checking east_bitcoin_node
+creating new  wallet: east
+generating first 110 blocks
+generating 110 blocks
+send 1 btc to mrfaXzS5GkffJ7w7aHqheqTi81CGAgW3QL
+send 1 btc to 2N7XtNcP6xr4ZDCksqP1QvU9FyfaBXh2VGG
+send 1 btc to bcrt1q3a34qdsw4dd7ye4fdvzut88tcjgz76d8gkjqdd
+send 1 btc to bcrt1pxc8kgrxdlzvclef9fnfd7nslmval2xlgg30nxw06hl86j4lml50sauyyat
+send 1 btc to n4o6eQLiDk8S4Y75aqxeBqhW3jXa9VWkXM
+send 1 btc to 2NF1x6SNoZRbtAYT1hGNwZk7cuAHYsguU3p
+send 1 btc to bcrt1q63062x9c98g025gttswwpmjk49wcysk5jeh4pd
+send 1 btc to bcrt1pny8rwj0j4xnlgmqkx8hqmf0tdx7zdh5y0u7w0te65j79n00a584sxupumd
+generating 1 blocks
+east_bitcoin_node is ready
+starting east_bitcoin_electrs
+checking image docker.io/eastbluehq/blockstream-electrs:v1.0.1
+use exising image docker.io/eastbluehq/blockstream-electrs:v1.0.1
+use exising network east_regbox
+connecting network into east_bitcoin_electrs
+checking east_bitcoin_electrs
+east_bitcoin_electrs is ready
+starting east_bitcoin_explorer
+checking image docker.io/eastbluehq/janoside-btc-rpc-explorer:v3.4.0
+use exising image docker.io/eastbluehq/janoside-btc-rpc-explorer:v3.4.0
+use exising network east_regbox
+connecting network into east_bitcoin_explorer
+east_bitcoin_explorer is ready
+┌───────────────────────┬─────────────┐
+│ name                  │ ports       │
+├───────────────────────┼─────────────┤
+│ server                │ 8080        │
+│ east_bitcoin_node     │ 18443,18444 │
+│ east_bitcoin_electrs  │ 3002,60401  │
+│ east_bitcoin_explorer │ 3000        │
+└───────────────────────┴─────────────┘
+```

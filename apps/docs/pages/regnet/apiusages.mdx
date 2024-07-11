@@ -1,0 +1,56 @@
+# API Usages
+
+You can directly call the API or use the Bitcoin SDK. To use the SDK, install the package `@east-bitcoin-lib/sdk` on your project.
+
+```bash copy
+npm install --save-dev @east-bitcoin-lib/sdk
+```
+
+## Auxiliary API
+
+### Faucet
+
+Using the API
+
+```ts
+const address = "...";
+const amount = 0.01;
+
+await fetch(`https://regbox.regnet.btc.eastlayer.io/send-to-address`, {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({ address, amount }),
+});
+```
+
+Using the SDK
+
+```ts
+import { RegboxAPI } from "@east-bitcoin-lib/sdk";
+
+const regboxUrl = "https://regbox.regnet.btc.eastlayer.io";
+const regboxApi = new RegboxAPI({ url: regboxUrl });
+const address = "...";
+const amount = 0.01;
+
+regboxApi.getFaucet(address, amount);
+```
+
+## Electrum API
+
+Electrum API provides many different APIs, like getting transactions, addresses, mempool. Visit https://github.com/Blockstream/esplora/blob/master/API.md for the list of APIs.
+
+### Broadcast tx using SDK
+
+```ts
+import { BElectrsAPI } from "@east-bitcoin-lib/sdk";
+const bitcoinApi = new BElectrsAPI({
+    network: "regtest", // regtest | testnet | mainnet
+    apiUrl: {
+    regtest: "https://blockstream-electrs-api.regnet.btc.eastlayer.io",
+    },
+});
+bitcoinApi.brodcastTx(" <transaction hex here . . .> ");
+```

@@ -11,18 +11,18 @@ You need to have these installed on your system:
 ## Installation
 1. Before running your own Eastnode, you must clone the eastnode repository and install regbox.
 
-```bash
+```bash copy
 git clone https://github.com/EAST-Blue/eastnode
 ```
 
-```bash
+```bash copy
 npm i -g @east-bitcoin-lib/regbox
 ```
 
 
 ## Build
 Next, build the Eastnode binary
-```bash
+```bash copy
 cd eastnode
 go build -o build/node cmd/node/main.go
 ```
@@ -30,12 +30,12 @@ go build -o build/node cmd/node/main.go
 ## Start
 
 Start the regbox and wait for all the containers to run
-```bash
+```bash copy
 regbox start
 ```
 
 Start the Eastnode
-```bash
+```bash copy
 cd eastnode
 ./build/node
 ```
