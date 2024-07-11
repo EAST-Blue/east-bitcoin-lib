@@ -31,8 +31,8 @@ const AccountCard = ({
     if (!uri) return;
 
     const [p2wpkh, p2tr] = await Promise.all([
-      fetch(`api/address?uri=${uri}&address=${account.p2wpkh}`),
-      fetch(`api/address?uri=${uri}&address=${account.p2tr}`),
+      fetch(`${uri}/address/${account.p2wpkh}`),
+      fetch(`${uri}/address/${account.p2tr}`),
     ]);
 
     const dataP2wpkh = await p2wpkh.json();

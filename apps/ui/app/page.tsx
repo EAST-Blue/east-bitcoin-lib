@@ -29,9 +29,7 @@ import "prism-code-editor/prism/languages/nasm";
 import "prism-code-editor/layout.css";
 import "prism-code-editor/scrollbar.css";
 import "./prism-style.css";
-import "prism-code-editor/languages/asm";
 import { Input, Output } from "@east-bitcoin-lib/sdk/dist/psbt/types";
-import { parseScript } from "./utils/parseOpcode";
 import { OpReturn } from "@east-bitcoin-lib/sdk/dist/addresses/opReturn";
 import HistorySidebar from "./components/HitsorySidebar";
 import { ToastContainer, toast } from "react-toastify";
@@ -561,6 +559,7 @@ export default function Page(): JSX.Element {
                   <div className="relative inline-block text-left">
                     <div className="flex">
                       <button
+                        disabled={hex === ""}
                         onClick={onBroadcast}
                         type="button"
                         className="flex px-4 rounded-r-none items-center py-2 disabled:select-none disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1"
@@ -573,14 +572,15 @@ export default function Page(): JSX.Element {
                           Broadcast
                         </p>
                       </button>
-                      <span
+                      <button
+                        disabled={hex === ""}
                         onClick={() =>
                           setIsBroadcastDropdown(!isBroadcastDropdown)
                         }
                         className="flex px-4 rounded-l-none items-center py-2 disabled:select-nlne cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-2"
                       >
                         ▾
-                      </span>
+                      </button>
                     </div>
                     <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-[#262626] ring-1 ring-black ring-opacity-5 focus:outline-none">
                       <div

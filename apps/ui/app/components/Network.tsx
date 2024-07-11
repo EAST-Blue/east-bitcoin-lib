@@ -1,3 +1,5 @@
+"use client";
+
 import Link from "next/link";
 import { useConfigContext } from "../contexts/ConfigContext";
 import { NetworkConfigType } from "../types/ConfigType";
