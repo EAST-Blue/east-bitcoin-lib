@@ -1,19 +1,20 @@
 "use client";
 
 import React, { useState } from "react";
+import ButtonCopy from "./ButtonCopy";
+import { copyToClipboard } from "../utils/copyToClipboard";
 
-const ImportAccountModal = ({
+const SignedTxModal = ({
   isOpen,
   onClose,
-  onSave,
+  hex,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (mnemonic: string) => void;
+  hex: string;
 }) => {
-  const [inputValue, setInputValue] = useState("");
-
   if (!isOpen) return null;
+  if (hex === "") return null;
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -28,24 +29,22 @@ const ImportAccountModal = ({
           </button>
         </div>
         <div className="mb-4">
-          <label className="block text-gray-400 mb-2">Mnemonic Phrase</label>
+          <label className="block text-gray-400 mb-2">Transaction Hex</label>
           <textarea
             rows={4}
             className="w-full px-3 border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
-            value={inputValue}
-            onChange={(e) => setInputValue(e.target.value)}
+            value={hex}
           />
         </div>
-        <div className="flex justify-end">
+        <div className="flex justify-end gap-x-2">
+          <ButtonCopy onClick={() => copyToClipboard(hex)} />
           <button
             className="flex px-4 items-center py-2 disabled:cursor-not-allowed rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 disabled:opacity-50"
             onClick={() => {
-              onSave(inputValue);
               onClose();
-              setInputValue("");
             }}
           >
-            Save
+            Close
           </button>
         </div>
       </div>
@@ -53,4 +52,4 @@ const ImportAccountModal = ({
   );
 };
 
-export default ImportAccountModal;
+export default SignedTxModal;

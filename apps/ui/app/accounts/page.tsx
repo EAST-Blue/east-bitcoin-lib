@@ -16,13 +16,14 @@ import AccountCard from "../components/AccountCard";
 import IconSign from "../icons/iconSign";
 import IconPlus from "../icons/IconPlus";
 import IconImport from "../icons/IconImport";
+import { copyToClipboard } from "../utils/copyToClipboard";
 
 const Account = () => {
   const { accounts, fetchAccounts } = useAccountContext() as AccountContextType;
   const { uri, regbox } = useConfigContext() as NetworkConfigType;
 
   const [isImportAccountModalOpen, setIsImportAccountModalOpen] =
-    useState<boolean>(false);
+    useState(false);
   const [showOptions, setShowOptions] = useState<AccountType | null>(null);
 
   const toastInvalidMnemonic = () => {
@@ -31,12 +32,6 @@ const Account = () => {
   const toastOnFaucet = () => {
     toast.success(<p>Faucet sent. Wait for automatic confirmation</p>, {
       autoClose: 1500,
-    });
-  };
-
-  const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text).catch((err) => {
-      console.error("Could not copy text: ", err);
     });
   };
 

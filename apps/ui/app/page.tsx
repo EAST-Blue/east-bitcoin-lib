@@ -41,6 +41,7 @@ import IconBroadcast from "./icons/IconBroadcast";
 import { SelectStyles, TX_OUTPUT_OPTIONS } from "./utils/constant";
 import { prettyTruncate } from "./utils/prettyTruncate";
 import IconPlus from "./icons/IconPlus";
+import SignedTxModal from "./components/SignedTxModal";
 
 export default function Page(): JSX.Element {
   const { accounts } = useAccountContext() as AccountContextType;
@@ -56,6 +57,8 @@ export default function Page(): JSX.Element {
   const [amount, setAmount] = useState<number>(0);
   const [hex, setHex] = useState<string>("");
   const [transactions, setTransactions] = useState([]);
+  const [isBroadcastDropdown, setIsBroadcastDropdown] = useState(false);
+  const [isSignedTxModalOpen, setIsSignedTxModalOpen] = useState(false);
 
   const toastSignedTransaction = () => {
     toast.info(<p>Transaction Signed. Please broadcast the transaction.</p>);
@@ -299,6 +302,8 @@ export default function Page(): JSX.Element {
   const onRemoveOutput = (index: number) => {
     setOutputs((output) => output.filter((_, i) => i !== index));
   };
+
+  const onGenerateCode = () => {};
 
   return (
     <div className="flex min-h-screen bg-black text-white overflow-hidden">
@@ -552,19 +557,58 @@ export default function Page(): JSX.Element {
                       Sign Transaction
                     </p>
                   </button>
-                  <button
-                    disabled={hex === ""}
-                    onClick={onBroadcast}
-                    type="button"
-                    className="flex px-4 items-center py-2 disabled:select-none disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1"
-                  >
-                    <div>
-                      <IconBroadcast size={24} color="rgba(255,255,255,0.7)" />
+
+                  <div className="relative inline-block text-left">
+                    <div className="flex">
+                      <button
+                        onClick={onBroadcast}
+                        type="button"
+                        className="flex px-4 rounded-r-none items-center py-2 disabled:select-none disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1"
+                      >
+                        <IconBroadcast
+                          size={24}
+                          color="rgba(255,255,255,0.7)"
+                        />
+                        <p className="pl-1 whitespace-nowrap font-semibold">
+                          Broadcast
+                        </p>
+                      </button>
+                      <span
+                        onClick={() =>
+                          setIsBroadcastDropdown(!isBroadcastDropdown)
+                        }
+                        className="flex px-4 rounded-l-none items-center py-2 disabled:select-nlne cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-2"
+                      >
+                        ▾
+                      </span>
                     </div>
-                    <p className="pl-1 whitespace-nowrap font-semibold">
-                      Broadcast
-                    </p>
-                  </button>
+                    <div className="absolute right-0 mt-2 w-48 rounded-md shadow-lg bg-[#262626] ring-1 ring-black ring-opacity-5 focus:outline-none">
+                      <div
+                        className={`py-1 ${isBroadcastDropdown ? "" : "hidden"}`}
+                      >
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setIsSignedTxModalOpen(true);
+                          }}
+                          className="flex items-center px-4 py-2 w-full text-white hover:bg-gray-700 focus:outline-none hover:rounded-t-md"
+                        >
+                          <i className="fa fa-key px-2"></i>
+                          Get Signed Tx
+                        </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            onGenerateCode();
+                          }}
+                          className="flex items-center px-4 py-2 w-full text-white hover:bg-gray-700 focus:outline-none hover:rounded-b-md"
+                        >
+                          <i className="fa fa-code px-2"></i>
+                          Generate Code
+                        </button>
+                      </div>
+                    </div>
+                  </div>
                 </div>
               </div>
             </form>
@@ -575,6 +619,13 @@ export default function Page(): JSX.Element {
       </main>
 
       <ToastContainer hideProgressBar={true} theme="light" />
+      <SignedTxModal
+        isOpen={isSignedTxModalOpen}
+        onClose={() => {
+          setIsSignedTxModalOpen(false);
+        }}
+        hex={hex}
+      />
     </div>
   );
 }
