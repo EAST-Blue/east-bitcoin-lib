@@ -17,9 +17,9 @@ export const ConfigContextProvider = ({
 }) => {
   const [config, setConfig] = useState({
     network: "regtest",
-    uri: null,
-    explorer: null,
-    regbox: null,
+    uri: "https://blockstream-electrs-api.regnet.btc.eastlayer.io",
+    explorer: "https://explorer.regnet.btc.eastlayer.io",
+    regbox: "https://regbox.regnet.btc.eastlayer.io",
   });
 
   const fetchConfig = async () => {

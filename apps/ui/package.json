@@ -4,9 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev --port 3001",
-    "build": "prisma db push && next build",
+    "build": "prisma db push && prisma db seed && next build",
     "start": "next start",
     "lint": "eslint . --max-warnings 0"
+  },
+  "prisma": {
+    "seed": "ts-node --compiler-options {\"module\":\"CommonJS\"} prisma/seed.ts"
   },
   "dependencies": {
     "@east-bitcoin-lib/sdk": "*",
@@ -19,6 +22,7 @@
     "ecpair": "^2.1.0",
     "next": "^14.1.1",
     "prism-code-editor": "^3.3.1",
+    "prisma": "^5.16.2",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
     "react-select": "^5.8.0",
