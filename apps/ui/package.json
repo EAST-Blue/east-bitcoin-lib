@@ -28,7 +28,8 @@
     "react-select": "^5.8.0",
     "react-toastify": "^10.0.5",
     "sqlite3": "^5.1.7",
-    "timeago.js": "^4.0.2"
+    "timeago.js": "^4.0.2",
+    "ts-node": "^10.9.2"
   },
   "devDependencies": {
     "@east-bitcoin-lib/eslint-config": "*",

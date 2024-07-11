@@ -30,7 +30,7 @@ const Account = () => {
     toast.error(<p>Mnemonic Invalid</p>, { autoClose: 1500 });
   };
   const toastOnFaucet = () => {
-    toast.success(<p>Faucet sent. Wait for automatic confirmation</p>, {
+    toast.success(<p>Sending coin. Wait for automatic confirmation</p>, {
       autoClose: 1500,
     });
   };
