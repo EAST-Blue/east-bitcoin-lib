@@ -2,7 +2,6 @@ import {
   API,
   Address,
   BElectrsAPI,
-  OrdAPI,
   P2shAutoUtxo,
   P2trAutoUtxo,
   P2wpkhAutoUtxo,
@@ -21,7 +20,6 @@ const bitcoinaApi = new BElectrsAPI({
 const api = new API({
   network: "regtest",
   bitcoin: bitcoinaApi,
-  ord: new OrdAPI({ network: "regtest" }), // this still dummy
 });
 
 async function psbtBuilderP2tr() {
@@ -31,6 +29,7 @@ async function psbtBuilderP2tr() {
     network: "regtest",
   });
   const p2tr = wallet.p2tr(0);
+  console.log({ address: p2tr.address });
 
   // TODO: add minimum input and output value
   const p = new PSBT({
@@ -51,6 +50,7 @@ async function psbtBuilderP2tr() {
   });
 
   await p.build();
+
   p.signAllInputs(p2tr.keypair);
   p.finalizeAllInputs();
 
@@ -71,6 +71,7 @@ async function psbtBuilderP2sh() {
   const unlockScripts = [Script.encodeNumber(1000)];
 
   const p2sh = wallet.p2sh(lockScripts);
+  console.log({ address: p2sh.address });
 
   const p = new PSBT({
     network: "regtest",
@@ -94,7 +95,10 @@ async function psbtBuilderP2sh() {
   });
 
   await p.build();
-  p.finalizeScriptInput(0, unlockScripts);
+  p.inputs.forEach((_, i) => {
+    p.finalizeScriptInput(i, unlockScripts);
+  });
+
   console.log({ hex: p.toHex(true) });
 }
 
