@@ -25,7 +25,6 @@ import { BitcoinUTXO } from "@east-bitcoin-lib/sdk/dist/repositories/bitcoin/typ
 import { PSBTOutput } from "./types/OutputContextType";
 import { PrismEditor, createEditor } from "prism-code-editor";
 import "prism-code-editor/prism/languages/nasm";
-import "prism-code-editor/prism/languages/nasm";
 import "prism-code-editor/layout.css";
 import "prism-code-editor/scrollbar.css";
 import "./prism-style.css";
@@ -40,6 +39,30 @@ import { SelectStyles, TX_OUTPUT_OPTIONS } from "./utils/constant";
 import { prettyTruncate } from "./utils/prettyTruncate";
 import IconPlus from "./icons/IconPlus";
 import SignedTxModal from "./components/SignedTxModal";
+import GenerateCodeModal from "./components/GenerateCodeModal";
+
+const formatBuffer = (buffer: any[]) => {
+  console.log(buffer);
+  return `Buffer.from([${buffer.join(", ")}])`;
+};
+
+const formatInputs = (inputs: any[]) => {
+  return inputs.map((input) => {
+    if (input.utxo && input.utxo.witness && input.utxo.witness.script) {
+      input.utxo.witness.script = formatBuffer(input.utxo.witness.script.data);
+    }
+    return input;
+  });
+};
+
+const formatOutputs = (outputs: any[]) => {
+  return outputs.map((output) => {
+    if (output.output && output.output.script) {
+      output.output.script = formatBuffer(output.output.script.data);
+    }
+    return output;
+  });
+};
 
 export default function Page(): JSX.Element {
   const { accounts } = useAccountContext() as AccountContextType;
@@ -57,6 +80,9 @@ export default function Page(): JSX.Element {
   const [transactions, setTransactions] = useState([]);
   const [isBroadcastDropdown, setIsBroadcastDropdown] = useState(false);
   const [isSignedTxModalOpen, setIsSignedTxModalOpen] = useState(false);
+  const [isGenerateCodeModalOpen, setIsGenerateCodeModalOpen] = useState(false);
+  const [psbtInputs, setPsbtInputs] = useState<any[]>([]); // only used for generate client code
+  const [psbtOutputs, setPsbtOutputs] = useState<any[]>([]); // only used for generate client code
 
   const toastSignedTransaction = () => {
     toast.info(<p>Transaction Signed. Please broadcast the transaction.</p>);
@@ -115,13 +141,13 @@ export default function Page(): JSX.Element {
     });
 
     // Prepare inputs
-    const psbtInputs: Input[] = [];
+    const _psbtInputs: Input[] = [];
     for (const utxo of utxos) {
       const addressType: AddressType = getAddressType(utxo.address);
       switch (addressType) {
         case "p2wpkh":
           const p2wpkhUtxo = await P2wpkhUtxo.fromBitcoinUTXO(utxo);
-          psbtInputs.push({ utxo: p2wpkhUtxo, value: utxo.value });
+          _psbtInputs.push({ utxo: p2wpkhUtxo, value: utxo.value });
           break;
 
         case "p2tr":
@@ -130,7 +156,7 @@ export default function Page(): JSX.Element {
             utxo,
             p2tr.tapInternalKey
           );
-          psbtInputs.push({ utxo: p2trUtxo, value: utxo.value });
+          _psbtInputs.push({ utxo: p2trUtxo, value: utxo.value });
           break;
 
         default:
@@ -139,16 +165,16 @@ export default function Page(): JSX.Element {
     }
 
     // Prepare outputs
-    const pbstOutputs: Output[] = [];
+    const _pbstOutputs: Output[] = [];
     for (const output of outputs) {
       if (output.address) {
-        pbstOutputs.push({
+        _pbstOutputs.push({
           output: Address.fromString(output.address!),
           value: output.value,
         });
       } else if (output.script) {
         const bufferScript = output.script.split("OP_RETURN ");
-        pbstOutputs.push({
+        _pbstOutputs.push({
           output: new OpReturn({
             dataScripts: [Script.encodeUTF8(bufferScript[1]!)],
           }),
@@ -160,8 +186,8 @@ export default function Page(): JSX.Element {
     // Build PSBT
     const p = new PSBT({
       network: network as Network,
-      inputs: psbtInputs,
-      outputs: pbstOutputs,
+      inputs: _psbtInputs,
+      outputs: _pbstOutputs,
       feeRate: 1,
       changeOutput: Address.fromString(address),
     });
@@ -189,6 +215,10 @@ export default function Page(): JSX.Element {
     // Finalize Tx
     const _hex = psbt.extractTransaction().toHex();
     setHex(_hex);
+
+    // This is for code generator
+    setPsbtInputs(utxos);
+    setPsbtOutputs(outputs);
 
     toastSignedTransaction();
   };
@@ -301,7 +331,9 @@ export default function Page(): JSX.Element {
     setOutputs((output) => output.filter((_, i) => i !== index));
   };
 
-  const onGenerateCode = () => {};
+  const onGenerateCode = () => {
+    console.log(inputs, outputs);
+  };
 
   return (
     <div className="flex min-h-screen bg-black text-white overflow-hidden">
@@ -574,9 +606,10 @@ export default function Page(): JSX.Element {
                       </button>
                       <button
                         disabled={hex === ""}
-                        onClick={() =>
-                          setIsBroadcastDropdown(!isBroadcastDropdown)
-                        }
+                        onClick={(e) => {
+                          e.preventDefault();
+                          setIsBroadcastDropdown(!isBroadcastDropdown);
+                        }}
                         className="flex px-4 rounded-l-none items-center py-2 disabled:select-nlne cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-2"
                       >
                         ▾
@@ -599,7 +632,7 @@ export default function Page(): JSX.Element {
                         <button
                           onClick={(e) => {
                             e.preventDefault();
-                            onGenerateCode();
+                            setIsGenerateCodeModalOpen(true);
                           }}
                           className="flex items-center px-4 py-2 w-full text-white hover:bg-gray-700 focus:outline-none hover:rounded-b-md"
                         >
@@ -625,6 +658,102 @@ export default function Page(): JSX.Element {
           setIsSignedTxModalOpen(false);
         }}
         hex={hex}
+      />
+      <GenerateCodeModal
+        isOpen={isGenerateCodeModalOpen}
+        onClose={() => setIsGenerateCodeModalOpen(false)}
+        code={`
+import { Address, AddressType, Script, Wallet, P2wpkhUtxo, P2trUtxo, PSBT, getAddressType } from "@east-bitcoin-lib/sdk";
+import { Input, Output } from "@east-bitcoin-lib/sdk/dist/psbt/types";
+import { OpReturn } from "@east-bitcoin-lib/sdk/dist/addresses/opReturn";
+
+async function buildPSBT() {
+  const wallet = new Wallet({
+    mnemonic: "${mnemonic}",
+    network: "${network}"
+  });
+
+  const inputs = ${JSON.stringify(psbtInputs)}
+  const outputs = ${JSON.stringify(psbtOutputs)} as any[]
+
+  // Prepare inputs
+  const psbtInputs: Input[] = [];
+  for (const utxo of inputs) {
+    const addressType: AddressType = getAddressType(utxo.address);
+    switch (addressType) {
+      case "p2wpkh":
+        const p2wpkhUtxo = await P2wpkhUtxo.fromBitcoinUTXO(utxo);
+        psbtInputs.push({ utxo: p2wpkhUtxo, value: utxo.value });
+        break;
+
+      case "p2tr":
+        const p2tr = wallet.p2tr(0);
+        const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
+          utxo,
+          p2tr.tapInternalKey
+        );
+        psbtInputs.push({ utxo: p2trUtxo, value: utxo.value });
+        break;
+
+      default:
+        break;
+    }
+  }
+
+  // Prepare outputs
+  const psbtOutputs: Output[] = [];
+  for (const output of outputs) {
+    if (output.address) {
+      psbtOutputs.push({
+        output: Address.fromString(output.address!),
+        value: output.value,
+      });
+    } else if (output.script) {
+      const bufferScript = output.script.split("OP_RETURN ");
+      psbtOutputs.push({
+        output: new OpReturn({
+          dataScripts: [Script.encodeUTF8(bufferScript[1]!)],
+        }),
+        value: 546, // hardcoded value
+      });
+    }
+  }
+
+  const p = new PSBT({
+    network: "${network}",
+    inputs: psbtInputs,
+    outputs: psbtOutputs,
+    feeRate: 1,
+    changeOutput: ${address !== "" ? `Address.fromString("${address}")` : ""}
+  })
+
+  await p.build()
+  const psbt = p.toPSBT()
+
+  // Sign Inputs
+  for (const [index, psbtInput] of p.inputs.entries()) {
+    switch (true) {
+      case psbtInput.utxo instanceof P2wpkhUtxo:
+        psbt.signInput(index, wallet.p2wpkh(0).keypair);
+        psbt.finalizeInput(index);
+        break;
+
+      case psbtInput.utxo instanceof P2trUtxo:
+        psbt.signInput(index, wallet.p2tr(0).keypair);
+        psbt.finalizeInput(index);
+        break;
+
+      default:
+        break;
+    }
+  }
+  
+  // Generate Tx Hex
+  const hex = psbt.extractTransaction().toHex();
+  console.log(hex)
+}
+
+buildPSBT()`}
       />
     </div>
   );
