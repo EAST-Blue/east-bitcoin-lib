@@ -112,7 +112,12 @@ export class PSBT extends CoinSelect {
 
     let i = 0;
     for (const input of this.psbt.data.inputs) {
-      if (input.partialSig) {
+      if (
+        input.partialSig ||
+        input.tapKeySig ||
+        input.tapScriptSig ||
+        input.finalScriptSig
+      ) {
         signedIndexes.push(i);
       } else {
         notSignedIndexes.push(i);
@@ -155,7 +160,7 @@ export class PSBT extends CoinSelect {
 
   toHex(extractTx = true) {
     if (extractTx) {
-      this.psbt.extractTransaction();
+      return this.psbt.extractTransaction().toHex();
     }
     return this.psbt.toHex();
   }
