@@ -10,7 +10,7 @@ import "prism-code-editor/scrollbar.css";
 import "prism-code-editor/copy-button.css";
 import "../prism-style.css";
 
-const GenerateCodeModal = ({
+export default function GenerateCodeModal({
   isOpen,
   onClose,
   code,
@@ -18,9 +18,9 @@ const GenerateCodeModal = ({
   isOpen: boolean;
   onClose: () => void;
   code: string;
-}) => {
-  if (!isOpen) return null;
-  if (code === "") return null;
+}): JSX.Element {
+  if (!isOpen) return <></>;
+  if (code === "") return <></>;
 
   const scriptRef = useRef<HTMLDivElement>(null);
   const scriptEditorRef = useRef<PrismEditor>();
@@ -42,8 +42,6 @@ const GenerateCodeModal = ({
     insertText(editor, code);
     return editor.remove;
   }, [code]);
-
-  console.log(scriptRef);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -77,6 +75,4 @@ const GenerateCodeModal = ({
       </div>
     </div>
   );
-};
-
-export default GenerateCodeModal;
+}
