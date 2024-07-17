@@ -1,0 +1,41 @@
+# Run your own node
+
+## Prerequisites
+
+You need to have these installed on your system:
+1. Docker
+2. NPM and nodeJs
+3. Golang
+
+
+## Installation
+1. Before running your own Eastnode, you must clone the eastnode repository and install regbox.
+
+```bash copy
+git clone https://github.com/EAST-Blue/eastnode
+```
+
+```bash copy
+npm i -g @east-bitcoin-lib/regbox
+```
+
+
+## Build
+Next, build the Eastnode binary
+```bash copy
+cd eastnode
+go build -o build/node cmd/node/main.go
+```
+
+## Start
+
+Start the regbox and wait for all the containers to run
+```bash copy
+regbox start
+```
+
+Start the Eastnode
+```bash copy
+cd eastnode
+./build/node
+```

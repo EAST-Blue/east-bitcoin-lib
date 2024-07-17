@@ -1,5 +1,5 @@
 {
-  "name": "docs",
+  "name": "@east-bitcoin-lib/docs",
   "version": "1.0.0",
   "private": true,
   "scripts": {
@@ -10,13 +10,15 @@
   },
   "dependencies": {
     "next": "^14.1.1",
+    "nextra": "^2.13.4",
+    "nextra-theme-docs": "^2.13.4",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
-    "@next/eslint-plugin-next": "^14.1.1",
     "@east-bitcoin-lib/eslint-config": "*",
     "@east-bitcoin-lib/typescript-config": "*",
+    "@next/eslint-plugin-next": "^14.1.1",
     "@types/eslint": "^8.56.5",
     "@types/node": "^20.11.24",
     "@types/react": "^18.2.61",

@@ -1,0 +1,21 @@
+{
+  "name": "@east-bitcoin-lib/cli-tests",
+  "version": "0.0.1",
+  "private": true,
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "scripts": {
+    "build": "tsc -b ./tsconfig.build.json",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@east-bitcoin-lib/sdk": "*",
+    "bitcoinjs-lib": "^6.1.5",
+    "ecpair": "^2.1.0",
+    "tiny-secp256k1": "^2.2.3"
+  },
+  "devDependencies": {
+    "@east-bitcoin-lib/eslint-config": "*",
+    "@east-bitcoin-lib/typescript-config": "*"
+  }
+}

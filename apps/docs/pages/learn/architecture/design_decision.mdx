@@ -1,0 +1,18 @@
+# Design Decision
+The architecture is designed with the following considerations:
+
+1. Bitcoin-Centric Design  \
+**Security Integration**: Ensuring that the architecture leverages Bitcoin's security features to protect data stored on Eastlayer. \
+**Transaction Embedding**: Implementing a method to embed data transactions into the Bitcoin blockchain, ensuring immutability and timestamping. \
+**Resilience to Bitcoin Re-Orgs**: Developing mechanisms to mitigate the impact of Bitcoin reorganizations on data stored on Eastlayer.
+
+2. Adaptive & Forward-Compatible \
+**Flexibility**: Designing the data layer to accommodate various data types and structures, ensuring it can adapt to future data storage needs. \
+**Extensibility**: Building the system with the ability to easily integrate new features and functionalities to support evolving data requirements. \
+**Interoperability**: Ensuring compatibility with existing and future metaprotocol to facilitate seamless data exchange and integration. \
+**Programmable**: Providing tools and mechanisms for developers to transform and manipulate data from Bitcoin and store it on Eastlayer.
+
+3. Scalable Data Infrastructure \
+**Data Permanence**: Implementing redundant storage mechanisms to ensure that data is replicated across multiple nodes to ensure data permanence. \
+**Sharding**: Implementing data sharding techniques to distribute data across the storage network for improved scalability and performance. \
+**Reliability and Availability**: Designing the system to be reliable and available, even under high data loads.

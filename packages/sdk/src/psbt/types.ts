@@ -1,35 +1,31 @@
-import { OP_RETURN, P2PKH, P2TR, P2WPKH } from "../addresses/types";
-import { API } from "../repositories";
+import {
+  AddressType,
+  OpReturnType,
+  P2pkhUtxo,
+  P2trUtxo,
+  P2wpkhUtxo,
+} from "../addresses";
+import { Address } from "../addresses";
+import { OpReturn } from "../addresses/opReturn";
 
-export type AutoAdjustment = {
-  api: API;
-  feeRate: number;
-  changeOutput?: OutputAdreess;
-};
+export type UtxoInput = P2pkhUtxo | P2wpkhUtxo | P2trUtxo;
 
 export type Input = {
-  txid: string;
-  vout: number;
-  sighashType?: number;
+  utxo: UtxoInput;
+  value: number;
+};
+export type OutputOutput = Address | OpReturn;
+
+export type Output = {
+  output: Address | OpReturn;
+  value: number;
 };
 
-export type InputWitness = {
-  witness: {
-    script: Buffer;
-    value: number;
-  };
+export type InputType = AddressType;
+
+export type OutputType = AddressType | OpReturnType;
+
+export type SignedInputInfo = {
+  signedIndexes: number[];
+  notSignedIndexes: number[];
 };
-
-export type InputP2PKH = Input & {
-  transaction: Buffer;
-};
-
-export type InputP2WPKH = Input & InputWitness;
-
-export type InputP2TR = Input &
-  InputWitness & {
-    tapInternalKey: Buffer;
-  };
-
-export type InputAddress = InputP2WPKH | InputP2WPKH | InputP2TR;
-export type OutputAdreess = P2PKH | P2WPKH | P2TR | OP_RETURN;

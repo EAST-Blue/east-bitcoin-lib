@@ -1,0 +1,18 @@
+{
+  "learn": {
+    "type": "page",
+    "title": "Learn"
+  },
+  "build": {
+    "type": "page",
+    "title": "Build"
+  },
+  "satsforge": {
+    "type": "page",
+    "title": "Satsforge"
+  },
+  "regnet": {
+    "type": "page",
+    "title": "RegNet"
+  }
+}
