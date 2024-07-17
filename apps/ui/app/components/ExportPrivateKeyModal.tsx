@@ -8,13 +8,14 @@ export default function ExportPrivateKeyModal({
   isOpen,
   onClose,
   privateKey,
+  hexPrivateKey,
 }: {
   isOpen: boolean;
   onClose: () => void;
   privateKey: string;
+  hexPrivateKey: string;
 }): JSX.Element {
   if (!isOpen) return <></>;
-  console.log(privateKey);
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -37,10 +38,19 @@ export default function ExportPrivateKeyModal({
             value={privateKey}
             className="w-full h-[150px] border border-gray-700 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white p-2 overflow-auto"
           />
+          <ButtonCopy onClick={() => copyToClipboard(privateKey)} />
+        </div>
+        <div className="mb-4">
+          <label className="block text-gray-400 mb-2">Hex (Private Key)</label>
+          <textarea
+            readOnly
+            value={hexPrivateKey}
+            className="w-full h-[150px] border border-gray-700 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white p-2 overflow-auto"
+          />
+          <ButtonCopy onClick={() => copyToClipboard(hexPrivateKey)} />
         </div>
 
         <div className="flex justify-end gap-x-2">
-          <ButtonCopy onClick={() => copyToClipboard(privateKey)} />
           <button
             className="flex px-4 items-center py-2 disabled:cursor-not-allowed rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 disabled:opacity-50"
             onClick={() => {

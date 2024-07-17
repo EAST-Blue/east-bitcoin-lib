@@ -31,6 +31,7 @@ const AccountCard = ({
   const [p2trBalance, setP2trBalance] = useState<number>(0);
   const [isExportModalOpen, setIsExportModalOpen] = useState(false);
   const [privateKey, setPrivateKey] = useState("");
+  const [hexPrivateKey, sethexPrivateKey] = useState("");
 
   const getBalanceByAddress = async () => {
     if (!uri) return;
@@ -72,6 +73,7 @@ const AccountCard = ({
     });
     const wif = keyPair.toWIF();
     setPrivateKey(wif);
+    sethexPrivateKey(keyPair.privateKey?.toString("hex")!);
     return wif;
   };
 
@@ -183,6 +185,7 @@ const AccountCard = ({
         isOpen={isExportModalOpen}
         onClose={() => setIsExportModalOpen(false)}
         privateKey={privateKey}
+        hexPrivateKey={hexPrivateKey}
       />
     </div>
   );
