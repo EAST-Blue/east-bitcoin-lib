@@ -1,0 +1,39 @@
+# CLI
+
+The east-cli is utilized to deploy and execute call/view functions on the smart index.
+
+## Installation
+
+```bash
+npm i -g @east-bitcoin-lib/cli
+```
+
+## Environment
+
+Make sure that the RPC URL is correct, by default it will be set as `https://rpc.testnet.eastlayer.io`.
+
+Also ensure that you have provided your bitcoin private key. You can provide the private key using environment variable or by parameter.
+
+```bash
+export BITCOIN_PRIVATE_KEY=7c67...
+```
+
+## Example
+
+### Deploy
+
+```bash
+east-cli deploy build/release.wasm
+```
+
+### Call
+
+```bash
+east-cli call idx188srfrumg9dmemr2myeywtyz3cae index 1
+```
+
+### View
+
+```bash
+east-cli view idx188srfrumg9dmemr2myeywtyz3cae getIndexedBlock
+```
