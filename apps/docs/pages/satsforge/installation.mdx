@@ -1,19 +1,35 @@
 ## Installation
 
 This section will show you how to run Satsforge locally using the regtest network that have been installed in the previous section.
+
 1. Clone the repo
+
 ```bash copy
-git clone https://github.com/EAST-Blue/east-bitcoin-lib.git && cd east-bitcoin-lib/apps/ui
+git clone https://github.com/EAST-Blue/east-bitcoin-lib.git && cd east-bitcoin-lib
 ```
 
-2. Install dependencies
+2. Build east-bitcoin-lib
+
 ```bash copy
-yarn
+yarn build
 ```
 
-3. Run project
+3. Go to Satsforge directory
+
 ```bash copy
-yarn dev
+cd apps/ui
 ```
 
-4. Go to **[localhost:3001/psbt](http://localhost:3001/psbt)**
+4. Install and Build Satsforge
+
+```bash copy
+yarn && yarn build
+```
+
+5. Start Satsforge
+
+```bash copy
+yarn start
+```
+
+4. Go to **[localhost:3000](http://localhost:3000)**

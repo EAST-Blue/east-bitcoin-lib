@@ -5,6 +5,9 @@ import { AccountType } from "../types/Account";
 import { useConfigContext } from "../contexts/ConfigContext";
 import { NetworkConfigType } from "../types/ConfigType";
 import ButtonCopy from "./ButtonCopy";
+import ExportPrivateKeyModal from "./ExportPrivateKeyModal";
+import { ecpair, Network, Wallet } from "@east-bitcoin-lib/sdk";
+import { networks } from "bitcoinjs-lib";
 
 const AccountCard = ({
   index,
@@ -23,9 +26,12 @@ const AccountCard = ({
   copyToClipboard: (address: string) => void;
   onFaucet: (addresses: string[]) => void;
 }) => {
-  const { uri } = useConfigContext() as NetworkConfigType;
+  const { uri, network } = useConfigContext() as NetworkConfigType;
   const [p2wpkhBalance, setP2wpkhBalance] = useState<number>(0);
   const [p2trBalance, setP2trBalance] = useState<number>(0);
+  const [isExportModalOpen, setIsExportModalOpen] = useState(false);
+  const [privateKey, setPrivateKey] = useState("");
+  const [hexPrivateKey, sethexPrivateKey] = useState("");
 
   const getBalanceByAddress = async () => {
     if (!uri) return;
@@ -47,7 +53,32 @@ const AccountCard = ({
     return sats / SATOSHIS_IN_BITCOIN;
   };
 
+  const getPrivateKey = (): string => {
+    const wallet = new Wallet({
+      mnemonic: account.mnemonic,
+      network: network as Network,
+    });
+
+    let networkBuffer = undefined;
+    if (network === "regtest") {
+      networkBuffer = networks.regtest;
+    } else if (network === "testnet") {
+      networkBuffer = networks.testnet;
+    } else if (network === "mainnet") {
+      networkBuffer = networks.bitcoin;
+    }
+
+    const keyPair = ecpair.fromPrivateKey(wallet.masterNode.privateKey!, {
+      network: networkBuffer,
+    });
+    const wif = keyPair.toWIF();
+    setPrivateKey(wif);
+    sethexPrivateKey(keyPair.privateKey?.toString("hex")!);
+    return wif;
+  };
+
   useEffect(() => {
+    getPrivateKey();
     const timer = setInterval(() => {
       getBalanceByAddress();
     }, 1000);
@@ -73,7 +104,12 @@ const AccountCard = ({
             </button>
             {account.mnemonic === showOptions?.mnemonic && (
               <div className="absolute right-0 mt-2 w-48 bg-[#262626] border border-gray-500 rounded shadow-lg">
-                <button className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500">
+                <button
+                  onClick={() => {
+                    setIsExportModalOpen(true);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500"
+                >
                   Export Private Key
                 </button>
                 <button
@@ -144,6 +180,13 @@ const AccountCard = ({
           </div>
         </div>
       </div>
+
+      <ExportPrivateKeyModal
+        isOpen={isExportModalOpen}
+        onClose={() => setIsExportModalOpen(false)}
+        privateKey={privateKey}
+        hexPrivateKey={hexPrivateKey}
+      />
     </div>
   );
 };
