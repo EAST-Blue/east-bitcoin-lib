@@ -1,7 +1,26 @@
 # Example
 
-The following example is a Smart Index code that implements a simplified coin metaprotocol.
+The following is an example demonstrating how a simplified coin metaprotocol can be implemented using Smart Index.
 The metaprotocol uses OP_RETURN to put a structured operation to issue or transfer coin.
+
+### OP_RETURN specification
+
+```
+Data in the marker output        Description
+-------------------------        -------------------------
+0x6a                             The OP_RETURN opcode.
+0x43 0x4f 0x49 0x4e              The protocol signature "COIN"
+0x69 | 0x74                      Issue (0x69) or Transfer (0x74) action
+<TOKEN_NAME>                     Token name string
+0x5f                             Protocol delimiter
+<AMOUNT>                         Token amount in string
+```
+
+For example, if you want to create a coin named "DOG" with total supply 10000 you can set your script as `OP_RETURN COINiDOG_10000`. Then, to transfer 100 of that token do `OP_RETURN COINtDOG_100`, the token will be received by the address on the other outpoint.
+
+### Code
+
+Full implementation here https://github.com/EAST-Blue/example-op-return-coin
 
 ```ts
 import {
@@ -12,8 +31,8 @@ import {
   getTxUTXOByBlockHeight,
   Table,
   getUTXOByTransactionHash,
-} from "east-wasm-sdk/assembly";
-export { allocate } from "east-wasm-sdk/assembly/external";
+} from "@east-bitcoin-lib/smartindex-sdk/assembly";
+export { allocate } from "@east-bitcoin-lib/smartindex-sdk/assembly/external";
 import { decode } from "as-hex/assembly";
 
 const stateTable = new Table("state", [
@@ -94,7 +113,7 @@ export function index(number_of_blocks_ptr: i32): void {
       if (utxos[i].pkAsmScripts.length == 2) {
         if (utxos[i].pkAsmScripts[0] === "OP_RETURN") {
           const msg = decode(utxos[i].pkAsmScripts[1]);
-          if (msg.substr(0, 4) === "EAST") {
+          if (msg.substr(0, 4) === "COIN") {
             const command = msg.charAt(4);
             const args = msg.substr(5).split("_");
 
