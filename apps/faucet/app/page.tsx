@@ -11,31 +11,31 @@ import { RegboxAPI } from "@east-bitcoin-lib/sdk";
 import { useEffect, useState } from "react";
 import { format, render, cancel, register } from "timeago.js";
 
-export const openTwitterShare = () => {
-  var shareURL = `http://twitter.com/intent/tweet?text=Requesting 0.1 rBTC from RegNet Faucet by Eastlayer&url=https://faucet.regnet.eastlayer.io`;
-
-  const width = 600;
-  const height = 400;
-
-  var top = window.screen.height - height;
-  top = top > 0 ? top / 2 : 0;
-
-  var left = window.screen.width - width;
-  left = left > 0 ? left / 2 : 0;
-
-  window.open(
-    shareURL,
-    "",
-    `left=${left},top=${top},width=${width},height=${height},personalbar=0,toolbar=0,scrollbars=0,resizable=0`
-  );
-};
-
 const latestHistory = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 export default function Home() {
   const [histories, setHistories] = useState([]);
   const [address, setAddress] = useState("");
   const [hasTweet, setHasTweet] = useState(false);
+
+  const openTwitterShare = () => {
+    var shareURL = `http://twitter.com/intent/tweet?text=Requesting 0.1 rBTC from RegNet Faucet by Eastlayer&url=https://faucet.regnet.eastlayer.io`;
+
+    const width = 600;
+    const height = 400;
+
+    var top = window.screen.height - height;
+    top = top > 0 ? top / 2 : 0;
+
+    var left = window.screen.width - width;
+    left = left > 0 ? left / 2 : 0;
+
+    window.open(
+      shareURL,
+      "",
+      `left=${left},top=${top},width=${width},height=${height},personalbar=0,toolbar=0,scrollbars=0,resizable=0`
+    );
+  };
 
   const fetchHistories = async () => {
     const response = await fetch("/api/history", {
