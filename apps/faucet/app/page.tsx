@@ -6,7 +6,10 @@ import Remind from "@/components/Remind";
 import IconBroadcast from "@/icons/IconBroadcast";
 import IconLighting from "@/icons/IconLighting";
 import IconWallet from "@/icons/IconWallet";
-import { useState } from "react";
+import { prettyTruncate } from "@/utils/prettyTruncate";
+import { RegboxAPI } from "@east-bitcoin-lib/sdk";
+import { useEffect, useState } from "react";
+import { format, render, cancel, register } from "timeago.js";
 
 export const openTwitterShare = () => {
   var shareURL = `http://twitter.com/intent/tweet?text=Requesting 0.1 rBTC from RegNet Faucet by Eastlayer&url=https://faucet.regnet.eastlayer.io`;
@@ -30,8 +33,50 @@ export const openTwitterShare = () => {
 const latestHistory = [0, 0, 0, 0, 0, 0, 0, 0, 0];
 
 export default function Home() {
+  const [histories, setHistories] = useState([]);
   const [address, setAddress] = useState("");
   const [hasTweet, setHasTweet] = useState(false);
+
+  const fetchHistories = async () => {
+    const response = await fetch("/api/history", {
+      method: "GET",
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!response.ok) {
+      throw new Error(`Error fetching histories data`);
+    }
+
+    const _histories = await response.json();
+    setHistories(_histories);
+  };
+
+  const onFaucet = async () => {
+    const regboxApi = new RegboxAPI({
+      url: "https://regbox.regnet.btc.eastlayer.io",
+    });
+
+    regboxApi.getFaucet(address, 0.01);
+
+    await regboxApi.generateBlock(1);
+    await fetch("/api/history", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ address }),
+    });
+
+    setAddress("");
+    setHasTweet(false);
+  };
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      fetchHistories();
+    }, 1000);
+
+    return () => {
+      clearInterval(timer);
+    };
+  }, []);
 
   return (
     <main className="max-w-6xl mx-auto">
@@ -110,7 +155,7 @@ export default function Home() {
                 <div className="w-full flex items-center flex-wrap">
                   <p className="text-lg w-1/2">Submit request</p>
                   <button
-                    onClick={() => openTwitterShare()}
+                    onClick={() => onFaucet()}
                     className="w-1/2 bg-gradient-to-b from-main-3 to-main-1 hover:from-main-2 hover:to-main-1 hover:text-main-9 px-6 py-2 rounded-xl font-bold font-title text-main-8 tracking-wide transition-all"
                   >
                     Request rBTC
@@ -121,19 +166,23 @@ export default function Home() {
           </div>
           <div className="p-4 w-full lg:w-2/5 space-y-4">
             <h4 className="text-2xl">History</h4>
-            {latestHistory.map((x) => {
+            {histories.map((x: any) => {
               return (
                 <div className="flex justify-between">
                   <p>
-                    <span className="font-code font-bold text-main-8">
-                      bcrt1p•••0sauyy
-                    </span>{" "}
-                    has received{" "}
+                    <a
+                      href={`https://explorer.regnet.btc.eastlayer.io/address/${x.address}`}
+                      target="_blank"
+                      className="font-code font-bold text-main-8 hover:underline"
+                    >
+                      {prettyTruncate(x.address, 10, "address")}
+                    </a>{" "}
+                    received{" "}
                     <span className="font-code font-bold text-main-8">
                       0.01 rBTC
                     </span>
                   </p>
-                  <p>1s ago</p>
+                  <p className="text-sm">{format(x.createdAt)}</p>
                 </div>
               );
             })}

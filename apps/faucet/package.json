@@ -1,5 +1,5 @@
 {
-  "name": "faucet",
+  "name": "@east-bitcoin-lib/faucet",
   "version": "0.1.0",
   "private": true,
   "scripts": {
@@ -9,11 +9,17 @@
     "lint": "next lint"
   },
   "dependencies": {
+    "@east-bitcoin-lib/sdk": "*",
     "react": "^18",
     "react-dom": "^18",
-    "next": "14.2.5"
+    "next": "14.2.5",
+    "@prisma/client": "5.16.1",
+    "prisma": "^5.16.2",
+    "timeago.js": "^4.0.2"
   },
   "devDependencies": {
+    "@east-bitcoin-lib/eslint-config": "*",
+    "@east-bitcoin-lib/typescript-config": "*",
     "typescript": "^5",
     "@types/node": "^20",
     "@types/react": "^18",
