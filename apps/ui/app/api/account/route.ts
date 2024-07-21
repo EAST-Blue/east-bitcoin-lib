@@ -20,12 +20,12 @@ export async function POST(
   res: NextResponse<number | { error: string }>
 ) {
   try {
-    const { mnemonic, p2wpkh, p2tr } = await req.json();
+    const { secret, p2wpkh, p2tr, path } = await req.json();
     await prisma.account.create({
-      data: { mnemonic, p2wpkh, p2tr },
+      data: { secret, p2wpkh, p2tr, path: parseInt(path) },
     });
 
-    return NextResponse.json({ mnemonic, p2wpkh, p2tr }, { status: 200 });
+    return NextResponse.json({ secret, p2wpkh, p2tr, path }, { status: 200 });
   } catch (error) {
     console.error("Error creating account:", error);
     NextResponse.json({ error }, { status: 500 });
@@ -37,12 +37,12 @@ export async function DELETE(
   res: NextResponse<number | { error: string }>
 ) {
   try {
-    const { mnemonic } = await req.json();
-    await prisma.account.delete({
-      where: { mnemonic },
+    const { secret } = await req.json();
+    await prisma.account.deleteMany({
+      where: { secret },
     });
 
-    return NextResponse.json({ mnemonic }, { status: 200 });
+    return NextResponse.json({ secret }, { status: 200 });
   } catch (error) {
     console.error("Error deleting account:", error);
     NextResponse.json({ error }, { status: 500 });

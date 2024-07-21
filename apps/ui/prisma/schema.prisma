@@ -9,9 +9,10 @@ datasource db {
 
 model Account {
   id Int @id @default(autoincrement())
-  mnemonic String @unique
+  secret String
   p2wpkh String @unique
   p2tr String @unique
+  path Int
 }
 
 model Network {

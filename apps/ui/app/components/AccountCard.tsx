@@ -6,8 +6,10 @@ import { useConfigContext } from "../contexts/ConfigContext";
 import { NetworkConfigType } from "../types/ConfigType";
 import ButtonCopy from "./ButtonCopy";
 import ExportPrivateKeyModal from "./ExportPrivateKeyModal";
-import { ecpair, Network, Wallet } from "@east-bitcoin-lib/sdk";
+import { ecpair, Network, Wallet, WalletParams } from "@east-bitcoin-lib/sdk";
 import { networks } from "bitcoinjs-lib";
+import { checkSecretType } from "../utils/checkSecretType";
+import { SecretEnum } from "../enums/SecretEnum";
 
 const AccountCard = ({
   index,
@@ -22,7 +24,7 @@ const AccountCard = ({
   account: AccountType;
   showOptions: AccountType | null;
   setShowOptions: (args: any) => void;
-  removeAccount: (mnemonic: string) => void;
+  removeAccount: (secret: string) => void;
   copyToClipboard: (address: string) => void;
   onFaucet: (addresses: string[]) => void;
 }) => {
@@ -54,10 +56,35 @@ const AccountCard = ({
   };
 
   const getPrivateKey = (): string => {
-    const wallet = new Wallet({
-      mnemonic: account.mnemonic,
-      network: network as Network,
-    });
+    if (!account.secret) return "";
+
+    const secretType = checkSecretType(account.secret);
+    let walletParams: WalletParams;
+
+    switch (secretType) {
+      case SecretEnum.MNEMONIC:
+        walletParams = {
+          mnemonic: account.secret,
+          network: network as Network,
+        };
+        break;
+      case SecretEnum.PRIVATEKEY:
+        walletParams = {
+          privateKey: account.secret,
+          network: network as Network,
+        };
+        break;
+      case SecretEnum.WIF:
+        walletParams = {
+          wif: account.secret,
+          network: network as Network,
+        };
+        break;
+      default:
+        throw new Error("Invalid secret string provided");
+    }
+
+    const wallet = new Wallet(walletParams);
 
     let networkBuffer = undefined;
     if (network === "regtest") {
@@ -102,7 +129,7 @@ const AccountCard = ({
             >
               <i className="fa-solid fa-ellipsis"></i>
             </button>
-            {account.mnemonic === showOptions?.mnemonic && (
+            {account.secret === showOptions?.secret && (
               <div className="absolute right-0 mt-2 w-48 bg-[#262626] border border-gray-500 rounded shadow-lg">
                 <button
                   onClick={() => {
@@ -121,7 +148,7 @@ const AccountCard = ({
                   Faucet
                 </button>
                 <button
-                  onClick={() => removeAccount(account.mnemonic)}
+                  onClick={() => removeAccount(account.secret)}
                   className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-500"
                 >
                   Remove Account
@@ -132,7 +159,10 @@ const AccountCard = ({
         </div>
         <div className="grid grid-cols-5 font-semibold text-white-7">
           <div className="col-span-3">
-            <p>Address</p>
+            <p>
+              Address{" "}
+              <span className="text-xs italic">(Index {account.path})</span>
+            </p>
           </div>
           <div className="col-span-1">
             <p>Type</p>

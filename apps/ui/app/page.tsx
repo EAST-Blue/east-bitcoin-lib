@@ -15,12 +15,10 @@ import {
   P2trUtxo,
   P2wpkhUtxo,
   PSBT,
-  RegboxAPI,
   Script,
-  Wallet,
   getAddressType,
 } from "@east-bitcoin-lib/sdk";
-import Select, { MultiValue, NonceProvider } from "react-select";
+import Select, { MultiValue } from "react-select";
 import { BitcoinUTXO } from "@east-bitcoin-lib/sdk/dist/repositories/bitcoin/types";
 import { PSBTOutput } from "./types/OutputContextType";
 import { PrismEditor, createEditor } from "prism-code-editor";
@@ -40,35 +38,15 @@ import { prettyTruncate } from "./utils/prettyTruncate";
 import IconPlus from "./icons/IconPlus";
 import SignedTxModal from "./components/SignedTxModal";
 import GenerateCodeModal from "./components/GenerateCodeModal";
-
-const formatBuffer = (buffer: any[]) => {
-  console.log(buffer);
-  return `Buffer.from([${buffer.join(", ")}])`;
-};
-
-const formatInputs = (inputs: any[]) => {
-  return inputs.map((input) => {
-    if (input.utxo && input.utxo.witness && input.utxo.witness.script) {
-      input.utxo.witness.script = formatBuffer(input.utxo.witness.script.data);
-    }
-    return input;
-  });
-};
-
-const formatOutputs = (outputs: any[]) => {
-  return outputs.map((output) => {
-    if (output.output && output.output.script) {
-      output.output.script = formatBuffer(output.output.script.data);
-    }
-    return output;
-  });
-};
+import { checkSecretType } from "./utils/checkSecretType";
+import { SecretEnum } from "./enums/SecretEnum";
+import { generateWalletBySecretType } from "./utils/generateWalletBySecretType";
 
 export default function Page(): JSX.Element {
   const { accounts } = useAccountContext() as AccountContextType;
   const { network, uri } = useConfigContext() as NetworkConfigType;
 
-  const [mnemonic, setMnemonic] = useState<string>("");
+  const [secret, setSecret] = useState<string>("");
   const [address, setAddress] = useState<string>("");
   const [inputs, setInputs] = useState<BitcoinUTXO[]>([]);
   const [utxos, setUtxos] = useState<BitcoinUTXO[]>([]);
@@ -109,7 +87,7 @@ export default function Page(): JSX.Element {
   }, [outputType]);
 
   const getUtxoByAddress = async () => {
-    if (mnemonic === "") return;
+    if (secret === "") return;
     if (address === "") return;
     if (!uri) return;
     if (!network) return;
@@ -135,10 +113,10 @@ export default function Page(): JSX.Element {
     if (outputType === "script" && !scriptEditorRef.current?.value) return;
 
     // Load Wallet
-    const wallet = new Wallet({
-      mnemonic,
-      network: network as Network,
-    });
+    const wallet = generateWalletBySecretType(secret, network);
+    if (!wallet) {
+      throw new Error("Invalid secret string provided");
+    }
 
     // Prepare inputs
     const _psbtInputs: Input[] = [];
@@ -278,7 +256,7 @@ export default function Page(): JSX.Element {
   };
 
   const resetState = () => {
-    setMnemonic("");
+    setSecret("");
     setAddress("");
     setInputs([]);
     setUtxos([]);
@@ -331,8 +309,26 @@ export default function Page(): JSX.Element {
     setOutputs((output) => output.filter((_, i) => i !== index));
   };
 
-  const onGenerateCode = () => {
-    console.log(inputs, outputs);
+  const generateWalletInitClientCode = () => {
+    if (secret === "") return;
+    const secretType = checkSecretType(secret);
+
+    switch (secretType) {
+      case SecretEnum.MNEMONIC:
+        return `mnemonic: ${secret}`;
+        break;
+
+      case SecretEnum.PRIVATEKEY:
+        return `privateKey: ${secret}`;
+        break;
+
+      case SecretEnum.WIF:
+        return `wif: ${secret}`;
+        break;
+
+      default:
+        throw new Error("invalid secret type");
+    }
   };
 
   return (
@@ -355,9 +351,9 @@ export default function Page(): JSX.Element {
                   </label>
                   <Select
                     onChange={(e: any) => {
-                      const [mnemonic, address] = e.value?.split(":");
-                      setMnemonic(mnemonic);
-                      setAddress(address);
+                      const [_secret, _address] = e.value?.split(":");
+                      setSecret(_secret);
+                      setAddress(_address);
                     }}
                     className="cursor-pointer"
                     placeholder="Select Address"
@@ -413,11 +409,11 @@ export default function Page(): JSX.Element {
                       label: `Account ${i + 1}`,
                       options: [
                         {
-                          value: `${account.mnemonic}:${account.p2wpkh}`,
+                          value: `${account.secret}:${account.p2wpkh}`,
                           label: `${account.p2wpkh} (P2WPKH)`,
                         },
                         {
-                          value: `${account.mnemonic}:${account.p2tr}`,
+                          value: `${account.secret}:${account.p2tr}`,
                           label: `${account.p2tr} (P2TR)`,
                         },
                       ],
@@ -669,7 +665,7 @@ import { OpReturn } from "@east-bitcoin-lib/sdk/dist/addresses/opReturn";
 
 async function buildPSBT() {
   const wallet = new Wallet({
-    mnemonic: "${mnemonic}",
+    ${generateWalletInitClientCode()}
     network: "${network}"
   });
 
