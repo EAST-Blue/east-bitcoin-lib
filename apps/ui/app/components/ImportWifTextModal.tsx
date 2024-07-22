@@ -9,9 +9,10 @@ const ImportWifTextModal = ({
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onSave: (wif: string) => void;
+  onSave: (index: number, mnemonic: string) => void;
 }) => {
   const [inputValue, setInputValue] = useState("");
+  const [derivationValue, setDerivationValue] = useState(0);
 
   if (!isOpen) return null;
 
@@ -36,11 +37,26 @@ const ImportWifTextModal = ({
             onChange={(e) => setInputValue(e.target.value)}
           />
         </div>
+        <div className="mb-4">
+          <label className="block text-gray-400 mb-2">Derivation Path</label>
+          <input
+            disabled
+            type="text"
+            className="w-[120px] pl-2 pr-2 border-white-1 border-r-0 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg rounded-r-none outline-none text-white-8 focus:outline-none focus:border-white-1 focus:ring-0 focus:ring-offset-0"
+            value={"m/86'/1'/0'/0/"}
+          />
+          <input
+            type="number"
+            className="w-1/6 pl-2 border-white-1 border-l-0 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg rounded-l-none outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+            value={derivationValue}
+            onChange={(e) => setDerivationValue(parseInt(e.target.value))}
+          />
+        </div>
         <div className="flex justify-end">
           <button
             className="flex px-4 items-center py-2 disabled:cursor-not-allowed rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 disabled:opacity-50"
             onClick={() => {
-              onSave(inputValue);
+              onSave(derivationValue, inputValue);
               onClose();
               setInputValue("");
             }}

@@ -48,6 +48,7 @@ export default function Page(): JSX.Element {
 
   const [secret, setSecret] = useState<string>("");
   const [address, setAddress] = useState<string>("");
+  const [path, setPath] = useState<number>(0);
   const [inputs, setInputs] = useState<BitcoinUTXO[]>([]);
   const [utxos, setUtxos] = useState<BitcoinUTXO[]>([]);
   const [outputType, setOutputType] = useState<string>("");
@@ -129,7 +130,7 @@ export default function Page(): JSX.Element {
           break;
 
         case "p2tr":
-          const p2tr = wallet.p2tr(0);
+          const p2tr = wallet.p2tr(path);
           const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
             utxo,
             p2tr.tapInternalKey
@@ -176,12 +177,12 @@ export default function Page(): JSX.Element {
     for (const [index, psbtInput] of p.inputs.entries()) {
       switch (true) {
         case psbtInput.utxo instanceof P2wpkhUtxo:
-          psbt.signInput(index, wallet.p2wpkh(0).keypair);
+          psbt.signInput(index, wallet.p2wpkh(path).keypair);
           psbt.finalizeInput(index);
           break;
 
         case psbtInput.utxo instanceof P2trUtxo:
-          psbt.signInput(index, wallet.p2tr(0).keypair);
+          psbt.signInput(index, wallet.p2tr(path).keypair);
           psbt.finalizeInput(index);
           break;
 
@@ -351,9 +352,10 @@ export default function Page(): JSX.Element {
                   </label>
                   <Select
                     onChange={(e: any) => {
-                      const [_secret, _address] = e.value?.split(":");
+                      const [_secret, _path, _address] = e.value?.split(":");
                       setSecret(_secret);
                       setAddress(_address);
+                      setPath(_path);
                     }}
                     className="cursor-pointer"
                     placeholder="Select Address"
@@ -409,11 +411,11 @@ export default function Page(): JSX.Element {
                       label: `Account ${i + 1}`,
                       options: [
                         {
-                          value: `${account.secret}:${account.p2wpkh}`,
+                          value: `${account.secret}:${account.path}:${account.p2wpkh}`,
                           label: `${account.p2wpkh} (P2WPKH)`,
                         },
                         {
-                          value: `${account.secret}:${account.p2tr}`,
+                          value: `${account.secret}:${account.path}:${account.p2tr}`,
                           label: `${account.p2tr} (P2TR)`,
                         },
                       ],
@@ -683,7 +685,7 @@ async function buildPSBT() {
         break;
 
       case "p2tr":
-        const p2tr = wallet.p2tr(0);
+        const p2tr = wallet.p2tr(${path});
         const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
           utxo,
           p2tr.tapInternalKey
@@ -730,12 +732,12 @@ async function buildPSBT() {
   for (const [index, psbtInput] of p.inputs.entries()) {
     switch (true) {
       case psbtInput.utxo instanceof P2wpkhUtxo:
-        psbt.signInput(index, wallet.p2wpkh(0).keypair);
+        psbt.signInput(index, wallet.p2wpkh(${path}).keypair);
         psbt.finalizeInput(index);
         break;
 
       case psbtInput.utxo instanceof P2trUtxo:
-        psbt.signInput(index, wallet.p2tr(0).keypair);
+        psbt.signInput(index, wallet.p2tr(${path}).keypair);
         psbt.finalizeInput(index);
         break;
 

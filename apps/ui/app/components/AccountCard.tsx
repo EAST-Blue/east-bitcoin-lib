@@ -129,39 +129,40 @@ const AccountCard = ({
             >
               <i className="fa-solid fa-ellipsis"></i>
             </button>
-            {account.secret === showOptions?.secret && (
-              <div className="absolute right-0 mt-2 w-48 bg-[#262626] border border-gray-500 rounded shadow-lg">
-                <button
-                  onClick={() => {
-                    setIsExportModalOpen(true);
-                  }}
-                  className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500"
-                >
-                  Export Private Key
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500"
-                  onClick={() => {
-                    onFaucet([account.p2wpkh, account.p2tr]);
-                  }}
-                >
-                  Faucet
-                </button>
-                <button
-                  onClick={() => removeAccount(account.secret)}
-                  className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-500"
-                >
-                  Remove Account
-                </button>
-              </div>
-            )}
+            {account.secret === showOptions?.secret &&
+              account.path === showOptions.path && (
+                <div className="absolute right-0 mt-2 w-48 bg-[#262626] border border-gray-500 rounded shadow-lg">
+                  <button
+                    onClick={() => {
+                      setIsExportModalOpen(true);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500"
+                  >
+                    Export Private Key
+                  </button>
+                  <button
+                    className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500"
+                    onClick={() => {
+                      onFaucet([account.p2wpkh, account.p2tr]);
+                    }}
+                  >
+                    Faucet
+                  </button>
+                  <button
+                    onClick={() => removeAccount(account.secret)}
+                    className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-500"
+                  >
+                    Remove Account
+                  </button>
+                </div>
+              )}
           </div>
         </div>
         <div className="grid grid-cols-5 font-semibold text-white-7">
           <div className="col-span-3">
             <p>
               Address{" "}
-              <span className="text-xs italic">(Index {account.path})</span>
+              <span className="text-xs italic">(Path {account.path})</span>
             </p>
           </div>
           <div className="col-span-1">

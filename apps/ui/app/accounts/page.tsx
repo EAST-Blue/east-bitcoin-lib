@@ -36,21 +36,31 @@ const Account = () => {
     });
   };
 
-  const onImportAccount = async (secret: string) => {
-    const isExist = accounts.find((account) => account.secret === secret);
-    if (isExist) return;
+  const toastOnAccountExist = (accountNumber: number) => {
+    toast.error(
+      <p>Secret and path already exist on Account {accountNumber}</p>,
+      {
+        autoClose: 1500,
+      }
+    );
+  };
 
-    // const isValidMnemonic = bip39.validateMnemonic(secret);
-    // if (!isValidMnemonic) {
-    //   toastInvalidMnemonic();
-    //   return;
-    // }
+  const onImportAccount = async (index: number, secret: string) => {
+    const isExist = accounts.findIndex(
+      (account) => account.secret === secret && account.path === index
+    );
+    if (isExist !== -1) {
+      toastOnAccountExist(isExist + 1);
+      return;
+    }
 
-    await saveMnemonic(secret);
+    // TODO : check if secret exist on another form e.g. if input is WIF, check is equivalent in HEX is exist in db
+
+    await saveSecret(index, secret);
     fetchAccounts();
   };
 
-  const saveMnemonic = async (secret?: string | undefined) => {
+  const saveSecret = async (index: number, secret?: string | undefined) => {
     if (!secret) {
       secret = Wallet.generateMnemonic();
     }
@@ -61,7 +71,6 @@ const Account = () => {
       return;
     }
 
-    const index = 0; //import account should be index 0
     await fetch("/api/account", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
@@ -117,7 +126,7 @@ const Account = () => {
           <h2 className="text-xl font-bold">Accounts</h2>
           <div className="flex justify-end space-x-4">
             <button
-              onClick={() => saveMnemonic()}
+              onClick={() => saveSecret(0)}
               type="button"
               className="flex px-4 items-center py-2 rounded-lg bg-gradient-to-b hover:from-white-1  from-white-2 to-white-1"
             >
