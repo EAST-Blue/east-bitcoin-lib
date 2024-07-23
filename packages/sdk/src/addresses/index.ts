@@ -52,3 +52,4 @@ export * from "./p2pkh";
 export * from "./p2sh";
 export * from "./p2tr";
 export * from "./p2wpkh";
+export * from "./opReturn";

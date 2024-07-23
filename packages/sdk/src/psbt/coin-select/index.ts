@@ -42,6 +42,7 @@ export type CoinSelectParams = {
 export type InputBytesData = {
   redeemScript?: Buffer;
   unlockScript?: Buffer;
+  paymentWitness?: Buffer[];
 };
 
 export type OutputBytesData = {
@@ -106,7 +107,7 @@ export class CoinSelect {
       case "p2sh":
         if (!data?.redeemScript || !data?.unlockScript) {
           throw new Error(
-            "errors.redeemScript & unlockScript is required when calculating p2sh input"
+            "errors.redeemScript & unlockScript is required when calculating p2sh input",
           );
         }
         bytes +=
@@ -119,6 +120,14 @@ export class CoinSelect {
         break;
       case "p2tr":
         bytes += FEE_TX_INPUT_TAPROOT;
+        if (data?.paymentWitness && data.paymentWitness.length > 0) {
+          const witnessBytes =
+            data.paymentWitness.reduce(
+              (prev, next) => prev + next.byteLength,
+              0,
+            ) / 4;
+          bytes += Math.ceil(witnessBytes);
+        }
         break;
       default:
         throw new Error("errors.fee input is not implemented yet");
@@ -146,7 +155,7 @@ export class CoinSelect {
       case "op_return":
         if (!data?.script) {
           throw new Error(
-            "errors.script is required when calculating op_return output"
+            "errors.script is required when calculating op_return output",
           );
         }
         bytes += data.script.byteLength;
@@ -169,6 +178,14 @@ export class CoinSelect {
             this.inputBytes(input.utxo.type, {
               redeemScript: input.utxo.redeemScript,
               unlockScript: input.utxo.unlockScript,
+            })
+          );
+        }
+        if (input.utxo instanceof P2trUtxo) {
+          return (
+            prev +
+            this.inputBytes(input.utxo.type, {
+              paymentWitness: input.utxo.paymentWitness,
             })
           );
         }
@@ -202,7 +219,7 @@ export class CoinSelect {
     }
 
     const utxos = await this.autoUtxo.api.bitcoin.getUTXOs(
-      this.autoUtxo.from.address.address
+      this.autoUtxo.from.address.address,
     );
 
     for (const utxo of utxos) {
@@ -243,7 +260,7 @@ export class CoinSelect {
           this.inputs.push({
             utxo: await P2pkhUtxo.fromBitcoinUTXO(
               this.autoUtxo.api.bitcoin,
-              utxo
+              utxo,
             ),
             value: utxo.value,
           });
@@ -269,7 +286,9 @@ export class CoinSelect {
           this.inputs.push({
             utxo: await P2trUtxo.fromBitcoinUTXO(
               utxo,
-              this.autoUtxo.from.tapInternalKey
+              this.autoUtxo.from.tapInternalKey,
+              this.autoUtxo.from.paymentWitness,
+              this.autoUtxo.from.redeem,
             ),
             value: utxo.value,
           });
