@@ -8,7 +8,14 @@ import {
   ecpair,
   pubkeyXOnly,
 } from "../utils";
-import { DeriveP2pkh, DeriveP2sh, DeriveP2tr, DeriveP2wpkh } from "./types";
+import {
+  DeriveP2pkh,
+  DeriveP2sh,
+  DeriveP2wpkh,
+  DeriveP2trScript,
+  P2trScript,
+  DeriveP2tr,
+} from "./types";
 import { StackScripts } from "../script";
 
 export type AddressPathType = "legacy" | "nested-segwit" | "segwit" | "taproot";
@@ -134,4 +141,33 @@ export class Wallet {
       tapInternalKey: xOnly,
     };
   }
+
+  p2trScript(
+    index: number,
+    tapScript: (internalpubKey: Buffer) => P2trScript,
+  ): DeriveP2trScript {
+    const childNode = this.masterNode.derivePath(
+      Wallet.getPath({ type: "taproot", network: this.network, index }),
+    );
+    const keypair = ecpair.fromPrivateKey(childNode.privateKey!);
+    const xOnly = pubkeyXOnly(keypair.publicKey);
+
+    const script = tapScript(xOnly);
+    const p2tr = payments.p2tr({
+      network: bitcoinJsNetwork(this.network),
+      internalPubkey: xOnly,
+      scriptTree: script.taptree,
+      redeem: script.redeem,
+    });
+
+    return {
+      address: p2tr.address!,
+      keypair: keypair,
+      tapInternalKey: xOnly,
+      paymentWitness: p2tr.witness!,
+      redeem: script.redeem,
+    };
+  }
 }
+
+export * from "./types";
