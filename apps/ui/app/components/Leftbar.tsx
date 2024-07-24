@@ -58,7 +58,7 @@ const Leftbar = ({ active }: { active: string }) => {
           Config
         </NavLink>
 
-        <NavLink active={active} name="utils" href="/utils">
+        <NavLink active={active} name="utils" href="#">
           Utils
         </NavLink>
       </nav>

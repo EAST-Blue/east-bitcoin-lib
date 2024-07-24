@@ -24,7 +24,7 @@ const AccountCard = ({
   account: AccountType;
   showOptions: AccountType | null;
   setShowOptions: (args: any) => void;
-  removeAccount: (secret: string) => void;
+  removeAccount: (path: number, secret: string) => void;
   copyToClipboard: (address: string) => void;
   onFaucet: (addresses: string[]) => void;
 }) => {
@@ -46,8 +46,14 @@ const AccountCard = ({
     const dataP2wpkh = await p2wpkh.json();
     const dataP2tr = await p2tr.json();
 
-    setP2wpkhBalance(dataP2wpkh?.chain_stats?.funded_txo_sum);
-    setP2trBalance(dataP2tr?.chain_stats?.funded_txo_sum);
+    setP2wpkhBalance(
+      dataP2wpkh?.chain_stats?.funded_txo_sum -
+        dataP2wpkh?.chain_stats?.spent_txo_sum
+    );
+    setP2trBalance(
+      dataP2tr?.chain_stats?.funded_txo_sum -
+        dataP2tr?.chain_stats?.spent_txo_sum
+    );
   };
 
   const satsToBitcoin = (sats: number) => {
@@ -149,7 +155,7 @@ const AccountCard = ({
                     Faucet
                   </button>
                   <button
-                    onClick={() => removeAccount(account.secret)}
+                    onClick={() => removeAccount(account.path, account.secret)}
                     className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-500"
                   >
                     Remove Account

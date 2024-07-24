@@ -266,6 +266,7 @@ export default function Page(): JSX.Element {
     setAmount(0);
     setHex("");
     setOutputs([]);
+    setIsBroadcastDropdown(false);
   };
 
   useEffect(() => {
@@ -290,16 +291,38 @@ export default function Page(): JSX.Element {
 
   const onSaveOutput = () => {
     if (outputType === "address" && addressOutput === "") return;
-    if (outputType === "script" && !scriptEditorRef.current?.value) return;
+    if (
+      outputType === "script" &&
+      !scriptEditorRef.current?.value &&
+      amount === 0
+    )
+      return;
+    if (
+      outputType === "script_transfer" &&
+      !scriptEditorRef.current?.value &&
+      addressOutput === "" &&
+      amount === 0
+    )
+      return;
 
     if (outputType === "address") {
       setOutputs([...outputs, ...[{ address: addressOutput, value: amount }]]);
       setAddressOutput("");
       setAmount(0);
     } else if (outputType === "script") {
+      const opReturnIssueScript = `OP_RETURN EASTi${scriptEditorRef.current?.value}_${amount}`;
+      setOutputs([...outputs, ...[{ script: opReturnIssueScript, value: 0 }]]);
+    } else if (outputType === "script_transfer") {
+      const opReturnIssueScript = `OP_RETURN EASTt${scriptEditorRef.current?.value}_${amount}`;
       setOutputs([
         ...outputs,
-        ...[{ script: scriptEditorRef.current?.value, value: 564 }],
+        ...[{ script: opReturnIssueScript, value: 0 }],
+        ...[{ address: addressOutput, value: 546 }],
+      ]);
+    } else if (outputType === "script_custom") {
+      setOutputs([
+        ...outputs,
+        ...[{ script: scriptEditorRef.current?.value, value: 0 }],
       ]);
     }
 
@@ -454,7 +477,7 @@ export default function Page(): JSX.Element {
                     isDisabled={!utxos}
                     onChange={(e: any) => setOutputType(e.value)}
                     className="cursor-pointer"
-                    placeholder="-- Address/Script --"
+                    placeholder="-- Select Output Type --"
                     isSearchable={false}
                     styles={SelectStyles}
                     options={TX_OUTPUT_OPTIONS}
@@ -467,7 +490,7 @@ export default function Page(): JSX.Element {
                       <>
                         <div>
                           <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
-                            Input Address
+                            Destination Address
                           </label>
                           <input
                             value={addressOutput}
@@ -476,9 +499,9 @@ export default function Page(): JSX.Element {
                             className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
                           />
                         </div>
-                        <div className="mt-1">
+                        <div className="mt-2">
                           <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
-                            Amount
+                            Amount (sats)
                           </label>
                           <input
                             value={amount}
@@ -492,15 +515,80 @@ export default function Page(): JSX.Element {
                       </>
                     )}
                     {outputType === "script" && (
-                      <div>
-                        <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
-                          Custom Script
-                        </label>
-                        <div
-                          ref={scriptRef}
-                          className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
-                        />
-                      </div>
+                      <>
+                        <div>
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Token Name
+                          </label>
+                          <div
+                            ref={scriptRef}
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                        <div className="mt-2">
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Token Supply
+                          </label>
+                          <input
+                            value={amount}
+                            onChange={(e) =>
+                              setAmount(parseInt(e.target.value))
+                            }
+                            type="number"
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                      </>
+                    )}
+                    {outputType === "script_transfer" && (
+                      <>
+                        <div>
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Token Name
+                          </label>
+                          <div
+                            ref={scriptRef}
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                        <div className="mt-2">
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Transfer Amount
+                          </label>
+                          <input
+                            value={amount}
+                            onChange={(e) =>
+                              setAmount(parseInt(e.target.value))
+                            }
+                            type="number"
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Destination Address
+                          </label>
+                          <input
+                            value={addressOutput}
+                            onChange={(e) => setAddressOutput(e.target.value)}
+                            type="text"
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                      </>
+                    )}
+                    {outputType === "script_custom" && (
+                      <>
+                        <div>
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Script
+                          </label>
+                          <div
+                            ref={scriptRef}
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                      </>
                     )}
                     <div className="mt-1">
                       <button

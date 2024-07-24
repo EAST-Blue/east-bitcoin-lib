@@ -85,11 +85,12 @@ const Account = () => {
     fetchAccounts();
   };
 
-  const removeAccount = async (secret: string) => {
+  const removeAccount = async (path: number, secret: string) => {
     await fetch("/api/account", {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
+        path,
         secret,
       }),
     });

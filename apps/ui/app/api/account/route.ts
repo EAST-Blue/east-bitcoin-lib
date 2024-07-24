@@ -37,12 +37,12 @@ export async function DELETE(
   res: NextResponse<number | { error: string }>
 ) {
   try {
-    const { secret } = await req.json();
+    const { path, secret } = await req.json();
     await prisma.account.deleteMany({
-      where: { secret },
+      where: { path: parseInt(path), secret },
     });
 
-    return NextResponse.json({ secret }, { status: 200 });
+    return NextResponse.json({ path, secret }, { status: 200 });
   } catch (error) {
     console.error("Error deleting account:", error);
     NextResponse.json({ error }, { status: 500 });
