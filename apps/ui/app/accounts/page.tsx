@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import Leftbar from "../components/Leftbar";
 import { Network, RegboxAPI, Wallet } from "@east-bitcoin-lib/sdk";
 import ImportAccountModal from "../components/ImportAccount";
@@ -21,6 +21,7 @@ import ImportWifTextModal from "../components/ImportWifTextModal";
 import { generateWalletBySecretType } from "../utils/generateWalletBySecretType";
 
 const Account = () => {
+  const apiURL = useRef("");
   const { accounts, fetchAccounts } = useAccountContext() as AccountContextType;
   const { regbox, network } = useConfigContext() as NetworkConfigType;
 
@@ -29,6 +30,19 @@ const Account = () => {
   const [showImportOptions, setShowImportOptions] = useState<SecretEnum | null>(
     null
   );
+
+  useEffect(() => {
+    const isTauri = (window as any).__TAURI__;
+    apiURL.current = isTauri ? "http://localhost:9090/account" : "/api/account";
+    if (isTauri) {
+      import("@tauri-apps/api/shell").then((mod) => {
+        console.log("disini")
+        const command = mod.Command.sidecar("bin/server");
+        const output = command.execute();
+        console.log("out", output)
+      });
+    }
+  }, []);
 
   const toastOnFaucet = () => {
     toast.success(<p>Sending coin. Wait for automatic confirmation</p>, {
@@ -61,32 +75,36 @@ const Account = () => {
   };
 
   const saveSecret = async (index: number, secret?: string | undefined) => {
-    if (!secret) {
-      secret = Wallet.generateMnemonic();
+    try {
+      if (!secret) {
+        secret = Wallet.generateMnemonic();
+      }
+
+      let wallet = generateWalletBySecretType(secret, network);
+      if (!wallet) {
+        console.error("Error secret");
+        return;
+      }
+
+      await fetch(apiURL.current, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          secret,
+          p2wpkh: wallet.p2wpkh(index).address,
+          p2tr: wallet.p2tr(index).address,
+          path: index,
+        }),
+      });
+
+      fetchAccounts();
+    } catch (error) {
+      throw new Error(`Error save secret : ${error}`);
     }
-
-    let wallet = generateWalletBySecretType(secret, network);
-    if (!wallet) {
-      console.error("Error secret");
-      return;
-    }
-
-    await fetch("/api/account", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        secret,
-        p2wpkh: wallet.p2wpkh(index).address,
-        p2tr: wallet.p2tr(index).address,
-        path: index,
-      }),
-    });
-
-    fetchAccounts();
   };
 
   const removeAccount = async (path: number, secret: string) => {
-    await fetch("/api/account", {
+    await fetch(apiURL.current, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
