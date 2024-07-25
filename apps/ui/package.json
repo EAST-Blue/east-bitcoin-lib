@@ -21,8 +21,6 @@
     "bip39": "^3.1.0",
     "bitcoinjs-lib": "^6.1.5",
     "ecpair": "^2.1.0",
-    "esbuild": "^0.23.0",
-    "esbuild-plugin-copy": "^2.1.1",
     "next": "^14.1.1",
     "prism-code-editor": "^3.3.1",
     "prisma": "^5.16.2",

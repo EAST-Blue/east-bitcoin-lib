@@ -22,7 +22,8 @@ import { generateWalletBySecretType } from "../utils/generateWalletBySecretType"
 
 const Account = () => {
   const apiURL = useRef("");
-  const { accounts, fetchAccounts } = useAccountContext() as AccountContextType;
+  const { accounts, accountApiUrl, fetchAccounts } =
+    useAccountContext() as AccountContextType;
   const { regbox, network } = useConfigContext() as NetworkConfigType;
 
   const [isShowImportOption, setIsShowImportOptions] = useState(false);
@@ -30,19 +31,6 @@ const Account = () => {
   const [showImportOptions, setShowImportOptions] = useState<SecretEnum | null>(
     null
   );
-
-  useEffect(() => {
-    const isTauri = (window as any).__TAURI__;
-    apiURL.current = isTauri ? "http://localhost:9090/account" : "/api/account";
-    if (isTauri) {
-      import("@tauri-apps/api/shell").then((mod) => {
-        console.log("disini")
-        const command = mod.Command.sidecar("bin/server");
-        const output = command.execute();
-        console.log("out", output)
-      });
-    }
-  }, []);
 
   const toastOnFaucet = () => {
     toast.success(<p>Sending coin. Wait for automatic confirmation</p>, {
@@ -86,7 +74,7 @@ const Account = () => {
         return;
       }
 
-      await fetch(apiURL.current, {
+      await fetch(accountApiUrl, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
@@ -104,7 +92,7 @@ const Account = () => {
   };
 
   const removeAccount = async (path: number, secret: string) => {
-    await fetch(apiURL.current, {
+    await fetch(accountApiUrl, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({

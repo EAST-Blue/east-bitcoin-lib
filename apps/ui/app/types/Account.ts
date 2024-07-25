@@ -6,6 +6,7 @@ export type AccountType = {
 };
 
 export type AccountContextType = {
+  accountApiUrl: string;
   accounts: AccountType[];
   fetchAccounts: () => void;
 };

@@ -43,6 +43,9 @@ import { SecretEnum } from "./enums/SecretEnum";
 import { generateWalletBySecretType } from "./utils/generateWalletBySecretType";
 
 export default function Page(): JSX.Element {
+  const broadcastApiUrl = useRef("");
+  const transactionApiUrl = useRef("");
+
   const { accounts } = useAccountContext() as AccountContextType;
   const { network, uri } = useConfigContext() as NetworkConfigType;
 
@@ -207,7 +210,7 @@ export default function Page(): JSX.Element {
     if (!network) return;
 
     try {
-      const response = await fetch("api/broadcast", {
+      const response = await fetch(broadcastApiUrl.current, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uri, hex }),
@@ -218,7 +221,7 @@ export default function Page(): JSX.Element {
       const result = await response.json();
 
       // Save to db
-      const responseSaveDb = await fetch("api/transaction", {
+      const responseSaveDb = await fetch(transactionApiUrl.current, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ address, network, hex, amount, txid: result }),
@@ -241,7 +244,7 @@ export default function Page(): JSX.Element {
     if (!network) return;
 
     try {
-      const response = await fetch("api/transaction", {
+      const response = await fetch(transactionApiUrl.current, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -274,6 +277,20 @@ export default function Page(): JSX.Element {
   }, [address]);
 
   useEffect(() => {
+    const isTauri = (window as any).__TAURI__;
+    broadcastApiUrl.current = isTauri
+      ? "http://localhost:9090/broadcast"
+      : "/api/broadcast";
+    transactionApiUrl.current = isTauri
+      ? "http://localhost:9090/transaction"
+      : "/api/transaction";
+
+    if (isTauri) {
+      import("@tauri-apps/api/shell").then((mod) => {
+        const command = mod.Command.sidecar("bin/server");
+        command.execute();
+      });
+    }
     getTransactionHistory();
   }, []);
 

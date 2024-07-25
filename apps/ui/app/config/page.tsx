@@ -13,7 +13,7 @@ import { NETWORK_MODE_OPTIONS, SelectStyles } from "../utils/constant";
 import IconSave from "../icons/IconSave";
 
 export default function Page(): JSX.Element {
-  const { network, uri, explorer, regbox, fetchConfig } =
+  const { network, uri, explorer, regbox, configApiUrl, fetchConfig } =
     useConfigContext() as NetworkConfigType;
 
   const [_network, setNetwork] = useState<string>(network);
@@ -40,7 +40,7 @@ export default function Page(): JSX.Element {
     }
 
     try {
-      await fetch("/api/config", {
+      await fetch(configApiUrl!, {
         method: "PUT",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

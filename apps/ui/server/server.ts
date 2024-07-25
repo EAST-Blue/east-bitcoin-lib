@@ -17,7 +17,7 @@ app.use(bodyParser.json());
 // Account API
 app.get("/account", async (req: any, res: any) => {
   try {
-    const accounts = prisma.account.findMany({ skip: 0, take: 100 });
+    const accounts = await prisma.account.findMany({ skip: 0, take: 100 });
 
     return res.status(200).json(accounts);
   } catch (error: any) {
@@ -33,7 +33,7 @@ app.post("/account", async (req: any, res: any) => {
 
     return res.status(200).json(req.body);
   } catch (error: any) {
-    console.error(error)
+    console.error(error);
     return res.status(500).json({ message: error?.message });
   }
 });
