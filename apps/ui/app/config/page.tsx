@@ -94,7 +94,7 @@ export default function Page(): JSX.Element {
                 </div>
                 <div>
                   <label className="block mb-2 text-white-7 font-semibold text-sm tracking-wide">
-                    URI
+                    API URL (Electrs)
                   </label>
                   <input
                     type="text"
@@ -117,20 +117,6 @@ export default function Page(): JSX.Element {
                     value={_explorer || explorer || ""}
                     onChange={(e) => {
                       setExplorer(e.target.value);
-                    }}
-                  />
-                </div>
-                <div>
-                  <label className="block mb-2 text-white-7 font-semibold text-sm tracking-wide">
-                    Regbox URI
-                  </label>
-                  <input
-                    type="text"
-                    className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
-                    placeholder="https://regbox.explorer.eastlayer.io"
-                    value={_regbox || regbox || ""}
-                    onChange={(e) => {
-                      setRegbox(e.target.value);
                     }}
                   />
                 </div>

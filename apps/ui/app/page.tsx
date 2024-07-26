@@ -356,15 +356,15 @@ export default function Page(): JSX.Element {
 
     switch (secretType) {
       case SecretEnum.MNEMONIC:
-        return `mnemonic: ${secret}`;
+        return `mnemonic: "${secret}"`;
         break;
 
       case SecretEnum.PRIVATEKEY:
-        return `privateKey: ${secret}`;
+        return `privateKey: "${secret}"`;
         break;
 
       case SecretEnum.WIF:
-        return `wif: ${secret}`;
+        return `wif: "${secret}"`;
         break;
 
       default:
