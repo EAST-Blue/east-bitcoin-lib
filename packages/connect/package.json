@@ -1,0 +1,18 @@
+{
+    "name": "@east-bitcoin-lib/connect",
+    "version": "0.0.1",
+    "private": false,
+    "main": "./dist/index.js",
+    "types": "./dist/index.d.ts",
+    "scripts": {
+        "build": "tsc -b ./tsconfig.build.json",
+        "clean": "rm -rf dist"
+    },
+    "dependencies": {
+        "sats-connect": "^0.5.0"
+    },
+    "devDependencies": {
+        "@east-bitcoin-lib/eslint-config": "*",
+        "@east-bitcoin-lib/typescript-config": "*"
+    }
+}
