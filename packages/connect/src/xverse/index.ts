@@ -1,4 +1,8 @@
-import { AddressPurposes, getAddress } from "sats-connect";
+import {
+  AddressPurposes,
+  getAddress,
+  signMessage as _signMessage,
+} from "sats-connect";
 
 import {
   fromXOnlyToFullPubkey,
@@ -7,6 +11,15 @@ import {
 } from "./utils";
 import { getAddressFormat } from "../address";
 import { Network } from "../network";
+import { XverseOnFinishResponse, XverseSignMessageOptions } from "./types";
+
+function handleOnCancel() {
+  throw new Error("Request canceled by user.");
+}
+
+function handleOnSignCancel(type: "transaction" | "message") {
+  throw new Error(`Failed to sign ${type} using xVerse`);
+}
 
 export async function connectXverse(network: Network) {
   network = network ?? "testnet";
@@ -67,14 +80,39 @@ export async function connectXverse(network: Network) {
   return result;
 }
 
-function handleOnCancel() {
-  throw new Error("Request canceled by user.");
-}
+export async function signMessage(
+  options: XverseSignMessageOptions
+): Promise<null | { signature: string }> {
+  let result = null;
+  if (!options.message || !options.network || !options.address) {
+    throw new Error("Invalid options provided.");
+  }
 
-export type XverseOnFinishResponse = {
-  addresses: Array<{
-    address: string;
-    publicKey: string;
-    purpose: "ordinals" | "payment";
-  }>;
-};
+  if (!isXverseInstalled()) {
+    throw new Error("xverse not installed.");
+  }
+
+  const handleFinish = (response: string) => {
+    result = {
+      signature: response,
+    };
+  };
+
+  const xverseOptions = {
+    payload: {
+      network: {
+        type: (options.network.charAt(0).toUpperCase() +
+          options.network.slice(1)) as XverseNetwork,
+      },
+      message: options.message,
+      broadcast: false,
+      address: options.address,
+    },
+    onFinish: handleFinish,
+    onCancel: () => handleOnSignCancel("message"),
+  };
+
+  await _signMessage(xverseOptions);
+
+  return result;
+}

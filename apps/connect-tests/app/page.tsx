@@ -1,12 +1,21 @@
 "use client";
 
 import Image from "next/image";
-import { connectXverse, connectUnisat,Network } from "@east-bitcoin-lib/connect";
+import {
+  connectXverse,
+  connectUnisat,
+  Network,
+} from "@east-bitcoin-lib/connect";
 
 export default function Home() {
   const onConnectXverse = async (network: Network) => {
+    const address = await connectXverse(network);
+    console.log("Xverse : ", address);
+  };
+
+  const onConnectUnisat = async (network: Network) => {
     const address = await connectUnisat(network);
-    console.log(address);
+    console.log("Unisat: ", address);
   };
 
   return (
@@ -36,10 +45,17 @@ export default function Home() {
       </div>
 
       <button
-        onClick={() => onConnectXverse('testnet')}
+        onClick={() => onConnectXverse("testnet")}
         className="cursor-pointer fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30"
       >
-        Connect Xverse
+        Connect Xverse Testnet
+      </button>
+
+      <button
+        onClick={() => onConnectUnisat("testnet")}
+        className="cursor-pointer fixed left-0 top-0 flex w-full justify-center border-b border-gray-300 bg-gradient-to-b from-zinc-200 pb-6 pt-8 backdrop-blur-2xl dark:border-neutral-800 dark:bg-zinc-800/30 dark:from-inherit lg:static lg:w-auto  lg:rounded-xl lg:border lg:bg-gray-200 lg:p-4 lg:dark:bg-zinc-800/30"
+      >
+        Connect Unisat Testnet
       </button>
 
       <div className="mb-32 grid text-center lg:mb-0 lg:w-full lg:max-w-5xl lg:grid-cols-4 lg:text-left">
