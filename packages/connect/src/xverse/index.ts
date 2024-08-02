@@ -80,7 +80,7 @@ export async function connectXverse(network: Network) {
   return result;
 }
 
-export async function signMessage(
+export async function signMessageXverse(
   options: XverseSignMessageOptions
 ): Promise<null | { signature: string }> {
   let result = null;

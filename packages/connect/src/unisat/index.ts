@@ -1,5 +1,6 @@
 import { getAddressFormat } from "../address"
 import { Network } from "../network"
+import { UnisatMessageOptions } from "./types"
 import { isUnisatInstalled, UnisatNetwork } from "./utils"
 
 export async function connectUnisat(network: Network) {
@@ -39,3 +40,20 @@ export async function connectUnisat(network: Network) {
     }
   ]
 }
+
+export async function signMessageUnisat(options: UnisatMessageOptions) {
+  if (!isUnisatInstalled()) {
+    throw new Error("Unisat not installed.")
+  }
+
+  const message = options.message
+  const type = options.type ?? 'ecdsa'
+
+  const signature = await window.unisat.signMessage(message, type)
+  if (!signature) {
+    throw new Error(`Failed to sign message`)
+  }
+
+  return signature
+}
+
