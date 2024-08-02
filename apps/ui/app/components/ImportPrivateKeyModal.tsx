@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 
-const ImportAccountModal = ({
+const ImportPrivateKeyModal = ({
   isOpen,
   onClose,
   onSave,
@@ -29,7 +29,7 @@ const ImportAccountModal = ({
           </button>
         </div>
         <div className="mb-4">
-          <label className="block text-gray-400 mb-2">Mnemonic Phrase</label>
+          <label className="block text-gray-400 mb-2">Private Key (HEX)</label>
           <textarea
             rows={4}
             className="w-full px-3 border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
@@ -52,7 +52,6 @@ const ImportAccountModal = ({
             onChange={(e) => setDerivationValue(parseInt(e.target.value))}
           />
         </div>
-
         <div className="flex justify-end">
           <button
             className="flex px-4 items-center py-2 disabled:cursor-not-allowed rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 disabled:opacity-50"
@@ -70,4 +69,4 @@ const ImportAccountModal = ({
   );
 };
 
-export default ImportAccountModal;
+export default ImportPrivateKeyModal;
