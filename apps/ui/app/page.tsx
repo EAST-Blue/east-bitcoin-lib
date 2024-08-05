@@ -43,7 +43,8 @@ import { SecretEnum } from "./enums/SecretEnum";
 import { generateWalletBySecretType } from "./utils/generateWalletBySecretType";
 import ExportPsbtModal from "./components/ExportPsbtModal";
 import ImportPsbtModal from "./components/ImportPsbtModal";
-import { Psbt } from "bitcoinjs-lib";
+import { InputUTXO } from "./types/Utxo";
+import { Transaction, Psbt } from "bitcoinjs-lib";
 
 export default function Page(): JSX.Element {
   const broadcastApiUrl = useRef("");
@@ -56,7 +57,7 @@ export default function Page(): JSX.Element {
   const [address, setAddress] = useState<string>("");
   const [path, setPath] = useState<number>(0);
   const [inputs, setInputs] = useState<BitcoinUTXO[]>([]);
-  const [utxos, setUtxos] = useState<BitcoinUTXO[]>([]);
+  const [utxos, setUtxos] = useState<InputUTXO[]>([]);
   const [outputType, setOutputType] = useState<string>("");
   const [addressOutput, setAddressOutput] = useState<string>("");
   const [outputs, setOutputs] = useState<PSBTOutput[]>([]);
@@ -137,7 +138,11 @@ export default function Page(): JSX.Element {
       switch (addressType) {
         case "p2wpkh":
           const p2wpkhUtxo = await P2wpkhUtxo.fromBitcoinUTXO(utxo);
-          _psbtInputs.push({ utxo: p2wpkhUtxo, value: utxo.value });
+          _psbtInputs.push({
+            utxo: p2wpkhUtxo,
+            value: utxo.value,
+            sighashType: utxo.sighash,
+          });
           break;
 
         case "p2tr":
@@ -146,7 +151,11 @@ export default function Page(): JSX.Element {
             utxo,
             p2tr.tapInternalKey
           );
-          _psbtInputs.push({ utxo: p2trUtxo, value: utxo.value });
+          _psbtInputs.push({
+            utxo: p2trUtxo,
+            value: utxo.value,
+            sighashType: utxo.sighash,
+          });
           break;
 
         default:
@@ -188,12 +197,16 @@ export default function Page(): JSX.Element {
     for (const [index, psbtInput] of p.inputs.entries()) {
       switch (true) {
         case psbtInput.utxo instanceof P2wpkhUtxo:
-          psbt.signInput(index, wallet.p2wpkh(path).keypair);
+          psbt.signInput(index, wallet.p2wpkh(path).keypair, [
+            utxos[index]?.sighash ?? Transaction.SIGHASH_ALL,
+          ]);
           psbt.finalizeInput(index);
           break;
 
         case psbtInput.utxo instanceof P2trUtxo:
-          psbt.signInput(index, wallet.p2tr(path).keypair);
+          psbt.signInput(index, wallet.p2tr(path).keypair, [
+            utxos[index]?.sighash ?? Transaction.SIGHASH_ALL,
+          ]);
           psbt.finalizeInput(index);
           break;
 
@@ -303,15 +316,21 @@ export default function Page(): JSX.Element {
     getTransactionHistory();
   }, []);
 
-  const handleChange = (
+  const onChangeInput = (
     selectedOptions: MultiValue<{
       label: string;
       value: string;
     }>
   ) => {
     const selectedUtxo = selectedOptions
-      ? selectedOptions.map((option) => JSON.parse(option.value))
+      ? selectedOptions.map((option) => {
+          const _utxo = JSON.parse(option.value);
+          _utxo["sighash"] = Transaction.SIGHASH_ALL; // default sighash
+
+          return _utxo;
+        })
       : [];
+
     setUtxos(selectedUtxo);
   };
 
@@ -502,7 +521,7 @@ export default function Page(): JSX.Element {
                     isMulti
                     isDisabled={false}
                     isSearchable={false}
-                    onChange={handleChange}
+                    onChange={onChangeInput}
                     className="cursor-pointer"
                     placeholder="-- Select Input --"
                     styles={SelectStyles}
@@ -510,12 +529,70 @@ export default function Page(): JSX.Element {
                       label: `${_utxo.txid} - ${_utxo.value} sats`,
                       value: JSON.stringify(_utxo),
                     }))}
-                    value={utxos.map((_utxo) => ({
-                      label: `${prettyTruncate(_utxo.txid, 32, "address")} - ${_utxo.value} sats`,
-                      value: JSON.stringify(_utxo),
-                    }))}
                   />
                 </div>
+
+                {utxos.map((_input, i) => (
+                  <div className="flex flex-row gap-x-2 mt-2 mb-4">
+                    <p className="text-xs mt-2 text-[rgba(255,255,255,0.5)] mx-2">
+                      Input {i + 1}
+                    </p>
+                    <input
+                      disabled
+                      value={_input.txid}
+                      type="text"
+                      className="w-1/2 text-sm px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                    />
+                    <div className="w-1/2">
+                      <Select
+                        onChange={(e) => {
+                          const _utxos = utxos;
+                          if (_utxos[i]) {
+                            _utxos[i].sighash = e?.value;
+                            setUtxos(_utxos);
+                          }
+                        }}
+                        styles={SelectStyles}
+                        defaultValue={{
+                          label: "SIGHASH_ALL",
+                          value: Transaction.SIGHASH_ALL,
+                        }}
+                        options={[
+                          {
+                            label: "SIGHASH_ALL",
+                            value: Transaction.SIGHASH_ALL,
+                          },
+                          {
+                            label: "SIGHASH_NONE",
+                            value: Transaction.SIGHASH_NONE,
+                          },
+                          {
+                            label: "SIGHASH_SINGLE",
+                            value: Transaction.SIGHASH_SINGLE,
+                          },
+                          {
+                            label: "SIGHASH_ALL_ANYONECANPAY",
+                            value:
+                              Transaction.SIGHASH_ALL +
+                              Transaction.SIGHASH_ANYONECANPAY,
+                          },
+                          {
+                            label: "SIGHASH_NONE_ANYONECANPAY",
+                            value:
+                              Transaction.SIGHASH_NONE +
+                              Transaction.SIGHASH_ANYONECANPAY,
+                          },
+                          {
+                            label: "SIGHASH_SINGLE_ANYONECANPAY",
+                            value:
+                              Transaction.SIGHASH_SINGLE +
+                              Transaction.SIGHASH_ANYONECANPAY,
+                          },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                ))}
 
                 <div>
                   <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
