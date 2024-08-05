@@ -41,6 +41,9 @@ import GenerateCodeModal from "./components/GenerateCodeModal";
 import { checkSecretType } from "./utils/checkSecretType";
 import { SecretEnum } from "./enums/SecretEnum";
 import { generateWalletBySecretType } from "./utils/generateWalletBySecretType";
+import ExportPsbtModal from "./components/ExportPsbtModal";
+import ImportPsbtModal from "./components/ImportPsbtModal";
+import { Psbt } from "bitcoinjs-lib";
 
 export default function Page(): JSX.Element {
   const broadcastApiUrl = useRef("");
@@ -62,9 +65,14 @@ export default function Page(): JSX.Element {
   const [transactions, setTransactions] = useState([]);
   const [isBroadcastDropdown, setIsBroadcastDropdown] = useState(false);
   const [isSignedTxModalOpen, setIsSignedTxModalOpen] = useState(false);
+  const [isExportPsbtModalOpen, setIsExportPsbtModalOpen] = useState(false);
   const [isGenerateCodeModalOpen, setIsGenerateCodeModalOpen] = useState(false);
   const [psbtInputs, setPsbtInputs] = useState<any[]>([]); // only used for generate client code
   const [psbtOutputs, setPsbtOutputs] = useState<any[]>([]); // only used for generate client code
+  const [exportPsbt, setExportPsbt] = useState<string>(""); // to store base64 psbt export
+
+  const [isPsbtImport, setIsPsbtImport] = useState<boolean>(false);
+  const [importedPsbt, setImportedPsbt] = useState<Psbt | null>(null);
 
   const toastSignedTransaction = () => {
     toast.info(<p>Transaction Signed. Please broadcast the transaction.</p>);
@@ -197,6 +205,7 @@ export default function Page(): JSX.Element {
     // Finalize Tx
     const _hex = psbt.extractTransaction().toHex();
     setHex(_hex);
+    setExportPsbt(psbt.toBase64());
 
     // This is for code generator
     setPsbtInputs(utxos);
@@ -372,6 +381,18 @@ export default function Page(): JSX.Element {
     }
   };
 
+  const onImportPsbt = (base64: string) => {
+    try {
+      resetState();
+      setIsPsbtImport(true);
+
+      const psbt = Psbt.fromBase64(base64);
+      setImportedPsbt(psbt);
+    } catch (error) {
+      throw new Error(`Error import PSBT ${error}`);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-black text-white overflow-hidden">
       <Leftbar active="transaction" />
@@ -381,8 +402,18 @@ export default function Page(): JSX.Element {
 
         <div className="flex w-full">
           <div className="w-2/3 pr-4">
-            <div className="bg-white-1 p-3 rounded-lg">
+            <div className="flex flex-row justify-between bg-white-1 p-3 rounded-lg">
               <h2 className="text-xl font-bold">Transaction Builder</h2>
+              <button
+                disabled={hex === ""}
+                onClick={onBroadcast}
+                type="button"
+                className="flex px-4 items-center py-2 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1"
+              >
+                <p className="pl-1 whitespace-nowrap font-semibold">
+                  Import PSBT
+                </p>
+              </button>
             </div>
             <form className="mt-2">
               <div className="bg-white-1 p-3 rounded-lg space-y-4">
@@ -697,7 +728,7 @@ export default function Page(): JSX.Element {
                         disabled={hex === ""}
                         onClick={onBroadcast}
                         type="button"
-                        className="flex px-4 rounded-r-none items-center py-2 disabled:select-none disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1"
+                        className="flex px-4 items-center py-2 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1"
                       >
                         <IconBroadcast
                           size={24}
@@ -742,6 +773,16 @@ export default function Page(): JSX.Element {
                           <i className="fa fa-code px-2"></i>
                           Generate Code
                         </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setIsExportPsbtModalOpen(true);
+                          }}
+                          className="flex items-center px-4 py-2 w-full text-white hover:bg-gray-700 focus:outline-none hover:rounded-b-md"
+                        >
+                          <i className="fa fa-code px-2"></i>
+                          Export PSBT
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -755,6 +796,22 @@ export default function Page(): JSX.Element {
       </main>
 
       <ToastContainer hideProgressBar={true} theme="light" />
+      <ImportPsbtModal
+        isOpen={isExportPsbtModalOpen}
+        onSave={() => {
+          setIsExportPsbtModalOpen(false);
+        }}
+        onClose={() => {
+          setIsExportPsbtModalOpen(false);
+        }}
+      />
+      <ExportPsbtModal
+        isOpen={isExportPsbtModalOpen}
+        onClose={() => {
+          setIsExportPsbtModalOpen(false);
+        }}
+        base64={exportPsbt}
+      />
       <SignedTxModal
         isOpen={isSignedTxModalOpen}
         onClose={() => {
