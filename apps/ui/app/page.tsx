@@ -46,6 +46,7 @@ import ImportPsbtModal from "./components/ImportPsbtModal";
 import { InputUTXO } from "./types/Utxo";
 import { Transaction, Psbt, networks } from "bitcoinjs-lib";
 import { parseScript } from "./utils/parseOpcode";
+import { parseNetwork } from "./utils/parseNetwork";
 
 export default function Page(): JSX.Element {
   const broadcastApiUrl = useRef("");
@@ -492,7 +493,7 @@ export default function Page(): JSX.Element {
       resetState();
       setIsPsbtImport(true);
 
-      const psbt = Psbt.fromBase64(base64, { network: networks.regtest });
+      const psbt = Psbt.fromBase64(base64, { network: parseNetwork(network) });
       setImportedPsbt(psbt);
       setIsImportPsbtModalOpen(false);
     } catch (error) {
