@@ -1,6 +1,6 @@
 "use client";
 
-import React from "react";
+import React, { useState } from "react";
 
 const ImportPsbtModal = ({
   isOpen,
@@ -8,10 +8,12 @@ const ImportPsbtModal = ({
   onClose,
 }: {
   isOpen: boolean;
-  onSave: () => void;
+  onSave: (base64: string) => void;
   onClose: () => void;
 }) => {
   if (!isOpen) return null;
+
+  const [psbt, setPsbt] = useState<string>("");
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
@@ -30,6 +32,9 @@ const ImportPsbtModal = ({
             Paste your Base64 PSBT
           </label>
           <textarea
+            onChange={(e) => {
+              setPsbt(e.target.value);
+            }}
             rows={4}
             className="w-full px-3 border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
           />
@@ -38,7 +43,9 @@ const ImportPsbtModal = ({
           <button
             className="flex px-4 items-center py-2 disabled:cursor-not-allowed rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 disabled:opacity-50"
             onClick={() => {
-              onSave();
+              if (psbt !== "") {
+                onSave(psbt);
+              }
             }}
           >
             Import
