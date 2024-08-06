@@ -200,11 +200,8 @@ export default function Page(): JSX.Element {
       }
     }
 
-    console.log(psbt);
-
     const hex = psbt.extractTransaction().toHex();
     setHex(hex);
-    console.log(hex);
   };
 
   const onSignTransaction = async () => {
@@ -380,6 +377,8 @@ export default function Page(): JSX.Element {
     setHex("");
     setOutputs([]);
     setIsBroadcastDropdown(false);
+    setImportedPsbt(null);
+    setIsPsbtImport(false);
   };
 
   useEffect(() => {
