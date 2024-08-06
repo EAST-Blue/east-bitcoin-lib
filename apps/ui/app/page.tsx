@@ -47,6 +47,8 @@ import { InputUTXO } from "./types/Utxo";
 import { Transaction, Psbt, networks } from "bitcoinjs-lib";
 import { parseScript } from "./utils/parseOpcode";
 import { parseNetwork } from "./utils/parseNetwork";
+import { sighashNumberToType } from "./utils/sighashNumberToType";
+import { witnessUtxoToTxid } from "./utils/witnessUtxoToTxid";
 
 export default function Page(): JSX.Element {
   const broadcastApiUrl = useRef("");
@@ -85,6 +87,10 @@ export default function Page(): JSX.Element {
 
   const toastBroadcastedTransaction = () => {
     toast.success(<p>Transaction broadcasted successfully.</p>);
+  };
+
+  const toastImportPsbt = () => {
+    toast.success(<p>PSBT imported successfully.</p>);
   };
 
   const scriptRef = useRef<HTMLDivElement>(null);
@@ -496,6 +502,7 @@ export default function Page(): JSX.Element {
       const psbt = Psbt.fromBase64(base64, { network: parseNetwork(network) });
       setImportedPsbt(psbt);
       setIsImportPsbtModalOpen(false);
+      toastImportPsbt();
     } catch (error) {
       throw new Error(`Error import PSBT ${error}`);
     }
@@ -627,23 +634,20 @@ export default function Page(): JSX.Element {
                   importedPsbt.data.inputs.map((_input, i) => (
                     <div className="flex flex-row gap-x-2 mt-2 mb-4">
                       <p className="text-xs mt-2 text-[rgba(255,255,255,0.5)] mx-2">
-                        Imported Input {i + 1}
+                        Imported
                       </p>
                       <input
                         disabled
-                        value={_input.sighashType}
+                        value={witnessUtxoToTxid(importedPsbt, i)}
                         type="text"
-                        className="w-1/2 text-sm px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                        className="w-1/2 text-sm px-3 h-[38px] border-2 border-white-5 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
                       />
-                      {/* <div className="w-1/2">
-                        <Select
-                          styles={SelectStyles}
-                          defaultValue={{
-                            label: "SIGHASH_TYPE",
-                            value: _input.sighashType!
-                          }}
-                        />
-                      </div> */}
+                      <input
+                        disabled
+                        value={sighashNumberToType(importedPsbt, i)}
+                        type="text"
+                        className="w-1/2 text-sm px-3 h-[38px] border-2 border-white-5 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                      />
                     </div>
                   ))}
 
