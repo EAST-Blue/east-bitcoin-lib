@@ -50,6 +50,7 @@ import { parseNetwork } from "./utils/parseNetwork";
 import { sighashNumberToType } from "./utils/sighashNumberToType";
 import { witnessUtxoToTxid } from "./utils/witnessUtxoToTxid";
 import { outsToString } from "./utils/outsToString";
+import { isIncludeSighashAll } from "./utils/isIncludeSighashAll";
 
 export default function Page(): JSX.Element {
   const broadcastApiUrl = useRef("");
@@ -637,7 +638,10 @@ export default function Page(): JSX.Element {
                   </label>
                   <Select
                     isMulti
-                    isDisabled={false}
+                    isDisabled={
+                      transactionPsbt !== null &&
+                      isIncludeSighashAll(transactionPsbt)
+                    }
                     isSearchable={false}
                     onChange={onChangeInput}
                     className="cursor-pointer"
