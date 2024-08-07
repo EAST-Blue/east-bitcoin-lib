@@ -1,7 +1,7 @@
 import { Psbt } from "bitcoinjs-lib";
 
 export const witnessUtxoToTxid = (psbt: Psbt, inputIndex: number): string => {
-  const extractedPsbt = psbt.extractTransaction();
+  const extractedPsbt = psbt.extractTransaction(true);
   const ins = extractedPsbt.ins;
 
   const hash = ins[inputIndex]?.hash;

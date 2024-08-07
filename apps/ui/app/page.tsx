@@ -207,7 +207,7 @@ export default function Page(): JSX.Element {
       }
     }
 
-    const hex = psbt.extractTransaction().toHex();
+    const hex = psbt.extractTransaction(true).toHex();
     setHex(hex);
   };
 

@@ -1,7 +1,7 @@
 import { Psbt, Transaction } from "bitcoinjs-lib";
 
 export const sighashNumberToType = (psbt: Psbt, inputIndex: number): string => {
-  const txPsbt = psbt.extractTransaction();
+  const txPsbt = psbt.extractTransaction(true);
   const witness = txPsbt.ins[inputIndex]?.witness;
 
   if (!witness) throw new Error(`Witness not exist on input`);
