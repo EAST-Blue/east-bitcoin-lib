@@ -1,8 +1,12 @@
-import { Psbt, Transaction } from "bitcoinjs-lib";
+import { Transaction } from "bitcoinjs-lib";
 
-export const sighashNumberToType = (psbt: Psbt, inputIndex: number): string => {
-  const txPsbt = psbt.extractTransaction(true);
-  const witness = txPsbt.ins[inputIndex]?.witness;
+export const sighashNumberToType = (
+  transaction: Transaction | null,
+  inputIndex: number
+): string => {
+  if (!transaction) return "UNDEFINED";
+
+  const witness = transaction.ins[inputIndex]?.witness;
 
   if (!witness) throw new Error(`Witness not exist on input`);
 

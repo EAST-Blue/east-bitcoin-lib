@@ -49,6 +49,7 @@ import { parseScript } from "./utils/parseOpcode";
 import { parseNetwork } from "./utils/parseNetwork";
 import { sighashNumberToType } from "./utils/sighashNumberToType";
 import { witnessUtxoToTxid } from "./utils/witnessUtxoToTxid";
+import { outsToString } from "./utils/outsToString";
 
 export default function Page(): JSX.Element {
   const broadcastApiUrl = useRef("");
@@ -80,6 +81,9 @@ export default function Page(): JSX.Element {
   const [isPsbtImport, setIsPsbtImport] = useState<boolean>(false);
   const [isImportPsbtModalOpen, setIsImportPsbtModalOpen] = useState(false);
   const [importedPsbt, setImportedPsbt] = useState<Psbt | null>(null);
+  const [transactionPsbt, setTransactionPsbt] = useState<Transaction | null>(
+    null
+  );
 
   const toastSignedTransaction = () => {
     toast.info(<p>Transaction Signed. Please broadcast the transaction.</p>);
@@ -130,193 +134,203 @@ export default function Page(): JSX.Element {
   };
 
   const onSignTransactionImportPsbt = async () => {
-    if (utxos.length < 1) return;
-    if (outputType === "address" && amount <= 0) return;
-    if (outputType === "address" && addressOutput === "") return;
-    if (outputType === "script" && !scriptEditorRef.current?.value) return;
+    try {
+      if (utxos.length < 1) return;
+      if (outputType === "address" && amount <= 0) return;
+      if (outputType === "address" && addressOutput === "") return;
+      if (outputType === "script" && !scriptEditorRef.current?.value) return;
 
-    // Get imported psbt
-    const psbt = importedPsbt;
-    if (!psbt) return;
+      // Get imported psbt
+      const psbt = importedPsbt?.clone();
+      if (!psbt) return;
 
-    // Load Wallet
-    const wallet = generateWalletBySecretType(secret, network);
-    if (!wallet) {
-      throw new Error("Invalid secret string provided");
-    }
-
-    // Prepare inputs
-    let inputStartIndex = psbt.inputCount;
-    for (const utxo of utxos) {
-      const addressType: AddressType = getAddressType(utxo.address);
-      switch (addressType) {
-        case "p2wpkh":
-          const p2wpkhUtxo = await P2wpkhUtxo.fromBitcoinUTXO(utxo);
-          psbt
-            .addInput({
-              hash: utxo.txid,
-              index: utxo.vout,
-              witnessUtxo: p2wpkhUtxo.witness,
-              sighashType: utxo.sighash,
-            })
-            .signInput(inputStartIndex, wallet.p2wpkh(path).keypair, [
-              utxo.sighash!,
-            ])
-            .finalizeInput(inputStartIndex);
-          break;
-        case "p2tr":
-          const p2tr = wallet.p2tr(path);
-          const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
-            utxo,
-            p2tr.tapInternalKey
-          );
-          psbt
-            .addInput({
-              hash: utxo.txid,
-              index: utxo.vout,
-              witnessUtxo: p2trUtxo.witness,
-              tapInternalKey: p2trUtxo.tapInternalKey,
-              sighashType: utxo.sighash,
-              ...(p2trUtxo.tapLeafScript
-                ? {
-                    tapLeafScript: p2trUtxo.tapLeafScript,
-                  }
-                : {}),
-            })
-            .signInput(inputStartIndex, wallet.p2tr(path).keypair, [
-              utxo.sighash!,
-            ])
-            .finalizeInput(inputStartIndex);
-          break;
-        default:
-          throw new Error(`Input type not supported`);
+      // Load Wallet
+      const wallet = generateWalletBySecretType(secret, network);
+      if (!wallet) {
+        throw new Error("Invalid secret string provided");
       }
 
-      inputStartIndex++;
-    }
+      // Prepare inputs
+      let inputStartIndex = psbt.inputCount;
+      for (const utxo of utxos) {
+        const addressType: AddressType = getAddressType(utxo.address);
+        switch (addressType) {
+          case "p2wpkh":
+            const p2wpkhUtxo = await P2wpkhUtxo.fromBitcoinUTXO(utxo);
+            psbt
+              .addInput({
+                hash: utxo.txid,
+                index: utxo.vout,
+                witnessUtxo: p2wpkhUtxo.witness,
+                sighashType: utxo.sighash,
+              })
+              .signInput(inputStartIndex, wallet.p2wpkh(path).keypair, [
+                utxo.sighash!,
+              ])
+              .finalizeInput(inputStartIndex);
+            break;
+          case "p2tr":
+            const p2tr = wallet.p2tr(path);
+            const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
+              utxo,
+              p2tr.tapInternalKey
+            );
+            psbt
+              .addInput({
+                hash: utxo.txid,
+                index: utxo.vout,
+                witnessUtxo: p2trUtxo.witness,
+                tapInternalKey: p2trUtxo.tapInternalKey,
+                sighashType: utxo.sighash,
+                ...(p2trUtxo.tapLeafScript
+                  ? {
+                      tapLeafScript: p2trUtxo.tapLeafScript,
+                    }
+                  : {}),
+              })
+              .signInput(inputStartIndex, wallet.p2tr(path).keypair, [
+                utxo.sighash!,
+              ])
+              .finalizeInput(inputStartIndex);
+            break;
+          default:
+            throw new Error(`Input type not supported`);
+        }
 
-    // Prepare outputs
-    for (const output of outputs) {
-      if (output.address) {
-        psbt.addOutput({ address: output.address, value: output.value });
-      } else if (output.script) {
-        psbt.addOutput({
-          script: parseScript(output.script),
-          value: output.value,
-        });
+        inputStartIndex++;
       }
-    }
 
-    const hex = psbt.extractTransaction(true).toHex();
-    setHex(hex);
+      // Prepare outputs
+      for (const output of outputs) {
+        if (output.address) {
+          psbt.addOutput({ address: output.address, value: output.value });
+        } else if (output.script) {
+          psbt.addOutput({
+            script: parseScript(output.script),
+            value: output.value,
+          });
+        }
+      }
+
+      const hex = psbt.extractTransaction(true).toHex();
+      setHex(hex);
+    } catch (error) {
+      toast.error(`Error sign : ${error}`);
+      console.error(error);
+    }
   };
 
   const onSignTransaction = async () => {
-    if (utxos.length < 1) return;
-    if (outputType === "address" && amount <= 0) return;
-    if (outputType === "address" && addressOutput === "") return;
-    if (outputType === "script" && !scriptEditorRef.current?.value) return;
+    try {
+      if (utxos.length < 1) return;
+      if (outputType === "address" && amount <= 0) return;
+      if (outputType === "address" && addressOutput === "") return;
+      if (outputType === "script" && !scriptEditorRef.current?.value) return;
 
-    // Load Wallet
-    const wallet = generateWalletBySecretType(secret, network);
-    if (!wallet) {
-      throw new Error("Invalid secret string provided");
-    }
+      // Load Wallet
+      const wallet = generateWalletBySecretType(secret, network);
+      if (!wallet) {
+        throw new Error("Invalid secret string provided");
+      }
 
-    // Prepare inputs
-    const _psbtInputs: Input[] = [];
-    for (const utxo of utxos) {
-      const addressType: AddressType = getAddressType(utxo.address);
-      switch (addressType) {
-        case "p2wpkh":
-          const p2wpkhUtxo = await P2wpkhUtxo.fromBitcoinUTXO(utxo);
-          _psbtInputs.push({
-            utxo: p2wpkhUtxo,
-            value: utxo.value,
-            sighashType: utxo.sighash,
+      // Prepare inputs
+      const _psbtInputs: Input[] = [];
+      for (const utxo of utxos) {
+        const addressType: AddressType = getAddressType(utxo.address);
+        switch (addressType) {
+          case "p2wpkh":
+            const p2wpkhUtxo = await P2wpkhUtxo.fromBitcoinUTXO(utxo);
+            _psbtInputs.push({
+              utxo: p2wpkhUtxo,
+              value: utxo.value,
+              sighashType: utxo.sighash,
+            });
+            break;
+
+          case "p2tr":
+            const p2tr = wallet.p2tr(path);
+            const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
+              utxo,
+              p2tr.tapInternalKey
+            );
+            _psbtInputs.push({
+              utxo: p2trUtxo,
+              value: utxo.value,
+              sighashType: utxo.sighash,
+            });
+            break;
+
+          default:
+            break;
+        }
+      }
+
+      // Prepare outputs
+      const _pbstOutputs: Output[] = [];
+      for (const output of outputs) {
+        if (output.address) {
+          _pbstOutputs.push({
+            output: Address.fromString(output.address!),
+            value: output.value,
           });
-          break;
-
-        case "p2tr":
-          const p2tr = wallet.p2tr(path);
-          const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
-            utxo,
-            p2tr.tapInternalKey
-          );
-          _psbtInputs.push({
-            utxo: p2trUtxo,
-            value: utxo.value,
-            sighashType: utxo.sighash,
+        } else if (output.script) {
+          const bufferScript = output.script.split("OP_RETURN ");
+          _pbstOutputs.push({
+            output: new OpReturn({
+              dataScripts: [Script.encodeUTF8(bufferScript[1]!)],
+            }),
+            value: 546, // hardcoded value
           });
-          break;
-
-        default:
-          break;
+        }
       }
-    }
 
-    // Prepare outputs
-    const _pbstOutputs: Output[] = [];
-    for (const output of outputs) {
-      if (output.address) {
-        _pbstOutputs.push({
-          output: Address.fromString(output.address!),
-          value: output.value,
-        });
-      } else if (output.script) {
-        const bufferScript = output.script.split("OP_RETURN ");
-        _pbstOutputs.push({
-          output: new OpReturn({
-            dataScripts: [Script.encodeUTF8(bufferScript[1]!)],
-          }),
-          value: 546, // hardcoded value
-        });
+      // Build PSBT
+      const p = new PSBT({
+        network: network as Network,
+        inputs: _psbtInputs,
+        outputs: _pbstOutputs,
+        feeRate: 1,
+        changeOutput: Address.fromString(address),
+      });
+      await p.build();
+      const psbt = p.toPSBT();
+
+      // Sign Inputs
+      for (const [index, psbtInput] of p.inputs.entries()) {
+        switch (true) {
+          case psbtInput.utxo instanceof P2wpkhUtxo:
+            psbt.signInput(index, wallet.p2wpkh(path).keypair, [
+              utxos[index]?.sighash ?? Transaction.SIGHASH_ALL,
+            ]);
+            psbt.finalizeInput(index);
+            break;
+
+          case psbtInput.utxo instanceof P2trUtxo:
+            psbt.signInput(index, wallet.p2tr(path).keypair, [
+              utxos[index]?.sighash ?? Transaction.SIGHASH_ALL,
+            ]);
+            psbt.finalizeInput(index);
+            break;
+
+          default:
+            break;
+        }
       }
+
+      // Finalize Tx
+      const _hex = psbt.extractTransaction().toHex();
+      setHex(_hex);
+      setExportPsbt(psbt.toBase64());
+
+      // This is for code generator
+      setPsbtInputs(utxos);
+      setPsbtOutputs(outputs);
+
+      toastSignedTransaction();
+    } catch (error) {
+      toast.error(`Error sign : ${error}`);
+      console.error(error);
     }
-
-    // Build PSBT
-    const p = new PSBT({
-      network: network as Network,
-      inputs: _psbtInputs,
-      outputs: _pbstOutputs,
-      feeRate: 1,
-      changeOutput: Address.fromString(address),
-    });
-    await p.build();
-    const psbt = p.toPSBT();
-
-    // Sign Inputs
-    for (const [index, psbtInput] of p.inputs.entries()) {
-      switch (true) {
-        case psbtInput.utxo instanceof P2wpkhUtxo:
-          psbt.signInput(index, wallet.p2wpkh(path).keypair, [
-            utxos[index]?.sighash ?? Transaction.SIGHASH_ALL,
-          ]);
-          psbt.finalizeInput(index);
-          break;
-
-        case psbtInput.utxo instanceof P2trUtxo:
-          psbt.signInput(index, wallet.p2tr(path).keypair, [
-            utxos[index]?.sighash ?? Transaction.SIGHASH_ALL,
-          ]);
-          psbt.finalizeInput(index);
-          break;
-
-        default:
-          break;
-      }
-    }
-
-    // Finalize Tx
-    const _hex = psbt.extractTransaction().toHex();
-    setHex(_hex);
-    setExportPsbt(psbt.toBase64());
-
-    // This is for code generator
-    setPsbtInputs(utxos);
-    setPsbtOutputs(outputs);
-
-    toastSignedTransaction();
   };
 
   const onBroadcast = async () => {
@@ -350,6 +364,7 @@ export default function Page(): JSX.Element {
 
       toastBroadcastedTransaction();
     } catch (error) {
+      toast.error(`Error broadcast : ${error}`);
       console.error(error);
     }
   };
@@ -384,8 +399,9 @@ export default function Page(): JSX.Element {
     setHex("");
     setOutputs([]);
     setIsBroadcastDropdown(false);
-    setImportedPsbt(null);
     setIsPsbtImport(false);
+    setImportedPsbt(null);
+    setTransactionPsbt(null);
   };
 
   useEffect(() => {
@@ -501,10 +517,14 @@ export default function Page(): JSX.Element {
 
       const psbt = Psbt.fromBase64(base64, { network: parseNetwork(network) });
       setImportedPsbt(psbt);
+
+      const transaction = psbt.extractTransaction(true);
+      setTransactionPsbt(transaction);
+
       setIsImportPsbtModalOpen(false);
       toastImportPsbt();
     } catch (error) {
-      throw new Error(`Error import PSBT ${error}`);
+      toast.error(<p>Import PSBT Failed: Invalid Format</p>);
     }
   };
 
@@ -638,13 +658,13 @@ export default function Page(): JSX.Element {
                       </p>
                       <input
                         disabled
-                        value={witnessUtxoToTxid(importedPsbt, i)}
+                        value={witnessUtxoToTxid(transactionPsbt, i)}
                         type="text"
                         className="w-1/2 text-sm px-3 h-[38px] border-2 border-white-5 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
                       />
                       <input
                         disabled
-                        value={sighashNumberToType(importedPsbt, i)}
+                        value={sighashNumberToType(transactionPsbt, i)}
                         type="text"
                         className="w-1/2 text-sm px-3 h-[38px] border-2 border-white-5 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
                       />
@@ -848,6 +868,31 @@ export default function Page(): JSX.Element {
                     </div>
                   </div>
                 )}
+
+                {transactionPsbt &&
+                  transactionPsbt.outs.map((_out) => (
+                    <div className="flex flex-row gap-x-2 mt-2 mb-4">
+                      <p className="text-xs mt-2 text-[rgba(255,255,255,0.5)] mx-2">
+                        Imported
+                      </p>
+                      <input
+                        disabled
+                        value={prettyTruncate(
+                          outsToString(_out),
+                          48,
+                          "address"
+                        )}
+                        type="text"
+                        className="w-1/2 text-sm px-3 h-[38px] border-2 border-white-5 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                      />
+                      <input
+                        disabled
+                        value={_out.value}
+                        type="text"
+                        className="w-1/2 text-sm px-3 h-[38px] border-2 border-white-5 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                      />
+                    </div>
+                  ))}
 
                 {outputs.map((_output, i) => (
                   <div className="flex items-center justify-end ml-auto gap-x-2">

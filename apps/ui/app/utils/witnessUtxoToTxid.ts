@@ -1,8 +1,12 @@
-import { Psbt } from "bitcoinjs-lib";
+import { Transaction } from "bitcoinjs-lib";
 
-export const witnessUtxoToTxid = (psbt: Psbt, inputIndex: number): string => {
-  const extractedPsbt = psbt.extractTransaction(true);
-  const ins = extractedPsbt.ins;
+export const witnessUtxoToTxid = (
+  transaction: Transaction | null,
+  inputIndex: number
+): string => {
+  if (!transaction) return "UNDEFINED";
+
+  const ins = transaction.ins;
 
   const hash = ins[inputIndex]?.hash;
   const txid = reverseBuffer(hash!).toString("hex");

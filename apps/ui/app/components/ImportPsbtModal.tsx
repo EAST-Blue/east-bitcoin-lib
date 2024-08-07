@@ -17,7 +17,7 @@ const ImportPsbtModal = ({
 
   return (
     <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50">
-      <div className="bg-[#262626] p-6 rounded-lg w-1/3">
+      <div className="bg-[#262626] p-6 rounded-lg w-2/5">
         <div className="flex justify-between items-center mb-4">
           <h2 className="text-xl font-bold">Import PSBT</h2>
           <button
@@ -35,7 +35,7 @@ const ImportPsbtModal = ({
             onChange={(e) => {
               setPsbt(e.target.value);
             }}
-            rows={4}
+            rows={8}
             className="w-full px-3 border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
           />
         </div>
