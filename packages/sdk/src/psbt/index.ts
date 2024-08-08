@@ -190,3 +190,4 @@ export class PSBT extends CoinSelect {
 }
 
 export * from "./extensions";
+export * from "./types";

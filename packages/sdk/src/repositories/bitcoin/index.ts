@@ -32,3 +32,4 @@ export abstract class BitcoinAPIAbstract {
 
 export * from "./mempool";
 export * from "./blockstream";
+export * from "./types";
