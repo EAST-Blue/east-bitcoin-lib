@@ -1,0 +1,32 @@
+{
+  "name": "@east-bitcoin-lib/faucet",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "prisma db push && next build",
+    "start": "next start",
+    "lint": "next lint"
+  },
+  "dependencies": {
+    "@east-bitcoin-lib/sdk": "*",
+    "react": "^18",
+    "react-dom": "^18",
+    "next": "14.2.5",
+    "@prisma/client": "5.16.1",
+    "prisma": "^5.16.2",
+    "timeago.js": "^4.0.2"
+  },
+  "devDependencies": {
+    "@east-bitcoin-lib/eslint-config": "*",
+    "@east-bitcoin-lib/typescript-config": "*",
+    "typescript": "^5",
+    "@types/node": "^20",
+    "@types/react": "^18",
+    "@types/react-dom": "^18",
+    "postcss": "^8",
+    "tailwindcss": "^3.4.1",
+    "eslint": "^8",
+    "eslint-config-next": "14.2.5"
+  }
+}
