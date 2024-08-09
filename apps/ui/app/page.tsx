@@ -41,6 +41,16 @@ import GenerateCodeModal from "./components/GenerateCodeModal";
 import { checkSecretType } from "./utils/checkSecretType";
 import { SecretEnum } from "./enums/SecretEnum";
 import { generateWalletBySecretType } from "./utils/generateWalletBySecretType";
+import ExportPsbtModal from "./components/ExportPsbtModal";
+import ImportPsbtModal from "./components/ImportPsbtModal";
+import { InputUTXO } from "./types/Utxo";
+import { Transaction, Psbt, networks } from "bitcoinjs-lib";
+import { parseScript } from "./utils/parseOpcode";
+import { parseNetwork } from "./utils/parseNetwork";
+import { sighashNumberToType } from "./utils/sighashNumberToType";
+import { witnessUtxoToTxid } from "./utils/witnessUtxoToTxid";
+import { outsToString } from "./utils/outsToString";
+import { isIncludeSighashAll } from "./utils/isIncludeSighashAll";
 
 export default function Page(): JSX.Element {
   const broadcastApiUrl = useRef("");
@@ -53,7 +63,7 @@ export default function Page(): JSX.Element {
   const [address, setAddress] = useState<string>("");
   const [path, setPath] = useState<number>(0);
   const [inputs, setInputs] = useState<BitcoinUTXO[]>([]);
-  const [utxos, setUtxos] = useState<BitcoinUTXO[]>([]);
+  const [utxos, setUtxos] = useState<InputUTXO[]>([]);
   const [outputType, setOutputType] = useState<string>("");
   const [addressOutput, setAddressOutput] = useState<string>("");
   const [outputs, setOutputs] = useState<PSBTOutput[]>([]);
@@ -62,9 +72,19 @@ export default function Page(): JSX.Element {
   const [transactions, setTransactions] = useState([]);
   const [isBroadcastDropdown, setIsBroadcastDropdown] = useState(false);
   const [isSignedTxModalOpen, setIsSignedTxModalOpen] = useState(false);
+  const [isExportPsbtModalOpen, setIsExportPsbtModalOpen] = useState(false);
   const [isGenerateCodeModalOpen, setIsGenerateCodeModalOpen] = useState(false);
   const [psbtInputs, setPsbtInputs] = useState<any[]>([]); // only used for generate client code
   const [psbtOutputs, setPsbtOutputs] = useState<any[]>([]); // only used for generate client code
+  const [exportPsbt, setExportPsbt] = useState<string>(""); // to store base64 psbt export
+
+  // State for import psbt
+  const [isPsbtImport, setIsPsbtImport] = useState<boolean>(false);
+  const [isImportPsbtModalOpen, setIsImportPsbtModalOpen] = useState(false);
+  const [importedPsbt, setImportedPsbt] = useState<Psbt | null>(null);
+  const [transactionPsbt, setTransactionPsbt] = useState<Transaction | null>(
+    null
+  );
 
   const toastSignedTransaction = () => {
     toast.info(<p>Transaction Signed. Please broadcast the transaction.</p>);
@@ -72,6 +92,10 @@ export default function Page(): JSX.Element {
 
   const toastBroadcastedTransaction = () => {
     toast.success(<p>Transaction broadcasted successfully.</p>);
+  };
+
+  const toastImportPsbt = () => {
+    toast.success(<p>PSBT imported successfully.</p>);
   };
 
   const scriptRef = useRef<HTMLDivElement>(null);
@@ -110,99 +134,204 @@ export default function Page(): JSX.Element {
     setInputs(confirmedUtxos);
   };
 
+  const onSignTransactionImportPsbt = async () => {
+    try {
+      if (utxos.length < 1) return;
+      if (outputType === "address" && amount <= 0) return;
+      if (outputType === "address" && addressOutput === "") return;
+      if (outputType === "script" && !scriptEditorRef.current?.value) return;
+
+      // Get imported psbt
+      const psbt = importedPsbt?.clone();
+      if (!psbt) return;
+
+      // Load Wallet
+      const wallet = generateWalletBySecretType(secret, network);
+      if (!wallet) {
+        throw new Error("Invalid secret string provided");
+      }
+
+      // Prepare inputs
+      let inputStartIndex = psbt.inputCount;
+      for (const utxo of utxos) {
+        const addressType: AddressType = getAddressType(utxo.address);
+        switch (addressType) {
+          case "p2wpkh":
+            const p2wpkhUtxo = await P2wpkhUtxo.fromBitcoinUTXO(utxo);
+            psbt
+              .addInput({
+                hash: utxo.txid,
+                index: utxo.vout,
+                witnessUtxo: p2wpkhUtxo.witness,
+                sighashType: utxo.sighash,
+              })
+              .signInput(inputStartIndex, wallet.p2wpkh(path).keypair, [
+                utxo.sighash!,
+              ])
+              .finalizeInput(inputStartIndex);
+            break;
+          case "p2tr":
+            const p2tr = wallet.p2tr(path);
+            const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
+              utxo,
+              p2tr.tapInternalKey
+            );
+            psbt
+              .addInput({
+                hash: utxo.txid,
+                index: utxo.vout,
+                witnessUtxo: p2trUtxo.witness,
+                tapInternalKey: p2trUtxo.tapInternalKey,
+                sighashType: utxo.sighash,
+                ...(p2trUtxo.tapLeafScript
+                  ? {
+                      tapLeafScript: p2trUtxo.tapLeafScript,
+                    }
+                  : {}),
+              })
+              .signInput(inputStartIndex, wallet.p2tr(path).keypair, [
+                utxo.sighash!,
+              ])
+              .finalizeInput(inputStartIndex);
+            break;
+          default:
+            throw new Error(`Input type not supported`);
+        }
+
+        inputStartIndex++;
+      }
+
+      // Prepare outputs
+      for (const output of outputs) {
+        if (output.address) {
+          psbt.addOutput({ address: output.address, value: output.value });
+        } else if (output.script) {
+          psbt.addOutput({
+            script: parseScript(output.script),
+            value: output.value,
+          });
+        }
+      }
+
+      const hex = psbt.extractTransaction(true).toHex();
+      setHex(hex);
+    } catch (error) {
+      toast.error(`Error sign : ${error}`);
+      console.error(error);
+    }
+  };
+
   const onSignTransaction = async () => {
-    if (utxos.length < 1) return;
-    if (outputType === "address" && amount <= 0) return;
-    if (outputType === "address" && addressOutput === "") return;
-    if (outputType === "script" && !scriptEditorRef.current?.value) return;
+    try {
+      if (utxos.length < 1) return;
+      if (outputType === "address" && amount <= 0) return;
+      if (outputType === "address" && addressOutput === "") return;
+      if (outputType === "script" && !scriptEditorRef.current?.value) return;
 
-    // Load Wallet
-    const wallet = generateWalletBySecretType(secret, network);
-    if (!wallet) {
-      throw new Error("Invalid secret string provided");
-    }
-
-    // Prepare inputs
-    const _psbtInputs: Input[] = [];
-    for (const utxo of utxos) {
-      const addressType: AddressType = getAddressType(utxo.address);
-      switch (addressType) {
-        case "p2wpkh":
-          const p2wpkhUtxo = await P2wpkhUtxo.fromBitcoinUTXO(utxo);
-          _psbtInputs.push({ utxo: p2wpkhUtxo, value: utxo.value });
-          break;
-
-        case "p2tr":
-          const p2tr = wallet.p2tr(path);
-          const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
-            utxo,
-            p2tr.tapInternalKey
-          );
-          _psbtInputs.push({ utxo: p2trUtxo, value: utxo.value });
-          break;
-
-        default:
-          break;
+      // Load Wallet
+      const wallet = generateWalletBySecretType(secret, network);
+      if (!wallet) {
+        throw new Error("Invalid secret string provided");
       }
-    }
 
-    // Prepare outputs
-    const _pbstOutputs: Output[] = [];
-    for (const output of outputs) {
-      if (output.address) {
-        _pbstOutputs.push({
-          output: Address.fromString(output.address!),
-          value: output.value,
-        });
-      } else if (output.script) {
-        const bufferScript = output.script.split("OP_RETURN ");
-        _pbstOutputs.push({
-          output: new OpReturn({
-            dataScripts: [Script.encodeUTF8(bufferScript[1]!)],
-          }),
-          value: 546, // hardcoded value
-        });
+      // Prepare inputs
+      const _psbtInputs: Input[] = [];
+      for (const utxo of utxos) {
+        const addressType: AddressType = getAddressType(utxo.address);
+        switch (addressType) {
+          case "p2wpkh":
+            const p2wpkhUtxo = await P2wpkhUtxo.fromBitcoinUTXO(utxo);
+            _psbtInputs.push({
+              utxo: p2wpkhUtxo,
+              value: utxo.value,
+              sighashType: utxo.sighash,
+            });
+            break;
+
+          case "p2tr":
+            const p2tr = wallet.p2tr(path);
+            const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
+              utxo,
+              p2tr.tapInternalKey
+            );
+            _psbtInputs.push({
+              utxo: p2trUtxo,
+              value: utxo.value,
+              sighashType: utxo.sighash,
+            });
+            break;
+
+          default:
+            break;
+        }
       }
-    }
 
-    // Build PSBT
-    const p = new PSBT({
-      network: network as Network,
-      inputs: _psbtInputs,
-      outputs: _pbstOutputs,
-      feeRate: 1,
-      changeOutput: Address.fromString(address),
-    });
-    await p.build();
-    const psbt = p.toPSBT();
-
-    // Sign Inputs
-    for (const [index, psbtInput] of p.inputs.entries()) {
-      switch (true) {
-        case psbtInput.utxo instanceof P2wpkhUtxo:
-          psbt.signInput(index, wallet.p2wpkh(path).keypair);
-          psbt.finalizeInput(index);
-          break;
-
-        case psbtInput.utxo instanceof P2trUtxo:
-          psbt.signInput(index, wallet.p2tr(path).keypair);
-          psbt.finalizeInput(index);
-          break;
-
-        default:
-          break;
+      // Prepare outputs
+      const _pbstOutputs: Output[] = [];
+      for (const output of outputs) {
+        if (output.address) {
+          _pbstOutputs.push({
+            output: Address.fromString(output.address!),
+            value: output.value,
+          });
+        } else if (output.script) {
+          const bufferScript = output.script.split("OP_RETURN ");
+          _pbstOutputs.push({
+            output: new OpReturn({
+              dataScripts: [Script.encodeUTF8(bufferScript[1]!)],
+            }),
+            value: 546, // hardcoded value
+          });
+        }
       }
+
+      // Build PSBT
+      const p = new PSBT({
+        network: network as Network,
+        inputs: _psbtInputs,
+        outputs: _pbstOutputs,
+        feeRate: 1,
+        changeOutput: Address.fromString(address),
+      });
+      await p.build();
+      const psbt = p.toPSBT();
+
+      // Sign Inputs
+      for (const [index, psbtInput] of p.inputs.entries()) {
+        switch (true) {
+          case psbtInput.utxo instanceof P2wpkhUtxo:
+            psbt.signInput(index, wallet.p2wpkh(path).keypair, [
+              utxos[index]?.sighash ?? Transaction.SIGHASH_ALL,
+            ]);
+            psbt.finalizeInput(index);
+            break;
+
+          case psbtInput.utxo instanceof P2trUtxo:
+            psbt.signInput(index, wallet.p2tr(path).keypair, [
+              utxos[index]?.sighash ?? Transaction.SIGHASH_ALL,
+            ]);
+            psbt.finalizeInput(index);
+            break;
+
+          default:
+            break;
+        }
+      }
+
+      // Finalize Tx
+      const _hex = psbt.extractTransaction().toHex();
+      setHex(_hex);
+      setExportPsbt(psbt.toBase64());
+
+      // This is for code generator
+      setPsbtInputs(utxos);
+      setPsbtOutputs(outputs);
+
+      toastSignedTransaction();
+    } catch (error) {
+      toast.error(`Error sign : ${error}`);
+      console.error(error);
     }
-
-    // Finalize Tx
-    const _hex = psbt.extractTransaction().toHex();
-    setHex(_hex);
-
-    // This is for code generator
-    setPsbtInputs(utxos);
-    setPsbtOutputs(outputs);
-
-    toastSignedTransaction();
   };
 
   const onBroadcast = async () => {
@@ -236,6 +365,7 @@ export default function Page(): JSX.Element {
 
       toastBroadcastedTransaction();
     } catch (error) {
+      toast.error(`Error broadcast : ${error}`);
       console.error(error);
     }
   };
@@ -270,6 +400,9 @@ export default function Page(): JSX.Element {
     setHex("");
     setOutputs([]);
     setIsBroadcastDropdown(false);
+    setIsPsbtImport(false);
+    setImportedPsbt(null);
+    setTransactionPsbt(null);
   };
 
   useEffect(() => {
@@ -294,15 +427,21 @@ export default function Page(): JSX.Element {
     getTransactionHistory();
   }, []);
 
-  const handleChange = (
+  const onChangeInput = (
     selectedOptions: MultiValue<{
       label: string;
       value: string;
     }>
   ) => {
     const selectedUtxo = selectedOptions
-      ? selectedOptions.map((option) => JSON.parse(option.value))
+      ? selectedOptions.map((option) => {
+          const _utxo = JSON.parse(option.value);
+          _utxo["sighash"] = Transaction.SIGHASH_ALL; // default sighash
+
+          return _utxo;
+        })
       : [];
+
     setUtxos(selectedUtxo);
   };
 
@@ -372,6 +511,24 @@ export default function Page(): JSX.Element {
     }
   };
 
+  const onImportPsbt = (base64: string) => {
+    try {
+      resetState();
+      setIsPsbtImport(true);
+
+      const psbt = Psbt.fromBase64(base64, { network: parseNetwork(network) });
+      setImportedPsbt(psbt);
+
+      const transaction = psbt.extractTransaction(true);
+      setTransactionPsbt(transaction);
+
+      setIsImportPsbtModalOpen(false);
+      toastImportPsbt();
+    } catch (error) {
+      toast.error(<p>Import PSBT Failed: Invalid Format</p>);
+    }
+  };
+
   return (
     <div className="flex min-h-screen bg-black text-white overflow-hidden">
       <Leftbar active="transaction" />
@@ -381,8 +538,20 @@ export default function Page(): JSX.Element {
 
         <div className="flex w-full">
           <div className="w-2/3 pr-4">
-            <div className="bg-white-1 p-3 rounded-lg">
+            <div className="flex flex-row justify-between bg-white-1 p-3 rounded-lg">
               <h2 className="text-xl font-bold">Transaction Builder</h2>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.preventDefault();
+                  setIsImportPsbtModalOpen(true);
+                }}
+                className="flex px-4 items-center py-2 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 cursor-pointer"
+              >
+                <p className="pl-1 whitespace-nowrap font-semibold">
+                  Import PSBT
+                </p>
+              </button>
             </div>
             <form className="mt-2">
               <div className="bg-white-1 p-3 rounded-lg space-y-4">
@@ -469,9 +638,12 @@ export default function Page(): JSX.Element {
                   </label>
                   <Select
                     isMulti
-                    isDisabled={false}
+                    isDisabled={
+                      transactionPsbt !== null &&
+                      isIncludeSighashAll(transactionPsbt)
+                    }
                     isSearchable={false}
-                    onChange={handleChange}
+                    onChange={onChangeInput}
                     className="cursor-pointer"
                     placeholder="-- Select Input --"
                     styles={SelectStyles}
@@ -479,12 +651,91 @@ export default function Page(): JSX.Element {
                       label: `${_utxo.txid} - ${_utxo.value} sats`,
                       value: JSON.stringify(_utxo),
                     }))}
-                    value={utxos.map((_utxo) => ({
-                      label: `${prettyTruncate(_utxo.txid, 32, "address")} - ${_utxo.value} sats`,
-                      value: JSON.stringify(_utxo),
-                    }))}
                   />
                 </div>
+
+                {importedPsbt &&
+                  importedPsbt.data.inputs.map((_input, i) => (
+                    <div className="flex flex-row gap-x-2 mt-2 mb-4">
+                      <p className="text-xs mt-2 text-[rgba(255,255,255,0.5)] mx-2">
+                        Imported
+                      </p>
+                      <input
+                        disabled
+                        value={witnessUtxoToTxid(transactionPsbt, i)}
+                        type="text"
+                        className="w-1/2 text-sm px-3 h-[38px] border-2 border-white-5 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                      />
+                      <input
+                        disabled
+                        value={sighashNumberToType(transactionPsbt, i)}
+                        type="text"
+                        className="w-1/2 text-sm px-3 h-[38px] border-2 border-white-5 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                      />
+                    </div>
+                  ))}
+
+                {utxos.map((_input, i) => (
+                  <div className="flex flex-row gap-x-2 mt-2 mb-4">
+                    <p className="text-xs mt-2 text-[rgba(255,255,255,0.5)] mx-2">
+                      Input {i + 1}
+                    </p>
+                    <input
+                      disabled
+                      value={_input.txid}
+                      type="text"
+                      className="w-1/2 text-sm px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                    />
+                    <div className="w-1/2">
+                      <Select
+                        onChange={(e) => {
+                          const _utxos = utxos;
+                          if (_utxos[i]) {
+                            _utxos[i].sighash = e?.value;
+                            setUtxos(_utxos);
+                          }
+                        }}
+                        styles={SelectStyles}
+                        defaultValue={{
+                          label: "SIGHASH_ALL",
+                          value: Transaction.SIGHASH_ALL,
+                        }}
+                        options={[
+                          {
+                            label: "SIGHASH_ALL",
+                            value: Transaction.SIGHASH_ALL,
+                          },
+                          {
+                            label: "SIGHASH_NONE",
+                            value: Transaction.SIGHASH_NONE,
+                          },
+                          {
+                            label: "SIGHASH_SINGLE",
+                            value: Transaction.SIGHASH_SINGLE,
+                          },
+                          {
+                            label: "SIGHASH_ALL_ANYONECANPAY",
+                            value:
+                              Transaction.SIGHASH_ALL +
+                              Transaction.SIGHASH_ANYONECANPAY,
+                          },
+                          {
+                            label: "SIGHASH_NONE_ANYONECANPAY",
+                            value:
+                              Transaction.SIGHASH_NONE +
+                              Transaction.SIGHASH_ANYONECANPAY,
+                          },
+                          {
+                            label: "SIGHASH_SINGLE_ANYONECANPAY",
+                            value:
+                              Transaction.SIGHASH_SINGLE +
+                              Transaction.SIGHASH_ANYONECANPAY,
+                          },
+                        ]}
+                      />
+                    </div>
+                  </div>
+                ))}
 
                 <div>
                   <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
@@ -622,6 +873,31 @@ export default function Page(): JSX.Element {
                   </div>
                 )}
 
+                {transactionPsbt &&
+                  transactionPsbt.outs.map((_out) => (
+                    <div className="flex flex-row gap-x-2 mt-2 mb-4">
+                      <p className="text-xs mt-2 text-[rgba(255,255,255,0.5)] mx-2">
+                        Imported
+                      </p>
+                      <input
+                        disabled
+                        value={prettyTruncate(
+                          outsToString(_out),
+                          48,
+                          "address"
+                        )}
+                        type="text"
+                        className="w-1/2 text-sm px-3 h-[38px] border-2 border-white-5 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                      />
+                      <input
+                        disabled
+                        value={_out.value}
+                        type="text"
+                        className="w-1/2 text-sm px-3 h-[38px] border-2 border-white-5 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                      />
+                    </div>
+                  ))}
+
                 {outputs.map((_output, i) => (
                   <div className="flex items-center justify-end ml-auto gap-x-2">
                     <p className="text-sm mt-2 text-[rgba(255,255,255,0.5)]">
@@ -679,7 +955,11 @@ export default function Page(): JSX.Element {
                 <div className="w-2/3 flex justify-end space-x-4">
                   <button
                     disabled={outputs.length < 1}
-                    onClick={onSignTransaction}
+                    onClick={
+                      isPsbtImport
+                        ? onSignTransactionImportPsbt
+                        : onSignTransaction
+                    }
                     type="button"
                     className="flex px-4 items-center py-2 disabled:cursor-not-allowed rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 disabled:opacity-50"
                   >
@@ -697,7 +977,7 @@ export default function Page(): JSX.Element {
                         disabled={hex === ""}
                         onClick={onBroadcast}
                         type="button"
-                        className="flex px-4 rounded-r-none items-center py-2 disabled:select-none disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1"
+                        className="flex px-4 rounded-r-none items-center py-2 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 disabled:select-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50"
                       >
                         <IconBroadcast
                           size={24}
@@ -713,7 +993,7 @@ export default function Page(): JSX.Element {
                           e.preventDefault();
                           setIsBroadcastDropdown(!isBroadcastDropdown);
                         }}
-                        className="flex px-4 rounded-l-none items-center py-2 disabled:select-nlne cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-2"
+                        className="flex px-4 rounded-l-none items-center py-2 disabled:select-none cursor-pointer disabled:cursor-not-allowed disabled:opacity-50 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-2"
                       >
                         ▾
                       </button>
@@ -742,6 +1022,16 @@ export default function Page(): JSX.Element {
                           <i className="fa fa-code px-2"></i>
                           Generate Code
                         </button>
+                        <button
+                          onClick={(e) => {
+                            e.preventDefault();
+                            setIsExportPsbtModalOpen(true);
+                          }}
+                          className="flex items-center px-4 py-2 w-full text-white hover:bg-gray-700 focus:outline-none hover:rounded-b-md"
+                        >
+                          <i className="fa fa-code px-2"></i>
+                          Export PSBT
+                        </button>
                       </div>
                     </div>
                   </div>
@@ -755,6 +1045,22 @@ export default function Page(): JSX.Element {
       </main>
 
       <ToastContainer hideProgressBar={true} theme="light" />
+      <ImportPsbtModal
+        isOpen={isImportPsbtModalOpen}
+        onSave={(base64: string) => {
+          onImportPsbt(base64);
+        }}
+        onClose={() => {
+          setIsImportPsbtModalOpen(false);
+        }}
+      />
+      <ExportPsbtModal
+        isOpen={isExportPsbtModalOpen}
+        onClose={() => {
+          setIsExportPsbtModalOpen(false);
+        }}
+        base64={exportPsbt}
+      />
       <SignedTxModal
         isOpen={isSignedTxModalOpen}
         onClose={() => {
