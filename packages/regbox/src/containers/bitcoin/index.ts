@@ -14,7 +14,7 @@ export class BitcoinContainer extends ContainerAbstract {
       image: config.bitcoin.image,
       cmd: [
         "-txindex=1",
-        "-regtest=1",
+        "-easttestnet=1",
         "-rpcallowip=0.0.0.0/0",
         "-rpcbind=0.0.0.0",
         `-rpcuser=${config.bitcoin.user}`,

@@ -11,7 +11,7 @@ export class ElectrsContainer extends ContainerAbstract {
       cmd: [
         "-vvvv",
         "--jsonrpc-import",
-        "--network=regtest",
+        "--network=testnet",
         `--daemon-rpc-addr=${config.bitcoin.name}:18443`,
         `--cookie=${config.bitcoin.user}:${config.bitcoin.password}`,
         "--lightmode=1",
