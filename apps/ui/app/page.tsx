@@ -12,6 +12,7 @@ import {
   AddressType,
   BElectrsAPI,
   Network,
+  P2trScript,
   P2trUtxo,
   P2wpkhUtxo,
   PSBT,
@@ -33,7 +34,11 @@ import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import IconSign from "./icons/iconSign";
 import IconBroadcast from "./icons/IconBroadcast";
-import { SelectStyles, TX_OUTPUT_OPTIONS } from "./utils/constant";
+import {
+  SelectStyles,
+  TX_INPUT_OPTIONS,
+  TX_OUTPUT_OPTIONS,
+} from "./utils/constant";
 import { prettyTruncate } from "./utils/prettyTruncate";
 import IconPlus from "./icons/IconPlus";
 import SignedTxModal from "./components/SignedTxModal";
@@ -45,12 +50,13 @@ import ExportPsbtModal from "./components/ExportPsbtModal";
 import ImportPsbtModal from "./components/ImportPsbtModal";
 import { InputUTXO } from "./types/Utxo";
 import { Transaction, Psbt, networks } from "bitcoinjs-lib";
-import { parseScript } from "./utils/parseOpcode";
+import { parseScript, parseTapscript } from "./utils/parseOpcode";
 import { parseNetwork } from "./utils/parseNetwork";
 import { sighashNumberToType } from "./utils/sighashNumberToType";
 import { witnessUtxoToTxid } from "./utils/witnessUtxoToTxid";
 import { outsToString } from "./utils/outsToString";
 import { isIncludeSighashAll } from "./utils/isIncludeSighashAll";
+import { CustomScript } from "@east-bitcoin-lib/sdk/dist/addresses/custom";
 
 export default function Page(): JSX.Element {
   const broadcastApiUrl = useRef("");
@@ -61,9 +67,12 @@ export default function Page(): JSX.Element {
 
   const [secret, setSecret] = useState<string>("");
   const [address, setAddress] = useState<string>("");
+  const [addressType, setAddressType] = useState<string>("");
   const [path, setPath] = useState<number>(0);
   const [inputs, setInputs] = useState<BitcoinUTXO[]>([]);
   const [utxos, setUtxos] = useState<InputUTXO[]>([]);
+  const [inputType, setInputType] = useState<string>("");
+  const [tapscriptInput, setTapscriptInput] = useState<string>("");
   const [outputType, setOutputType] = useState<string>("");
   const [addressOutput, setAddressOutput] = useState<string>("");
   const [outputs, setOutputs] = useState<PSBTOutput[]>([]);
@@ -77,6 +86,7 @@ export default function Page(): JSX.Element {
   const [psbtInputs, setPsbtInputs] = useState<any[]>([]); // only used for generate client code
   const [psbtOutputs, setPsbtOutputs] = useState<any[]>([]); // only used for generate client code
   const [exportPsbt, setExportPsbt] = useState<string>(""); // to store base64 psbt export
+  const [outputOptions, setOutputOptions] = useState(TX_OUTPUT_OPTIONS);
 
   // State for import psbt
   const [isPsbtImport, setIsPsbtImport] = useState<boolean>(false);
@@ -132,6 +142,65 @@ export default function Page(): JSX.Element {
       utxos.filter((utxo) => utxo.status.confirmed === true) || [];
 
     setInputs(confirmedUtxos);
+  };
+
+  const getUtxoByTapscriptInput = async () => {
+    if (secret === "") return;
+    if (address === "") return;
+    if (!uri) return;
+    if (!network) return;
+    if (tapscriptInput === "") return;
+    if (addressType !== "p2tr") return;
+
+    try {
+      // Load Wallet
+      const wallet = generateWalletBySecretType(secret, network);
+      if (!wallet) {
+        throw new Error("Invalid secret string provided");
+      }
+
+      const bitcoinApi = new BElectrsAPI({
+        network: network as Network,
+        apiUrl: {
+          [network]: uri,
+        },
+      });
+
+      const parsedScript = parseTapscript(tapscriptInput.trim());
+      const script = (internalPubkey: Buffer): P2trScript => {
+        const inscription = Script.compile([
+          internalPubkey,
+          Script.OP_CHECKSIG,
+          ...parsedScript,
+        ]);
+        const recovery = Script.compile([internalPubkey, Script.OP_CHECKSIG]);
+
+        return {
+          taptree: [
+            {
+              output: Script.compile(inscription),
+            },
+            {
+              output: Script.compile(recovery),
+            },
+          ],
+          redeem: {
+            output: inscription,
+            redeemVersion: 192,
+          },
+        };
+      };
+      const p2tr = wallet.p2trScript(path, script);
+
+      const utxos = await bitcoinApi.getUTXOs(p2tr.address);
+      const confirmedUtxos =
+        utxos.filter((utxo) => utxo.status.confirmed === true) || [];
+
+      setInputs(confirmedUtxos);
+    } catch (error) {
+      console.error(error);
+      toast.error(`Error Fetching commit address UTXO : ${error}`);
+    }
   };
 
   const onSignTransactionImportPsbt = async () => {
@@ -275,12 +344,51 @@ export default function Page(): JSX.Element {
             value: output.value,
           });
         } else if (output.script) {
-          const bufferScript = output.script.split("OP_RETURN ");
+          const splitScript = output.script.split(" ");
+          if (splitScript[0] === "OP_RETURN") {
+            _pbstOutputs.push({
+              output: new OpReturn({
+                dataScripts: [Script.encodeUTF8(splitScript[1]!)],
+              }),
+              value: 546, // hardcoded value
+            });
+          }
+        } else if (output.tapscript) {
+          const { tapscript, value } = output;
+          const parsedScript = parseTapscript(tapscript);
+
+          const script = (internalPubkey: Buffer): P2trScript => {
+            const inscription = Script.compile([
+              internalPubkey,
+              Script.OP_CHECKSIG,
+              ...parsedScript,
+            ]);
+            const recovery = Script.compile([
+              internalPubkey,
+              Script.OP_CHECKSIG,
+            ]);
+
+            return {
+              taptree: [
+                {
+                  output: Script.compile(inscription),
+                },
+                {
+                  output: Script.compile(recovery),
+                },
+              ],
+              redeem: {
+                output: inscription,
+                redeemVersion: 192,
+              },
+            };
+          };
+
+          const p2tr = wallet.p2trScript(path, script);
+
           _pbstOutputs.push({
-            output: new OpReturn({
-              dataScripts: [Script.encodeUTF8(bufferScript[1]!)],
-            }),
-            value: 546, // hardcoded value
+            output: Address.fromString(p2tr.address!),
+            value: 1000,
           });
         }
       }
@@ -298,6 +406,45 @@ export default function Page(): JSX.Element {
 
       // Sign Inputs
       for (const [index, psbtInput] of p.inputs.entries()) {
+        // Handle commit address input
+        if (inputType === "input_commit_address" && tapscriptInput !== "") {
+          const parsedScript = parseTapscript(tapscriptInput.trim());
+          const script = (internalPubkey: Buffer): P2trScript => {
+            const inscription = Script.compile([
+              internalPubkey,
+              Script.OP_CHECKSIG,
+              ...parsedScript,
+            ]);
+            const recovery = Script.compile([
+              internalPubkey,
+              Script.OP_CHECKSIG,
+            ]);
+
+            return {
+              taptree: [
+                {
+                  output: Script.compile(inscription),
+                },
+                {
+                  output: Script.compile(recovery),
+                },
+              ],
+              redeem: {
+                output: inscription,
+                redeemVersion: 192,
+              },
+            };
+          };
+          const p2tr = wallet.p2trScript(path, script);
+          console.log(p2tr);
+
+          psbt.signInput(index, p2tr.keypair, [
+            utxos[index]?.sighash ?? Transaction.SIGHASH_ALL,
+          ]);
+          psbt.finalizeInput(index);
+          continue; // out from the loop
+        }
+
         switch (true) {
           case psbtInput.utxo instanceof P2wpkhUtxo:
             psbt.signInput(index, wallet.p2wpkh(path).keypair, [
@@ -410,6 +557,10 @@ export default function Page(): JSX.Element {
   }, [address]);
 
   useEffect(() => {
+    getUtxoByTapscriptInput();
+  }, [tapscriptInput]);
+
+  useEffect(() => {
     const isTauri = (window as any).__TAURI__;
     broadcastApiUrl.current = isTauri
       ? "http://localhost:9090/broadcast"
@@ -426,6 +577,11 @@ export default function Page(): JSX.Element {
     }
     getTransactionHistory();
   }, []);
+
+  useEffect(() => {
+    const updatedOptions = getUpdatedOptions();
+    setOutputOptions(updatedOptions);
+  }, [addressType]);
 
   const onChangeInput = (
     selectedOptions: MultiValue<{
@@ -480,6 +636,11 @@ export default function Page(): JSX.Element {
         ...outputs,
         ...[{ script: scriptEditorRef.current?.value, value: 0 }],
       ]);
+    } else if (outputType === "tapscript") {
+      setOutputs([
+        ...outputs,
+        ...[{ tapscript: scriptEditorRef.current?.value, value: amount }],
+      ]);
     }
 
     setOutputType("");
@@ -529,6 +690,34 @@ export default function Page(): JSX.Element {
     }
   };
 
+  const getUpdatedOptions = () => {
+    const standardOptions = [
+      { label: "Transfer", value: "address" },
+      { label: "Custom Script (Script Hash)", value: "script_custom" },
+    ];
+
+    if (addressType === "p2tr") {
+      standardOptions.push({
+        label: "Custom Script (Taproot)",
+        value: "tapscript",
+      });
+    }
+
+    return [
+      {
+        label: "Standard",
+        options: standardOptions,
+      },
+      {
+        label: "Eastlayer",
+        options: [
+          { label: "Issue Eastlayer Token", value: "script" },
+          { label: "Transfer Eastlayer Token", value: "script_transfer" },
+        ],
+      },
+    ];
+  };
+
   return (
     <div className="flex min-h-screen bg-black text-white overflow-hidden">
       <Leftbar active="transaction" />
@@ -564,7 +753,8 @@ export default function Page(): JSX.Element {
                       const [_secret, _path, _address] = e.value?.split(":");
                       setSecret(_secret);
                       setAddress(_address);
-                      setPath(_path);
+                      setPath(parseInt(_path));
+                      setAddressType(getAddressType(_address));
                     }}
                     className="cursor-pointer"
                     placeholder="Select Address"
@@ -634,25 +824,76 @@ export default function Page(): JSX.Element {
 
                 <div>
                   <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
-                    Input
+                    Input Type
                   </label>
                   <Select
-                    isMulti
-                    isDisabled={
-                      transactionPsbt !== null &&
-                      isIncludeSighashAll(transactionPsbt)
-                    }
-                    isSearchable={false}
-                    onChange={onChangeInput}
+                    isDisabled={!utxos}
+                    onChange={(e: any) => setInputType(e.value)}
                     className="cursor-pointer"
-                    placeholder="-- Select Input --"
+                    placeholder="-- Select Input Type --"
+                    isSearchable={false}
                     styles={SelectStyles}
-                    options={inputs.map((_utxo) => ({
-                      label: `${_utxo.txid} - ${_utxo.value} sats`,
-                      value: JSON.stringify(_utxo),
-                    }))}
+                    options={TX_INPUT_OPTIONS}
                   />
                 </div>
+
+                {inputType === "input_utxo" && (
+                  <div>
+                    <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                      Input
+                    </label>
+                    <Select
+                      isMulti
+                      isDisabled={
+                        transactionPsbt !== null &&
+                        isIncludeSighashAll(transactionPsbt)
+                      }
+                      isSearchable={false}
+                      onChange={onChangeInput}
+                      className="cursor-pointer"
+                      placeholder="-- Select Input --"
+                      styles={SelectStyles}
+                      options={inputs.map((_utxo) => ({
+                        label: `${_utxo.txid} - ${_utxo.value} sats`,
+                        value: JSON.stringify(_utxo),
+                      }))}
+                    />
+                  </div>
+                )}
+
+                {inputType === "input_commit_address" && (
+                  <div>
+                    <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                      Tapscript
+                    </label>
+                    <input
+                      value={tapscriptInput}
+                      onChange={(e) => setTapscriptInput(e.target.value)}
+                      type="text"
+                      className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                    />
+                    <label className="block mt-2 mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                      UTXO
+                    </label>
+                    <Select
+                      isMulti
+                      isDisabled={
+                        tapscriptInput === "" &&
+                        transactionPsbt !== null &&
+                        isIncludeSighashAll(transactionPsbt)
+                      }
+                      isSearchable={false}
+                      onChange={onChangeInput}
+                      className="cursor-pointer"
+                      placeholder="-- Select UTXO --"
+                      styles={SelectStyles}
+                      options={inputs.map((_utxo) => ({
+                        label: `${_utxo.txid} - ${_utxo.value} sats`,
+                        value: JSON.stringify(_utxo),
+                      }))}
+                    />
+                  </div>
+                )}
 
                 {importedPsbt &&
                   importedPsbt.data.inputs.map((_input, i) => (
@@ -690,7 +931,8 @@ export default function Page(): JSX.Element {
                       <Select
                         onChange={(e) => {
                           const _utxos = utxos;
-                          if (_utxos[i]) {
+                          if (_utxos && _utxos[i]) {
+                            // @ts-ignore: Unreachable code error
                             _utxos[i].sighash = e?.value;
                             setUtxos(_utxos);
                           }
@@ -748,7 +990,7 @@ export default function Page(): JSX.Element {
                     placeholder="-- Select Output Type --"
                     isSearchable={false}
                     styles={SelectStyles}
-                    options={TX_OUTPUT_OPTIONS}
+                    options={outputOptions}
                   />
                 </div>
 
@@ -853,7 +1095,20 @@ export default function Page(): JSX.Element {
                           </label>
                           <div
                             ref={scriptRef}
-                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                            className="w-full px-3 h-auto border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                      </>
+                    )}
+                    {outputType === "tapscript" && (
+                      <>
+                        <div>
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Tapscript
+                          </label>
+                          <div
+                            ref={scriptRef}
+                            className="w-full px-3 h-auto border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
                           />
                         </div>
                       </>
@@ -928,6 +1183,18 @@ export default function Page(): JSX.Element {
                           </p>
                           <p className="text-sm font-bold whitespace-nowrap">
                             {prettyTruncate(_output.script, 32)}
+                          </p>
+                          <i className="fa-solid fa-trash ml-2 text-sm whitespace-nowrap font-semibold"></i>
+                        </>
+                      )}
+
+                      {_output.tapscript && (
+                        <>
+                          <p className="text-sm whitespace-nowrap">
+                            Taproot Script
+                          </p>
+                          <p className="text-sm font-bold whitespace-nowrap">
+                            {prettyTruncate(_output.tapscript, 32)}
                           </p>
                           <i className="fa-solid fa-trash ml-2 text-sm whitespace-nowrap font-semibold"></i>
                         </>

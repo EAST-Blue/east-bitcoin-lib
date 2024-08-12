@@ -18,7 +18,7 @@ export const TX_OUTPUT_OPTIONS = [
     label: "Standard",
     options: [
       { label: "Transfer", value: "address" },
-      { label: "Custom Script", value: "script_custom" },
+      { label: "Custom Script (Script Hash)", value: "script_custom" },
     ],
   },
   {
@@ -27,6 +27,17 @@ export const TX_OUTPUT_OPTIONS = [
       { label: "Issue Eastlayer Token", value: "script" },
       { label: "Transfer Eastlayer Token", value: "script_transfer" },
     ],
+  },
+];
+
+export const TX_INPUT_OPTIONS = [
+  {
+    label: "UTXO",
+    value: "input_utxo",
+  },
+  {
+    label: "Commit Address",
+    value: "input_commit_address",
   },
 ];
 
