@@ -71,7 +71,7 @@ function main() {
         },
         explorer: {
           name: "east_bitcoin_explorer",
-          image: "docker.io/eastbluehq/janoside-btc-rpc-explorer:v3.4.3",
+          image: "docker.io/eastbluehq/janoside-btc-rpc-explorer:v3.4.5",
           port: parseArgToNumber(opts.explorerPort).toString(),
         },
         preloadAddresses: [
