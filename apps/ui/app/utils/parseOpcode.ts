@@ -22,7 +22,25 @@ export const parseScript = (plaintext: string): any => {
 export const parseTapscript = (plaintext: string): Buffer => {
   if (plaintext === "") return Buffer.from([]);
 
-  const components: string[] = plaintext.split(" ");
+  const functionCallPattern = /([a-zA-Z_][a-zA-Z0-9_]*)\(([^)]*)\)/g;
+  const components: string[] = [];
+  let match: RegExpExecArray | null;
+  let lastIndex = 0;
+
+  // Extract function calls and preserve their arguments
+  while ((match = functionCallPattern.exec(plaintext)) !== null) {
+    if (match.index > lastIndex) {
+      components.push(
+        ...plaintext.slice(lastIndex, match.index).trim().split(" ")
+      );
+    }
+    components.push(match[0]);
+    lastIndex = match.index + match[0].length;
+  }
+  if (lastIndex < plaintext.length) {
+    components.push(...plaintext.slice(lastIndex).trim().split(" "));
+  }
+
   const scriptComponents = components.map((component) => {
     if (component in OpCodes) {
       return OpCodes[component as OpCodeKey];

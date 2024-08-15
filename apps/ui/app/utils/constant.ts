@@ -1,3 +1,5 @@
+import { InputTypeEnum } from "../enums/StateKeyEnum";
+
 export const NETWORK_MODE_OPTIONS = [
   {
     label: "Mainnet",
@@ -33,11 +35,11 @@ export const TX_OUTPUT_OPTIONS = [
 export const TX_INPUT_OPTIONS = [
   {
     label: "UTXO",
-    value: "input_utxo",
+    value: InputTypeEnum.UTXO,
   },
   {
     label: "Commit Address",
-    value: "input_commit_address",
+    value: InputTypeEnum.COMMIT_ADDRESS,
   },
 ];
 
