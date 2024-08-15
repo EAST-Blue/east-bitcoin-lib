@@ -4,12 +4,12 @@ import { useEffect, useState } from "react";
 import Leftbar from "../components/Leftbar";
 import { useConfigContext } from "../contexts/ConfigContext";
 import { NetworkConfigType } from "../types/ConfigType";
-import { isValidHttpUrl } from "../utils/isValidHttpUrl";
+import { isValidHttpUrl } from "../helpers/isValidHttpUrl";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import NetworkSection from "../components/Network";
 import Select from "react-select";
-import { NETWORK_MODE_OPTIONS, SelectStyles } from "../utils/constant";
+import { NETWORK_MODE_OPTIONS, SelectStyles } from "../helpers/constant";
 import IconSave from "../icons/IconSave";
 
 export default function Page(): JSX.Element {

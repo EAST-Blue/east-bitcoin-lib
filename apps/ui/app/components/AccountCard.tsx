@@ -8,7 +8,7 @@ import ButtonCopy from "./ButtonCopy";
 import ExportPrivateKeyModal from "./ExportPrivateKeyModal";
 import { ecpair, Network, Wallet, WalletParams } from "@east-bitcoin-lib/sdk";
 import { networks } from "bitcoinjs-lib";
-import { checkSecretType } from "../utils/checkSecretType";
+import { checkSecretType } from "../helpers/checkSecretType";
 import { SecretEnum } from "../enums/SecretEnum";
 
 const AccountCard = ({

@@ -1,19 +1,5 @@
+import { useState, ReactNode } from "react";
 import Link from "next/link";
-import { ReactNode } from "react";
-
-// /* Rectangle 42 */
-
-// box-sizing: border-box;
-
-// position: absolute;
-// width: 154px;
-// height: 30px;
-// left: 13px;
-// top: 64px;
-
-// background: rgba(255, 255, 255, 0.1);
-// box-shadow: inset 0px 0px 10px rgba(255, 255, 255, 0.1);
-// border-radius: 8px;
 
 const NavLink = ({
   active,
@@ -33,8 +19,7 @@ const NavLink = ({
         active === name
           ? "bg-white text-opacity-100 text-black rounded-lg"
           : "text-white text-opacity-60 hover:bg-white hover:bg-opacity-10 hover:text-opacity-100 hover:rounded-lg"
-      }
-            w-full text-left py-2 px-4`}
+      } w-full text-left py-2 px-4`}
     >
       {children}
     </Link>
@@ -42,6 +27,12 @@ const NavLink = ({
 };
 
 const Leftbar = ({ active }: { active: string }) => {
+  const [isUtilsCollapsed, setIsUtilsCollapsed] = useState(true);
+
+  const toggleUtils = () => {
+    setIsUtilsCollapsed(!isUtilsCollapsed);
+  };
+
   return (
     <aside className="w-[200px] bg-white bg-opacity-10 p-4 rounded-r-lg">
       <div className="text-2xl font-bold mb-6">Satsforge</div>
@@ -57,6 +48,23 @@ const Leftbar = ({ active }: { active: string }) => {
         <NavLink active={active} name="config" href="/config">
           Config
         </NavLink>
+
+        <div className="flex flex-col space-y-2">
+          <button
+            onClick={toggleUtils}
+            className="flex flex-row justify-between text-left text-white text-opacity-60 hover:bg-white hover:bg-opacity-10 hover:text-opacity-100 hover:rounded-lg w-full py-2 px-4"
+          >
+            <p>Utils</p>
+            <i className="fa-solid fa-sort-down"></i>
+          </button>
+          {!isUtilsCollapsed && (
+            <div className="ml-4 flex flex-col space-y-2 text-sm">
+              <NavLink active={active} name="tapscript" href="/utils/tapscript">
+                Tapscript
+              </NavLink>
+            </div>
+          )}
+        </div>
       </nav>
     </aside>
   );

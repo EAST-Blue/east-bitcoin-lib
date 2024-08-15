@@ -2,7 +2,7 @@ import express from "express";
 import cors from "cors";
 import bodyParser from "body-parser";
 import prisma from "../db";
-import { isValidHttpUrl } from "../app/utils/isValidHttpUrl";
+import { isValidHttpUrl } from "../app/helpers/isValidHttpUrl";
 
 const app = express();
 

@@ -2,7 +2,7 @@
 
 import React from "react";
 import ButtonCopy from "./ButtonCopy";
-import { copyToClipboard } from "../utils/copyToClipboard";
+import { copyToClipboard } from "../helpers/copyToClipboard";
 
 const ExportPsbtModal = ({
   isOpen,

@@ -2,7 +2,7 @@
 
 import React, { useEffect, useRef } from "react";
 import ButtonCopy from "./ButtonCopy";
-import { copyToClipboard } from "../utils/copyToClipboard";
+import { copyToClipboard } from "../helpers/copyToClipboard";
 
 export default function ExportPrivateKeyModal({
   isOpen,

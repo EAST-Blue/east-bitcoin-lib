@@ -2,7 +2,7 @@
 
 import React, { useState } from "react";
 import ButtonCopy from "./ButtonCopy";
-import { copyToClipboard } from "../utils/copyToClipboard";
+import { copyToClipboard } from "../helpers/copyToClipboard";
 
 const SignedTxModal = ({
   isOpen,

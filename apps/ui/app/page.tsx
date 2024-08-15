@@ -38,25 +38,25 @@ import {
   SelectStyles,
   TX_INPUT_OPTIONS,
   TX_OUTPUT_OPTIONS,
-} from "./utils/constant";
-import { prettyTruncate } from "./utils/prettyTruncate";
+} from "./helpers/constant";
+import { prettyTruncate } from "./helpers/prettyTruncate";
 import IconPlus from "./icons/IconPlus";
 import SignedTxModal from "./components/SignedTxModal";
 import GenerateCodeModal from "./components/GenerateCodeModal";
-import { checkSecretType } from "./utils/checkSecretType";
+import { checkSecretType } from "./helpers/checkSecretType";
 import { SecretEnum } from "./enums/SecretEnum";
-import { generateWalletBySecretType } from "./utils/generateWalletBySecretType";
+import { generateWalletBySecretType } from "./helpers/generateWalletBySecretType";
 import ExportPsbtModal from "./components/ExportPsbtModal";
 import ImportPsbtModal from "./components/ImportPsbtModal";
 import { InputUTXO } from "./types/Utxo";
-import { Transaction, Psbt, networks } from "bitcoinjs-lib";
-import { parseScript, parseTapscript } from "./utils/parseOpcode";
-import { parseNetwork } from "./utils/parseNetwork";
-import { sighashNumberToType } from "./utils/sighashNumberToType";
-import { outsToString } from "./utils/outsToString";
-import { isIncludeSighashAll } from "./utils/isIncludeSighashAll";
+import { Transaction, Psbt } from "bitcoinjs-lib";
+import { parseScript } from "./helpers/parseOpcode";
+import { parseNetwork } from "./helpers/parseNetwork";
+import { sighashNumberToType } from "./helpers/sighashNumberToType";
+import { outsToString } from "./helpers/outsToString";
+import { isIncludeSighashAll } from "./helpers/isIncludeSighashAll";
 import { InputTypeEnum } from "./enums/StateKeyEnum";
-import { generateTapscript } from "./utils/generateTapscript";
+import { generateTapscript } from "./helpers/generateTapscript";
 import { witnessUtxoToTxid } from "@east-bitcoin-lib/sdk";
 
 export default function Page(): JSX.Element {
@@ -816,7 +816,7 @@ export default function Page(): JSX.Element {
                     {inputType === InputTypeEnum.COMMIT_ADDRESS && (
                       <div>
                         <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
-                          Tapscript
+                          Tapscript (hex)
                         </label>
                         <div
                           ref={inputScriptRef}
@@ -1069,7 +1069,7 @@ export default function Page(): JSX.Element {
                       <>
                         <div>
                           <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
-                            Tapscript
+                            Tapscript (hex)
                           </label>
                           <div
                             ref={scriptRef}
