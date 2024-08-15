@@ -41,6 +41,7 @@ export class PSBT extends CoinSelect {
           hash: input.utxo.txid,
           index: input.utxo.vout,
           nonWitnessUtxo: input.utxo.transaction,
+          sighashType: input.sighashType,
         });
         break;
       case input.utxo instanceof P2shUtxo:
@@ -49,6 +50,7 @@ export class PSBT extends CoinSelect {
           index: input.utxo.vout,
           nonWitnessUtxo: input.utxo.transaction,
           redeemScript: input.utxo.redeemScript,
+          sighashType: input.sighashType,
         });
         break;
       case input.utxo instanceof P2wpkhUtxo:

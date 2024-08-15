@@ -53,11 +53,11 @@ import { Transaction, Psbt, networks } from "bitcoinjs-lib";
 import { parseScript, parseTapscript } from "./utils/parseOpcode";
 import { parseNetwork } from "./utils/parseNetwork";
 import { sighashNumberToType } from "./utils/sighashNumberToType";
-import { witnessUtxoToTxid } from "./utils/witnessUtxoToTxid";
 import { outsToString } from "./utils/outsToString";
 import { isIncludeSighashAll } from "./utils/isIncludeSighashAll";
 import { InputTypeEnum } from "./enums/StateKeyEnum";
 import { generateTapscript } from "./utils/generateTapscript";
+import { witnessUtxoToTxid } from "@east-bitcoin-lib/sdk";
 
 export default function Page(): JSX.Element {
   const broadcastApiUrl = useRef("");
@@ -388,9 +388,6 @@ export default function Page(): JSX.Element {
           const script = generateTapscript(inputScriptEditorRef.current.value);
 
           const p2tr = wallet.p2trScript(path, script);
-
-          console.log(p2tr);
-          console.log(wallet.p2tr(path));
 
           psbt.signInput(index, p2tr.keypair, [
             utxos[index]?.sighash ?? Transaction.SIGHASH_ALL,
