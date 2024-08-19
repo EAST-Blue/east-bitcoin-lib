@@ -59,7 +59,11 @@ const Leftbar = ({ active }: { active: string }) => {
           </button>
           {!isUtilsCollapsed && (
             <div className="ml-4 flex flex-col space-y-2 text-sm">
-              <NavLink active={active} name="tapscript" href="/utils/tapscript">
+              <NavLink
+                active={active}
+                name="utils/tapscript"
+                href="/utils/tapscript"
+              >
                 Tapscript
               </NavLink>
             </div>

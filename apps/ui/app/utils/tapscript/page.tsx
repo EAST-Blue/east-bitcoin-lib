@@ -35,13 +35,18 @@ export default function Page(): JSX.Element {
   }, []);
 
   const handleEncode = () => {
-    const hexEncoded = Buffer.from(input, "utf8").toString("hex");
+    if (inputScriptEditorRef.current?.value === "") return;
+
+    const hexEncoded = Buffer.from(
+      inputScriptEditorRef.current?.value!,
+      "utf8"
+    ).toString("hex");
     setEncoded(hexEncoded);
   };
 
   return (
     <div className="min-h-screen bg-black text-white flex overflow-hidden">
-      <Leftbar active="config" />
+      <Leftbar active="utils/tapscript" />
 
       {/* Main Content */}
       <main className="flex-1 p-4 overflow-auto">
@@ -60,6 +65,12 @@ export default function Page(): JSX.Element {
               ref={inputScriptRef}
               className="w-full min-h-[100px] h-auto px-3 border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
             />
+            <p className="text-sm text-white-3">Notes :</p>
+            <p className="text-sm text-white-3">
+              Replace <i>OP_PUSH "your data" </i>
+              with
+              <i> encodeUtf8(your data)</i>
+            </p>
 
             <button
               className="flex my-2 px-4 items-center py-2 rounded-lg bg-gradient-to-b from-white-2 to-white-1 hover:from-white-1 cursor-pointer"

@@ -816,7 +816,7 @@ export default function Page(): JSX.Element {
                     {inputType === InputTypeEnum.COMMIT_ADDRESS && (
                       <div>
                         <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
-                          Tapscript (hex)
+                          Tapscript
                         </label>
                         <div
                           ref={inputScriptRef}
@@ -1069,7 +1069,7 @@ export default function Page(): JSX.Element {
                       <>
                         <div>
                           <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
-                            Tapscript (hex)
+                            Tapscript
                           </label>
                           <div
                             ref={scriptRef}
