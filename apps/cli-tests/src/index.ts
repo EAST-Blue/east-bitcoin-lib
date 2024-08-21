@@ -10,6 +10,7 @@ import {
   RegboxAPI,
   P2wpkhUtxo,
   P2wpkhAutoUtxo,
+  P2trUtxo,
 } from "@east-bitcoin-lib/sdk";
 import { Input } from "@east-bitcoin-lib/sdk/dist/psbt/types";
 import { BitcoinUTXO } from "@east-bitcoin-lib/sdk/dist/repositories/bitcoin/types";
@@ -56,16 +57,20 @@ async function getInputsByOutpoints(
     })
   );
 
-  const utxos: BitcoinUTXO[] = [];
-  for (const outpoint of outpoints) {
-    const key = `${outpoint.hash}:${outpoint.index}`;
-    if (utxoMap.has(key)) {
-      utxos.push(utxoMap.get(key)!);
+  let utxos: BitcoinUTXO[] = [];
+  if (outpoints.length > 0) {
+    for (const outpoint of outpoints) {
+      const key = `${outpoint.hash}:${outpoint.index}`;
+      if (utxoMap.has(key)) {
+        utxos.push(utxoMap.get(key)!);
+      }
     }
-  }
 
-  if (outpoints.length !== utxos.length) {
-    throw new Error("errors.outpoints and utxos length doesn't match");
+    if (outpoints.length !== utxos.length) {
+      throw new Error("errors.outpoints and utxos length doesn't match");
+    }
+  } else {
+    utxos = runeWallet1Utxos
   }
 
   const inputs = await Promise.all(
@@ -252,9 +257,11 @@ async function mintInscriptionCursedNotAtOffset0() {
       Script.OP_FALSE,
       Script.OP_IF,
       Script.encodeUTF8("ord"),
-      1, 1,
+      1,
+      1,
       Script.encodeUTF8("image/png"),
-      1, 2,
+      1,
+      2,
       Buffer.from([251]),
       Script.OP_0,
       imageBuffer,
@@ -554,6 +561,252 @@ async function mintInscriptionCursedReinscription() {
   return txHash;
 }
 
+async function mintInscriptionProvenance() {
+  // 1. MINT
+  const inscriptionTxHash = await mintInscriptionImage();
+  await sleep(5000);
+
+  console.log("InscriptionTxHash", inscriptionTxHash);
+
+  const script = (internalPubkey: Buffer): P2trScript => {
+    const inscription = Script.compile([
+      internalPubkey,
+      Script.OP_CHECKSIG,
+      Script.OP_FALSE,
+      Script.OP_IF,
+      Script.encodeUTF8("ord"),
+      1,
+      3, // OP_PUSHBYTES_1 3
+      Buffer.from(inscriptionTxHash, "hex").reverse(),
+      1,
+      1, // OP_PUSHBYTES_1 1
+      Script.encodeUTF8("text/plain;charset=utf-8"),
+      Script.OP_0,
+      Script.encodeUTF8("Nasi Padang Guguak"),
+      Script.OP_ENDIF,
+    ]);
+    const recovery = Script.compile([internalPubkey, Script.OP_CHECKSIG]);
+
+    return {
+      taptree: [
+        {
+          output: Script.compile(inscription),
+        },
+        {
+          output: Script.compile(recovery),
+        },
+      ],
+      redeem: {
+        output: inscription,
+        redeemVersion: 192,
+      },
+    };
+  };
+
+  const p2tr = wallet.p2trScript(0, script);
+  await regboxApi.getFaucet(p2tr.address, 1);
+  await sleep(5000);
+
+  const p2trUtxo = (await walletApi.getUTXOs(p2tr.address))[0]
+
+  const p2trInput = {
+    utxo: await P2trUtxo.fromBitcoinUTXO(p2trUtxo as BitcoinUTXO, p2tr.tapInternalKey, p2tr.paymentWitness, p2tr.redeem),
+    value: p2trUtxo!.value
+  }
+
+  const parentOrdinal = (
+    await getInputsByOutpoints(wallet.p2wpkh(0).address, [
+      { hash: inscriptionTxHash, index: 0 },
+    ])
+  )[0];
+
+  console.log(p2trInput, parentOrdinal);
+
+  const p = new PSBT({
+    network: "regtest",
+    inputs: [parentOrdinal as Input, p2trInput as Input],
+    outputs: [
+      {
+        output: Address.fromString(wallet.p2wpkh(0).address),
+        value: 600,
+      },
+      {
+        // this will become the owner of the insription
+        output: Address.fromString(p2tr.address),
+        value: 600,
+      },
+    ],
+    feeRate: 1,
+    changeOutput: Address.fromString(p2tr.address),
+    autoUtxo: {
+      api,
+      from: new P2trAutoUtxo(p2tr),
+    },
+  });
+
+  await p.build();
+  p.signInput(0, wallet.p2wpkh(0).keypair);
+  p.signInput(1, p2tr.keypair);
+  p.finalizeAllInputs();
+
+  const txHash = await walletApi.brodcastTx(p.toHex(true));
+  console.log({ hex: p.toHex(true), txHash: txHash });
+  return txHash;
+}
+
+async function mintInscriptionDelegate() {
+  // 1. MINT
+  const inscriptionTxHash = await mintInscriptionImage();
+  await sleep(5000);
+
+  console.log(
+    "InscriptionTxHash",
+    inscriptionTxHash,
+    Buffer.from(inscriptionTxHash, "hex")
+  );
+
+  const script = (internalPubkey: Buffer): P2trScript => {
+    const inscription = Script.compile([
+      internalPubkey,
+      Script.OP_CHECKSIG,
+      Script.OP_FALSE,
+      Script.OP_IF,
+      Script.encodeUTF8("ord"),
+      1,
+      11, // OP_PUSHBYTES_1 11
+      Buffer.from(inscriptionTxHash, "hex").reverse(),
+      Script.OP_ENDIF,
+    ]);
+    const recovery = Script.compile([internalPubkey, Script.OP_CHECKSIG]);
+
+    return {
+      taptree: [
+        {
+          output: Script.compile(inscription),
+        },
+        {
+          output: Script.compile(recovery),
+        },
+      ],
+      redeem: {
+        output: inscription,
+        redeemVersion: 192,
+      },
+    };
+  };
+
+  const p2tr = wallet.p2trScript(0, script);
+  await regboxApi.getFaucet(p2tr.address, 1);
+  await sleep(5000);
+
+  const p = new PSBT({
+    network: "regtest",
+    inputs: [],
+    outputs: [
+      {
+        // this will become the owner of the insription
+        output: Address.fromString(p2tr.address),
+        value: 600,
+      },
+    ],
+    feeRate: 1,
+    changeOutput: Address.fromString(p2tr.address),
+    autoUtxo: {
+      api,
+      from: new P2trAutoUtxo(p2tr),
+    },
+  });
+
+  await p.build();
+  p.signAllInputs(p2tr.keypair);
+  p.finalizeAllInputs();
+
+  const txHash = await walletApi.brodcastTx(p.toHex(true));
+  console.log({ hex: p.toHex(true), txHash: txHash });
+  return txHash;
+}
+
+async function mintInscriptionPointers() {
+  const script = (internalPubkey: Buffer): P2trScript => {
+    const inscription = Script.compile([
+      internalPubkey,
+      Script.OP_CHECKSIG,
+      Script.OP_FALSE,
+      Script.OP_IF,
+      Script.encodeUTF8("ord"),
+      1,
+      1, // OP_PUSHBYTES_1 1
+      Script.encodeUTF8("text/plain;charset=utf-8"),
+      Script.OP_0,
+      Script.encodeUTF8("Nasi Padang Guguak"),
+      Script.OP_ENDIF,
+      Script.OP_FALSE,
+      Script.OP_IF,
+      Script.encodeUTF8("ord"),
+      1,
+      1, // OP_PUSHBYTES_1 1
+      Script.encodeUTF8("text/plain;charset=utf-8"),
+      1,
+      2, // OP_PUSHBYTES_1 2
+      Buffer.from((600).toString(16), "hex"),
+      Script.OP_0,
+      Script.encodeUTF8("Nasi Padang Guguak"),
+      Script.OP_ENDIF,
+    ]);
+    const recovery = Script.compile([internalPubkey, Script.OP_CHECKSIG]);
+
+    return {
+      taptree: [
+        {
+          output: Script.compile(inscription),
+        },
+        {
+          output: Script.compile(recovery),
+        },
+      ],
+      redeem: {
+        output: inscription,
+        redeemVersion: 192,
+      },
+    };
+  };
+
+  const p2tr = wallet.p2trScript(0, script);
+  await regboxApi.getFaucet(p2tr.address, 1);
+  await sleep(5000);
+
+  const p = new PSBT({
+    network: "regtest",
+    inputs: [],
+    outputs: [
+      {
+        // this will become the owner of the insription
+        output: Address.fromString(p2tr.address),
+        value: 600,
+      },
+      {
+        // this will become the owner of the insription
+        output: Address.fromString(p2tr.address),
+        value: 600,
+      },
+    ],
+    feeRate: 1,
+    changeOutput: Address.fromString(p2tr.address),
+    autoUtxo: {
+      api,
+      from: new P2trAutoUtxo(p2tr),
+    },
+  });
+
+  await p.build();
+  p.signAllInputs(p2tr.keypair);
+  p.finalizeAllInputs();
+
+  const txHash = await walletApi.brodcastTx(p.toHex(true));
+  console.log({ hex: p.toHex(true), txHash: txHash });
+  return txHash;
+}
+
 async function main() {
   const p2wpkhAddress = wallet.p2wpkh(0).address;
   console.log("p2wpkh address: ", p2wpkhAddress);
@@ -584,14 +837,16 @@ async function main() {
   // Reinscription - using reinscription is cursed
   // mintInscriptionCursedReinscription()
   // Stutter - for inscriptions which start with OP_FALSE OP_FALSE OP_IF or OP_FALSE OP_IF OP_FALSE OP_IF https://github.com/ordinals/ord/issues/2693         // UnrecognizedEvenField - check even field (i % 2 == 0), if not recognize then cursed
-  mintInscriptionCursedStutter()
-
+  // mintInscriptionCursedStutter()
 
   // PROVENANCE
+  // mintInscriptionProvenance(); 
 
   // DELEGATE
+  // mintInscriptionDelegate()
 
   // pointer ordinal (2 ordinal in one tx)
+  mintInscriptionPointers()
 
   // TRANSFER
   // mintAndTransferInscription()
