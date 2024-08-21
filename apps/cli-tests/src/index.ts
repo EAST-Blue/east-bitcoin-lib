@@ -2,26 +2,28 @@ import {
   API,
   Address,
   BElectrsAPI,
-  P2shAutoUtxo,
   P2trAutoUtxo,
   P2trScript,
-  P2wpkhAutoUtxo,
   PSBT,
   Script,
   Wallet,
-  OpReturn,
+  RegboxAPI,
 } from "@east-bitcoin-lib/sdk";
+import { bitcoin } from "bitcoinjs-lib/src/networks";
 
-const bitcoinaApi = new BElectrsAPI({
+const walletApi = new BElectrsAPI({
   network: "regtest",
   apiUrl: {
     regtest: "http://localhost:3002",
   },
 });
+
 const api = new API({
   network: "regtest",
-  bitcoin: bitcoinaApi,
+  bitcoin: walletApi,
 });
+
+const regboxApi = new RegboxAPI({ url: "http://localhost:8080" });
 
 const wallet = new Wallet({
   mnemonic:
@@ -29,145 +31,14 @@ const wallet = new Wallet({
   network: "regtest",
 });
 
-async function psbtBuilderP2tr() {
-  const p2tr = wallet.p2tr(0);
-  console.log({ address: p2tr.address });
+// HELPER FUNCTIONS
 
-  // TODO: add minimum input and output value
-  const p = new PSBT({
-    network: "regtest",
-    inputs: [],
-    outputs: [
-      {
-        output: Address.fromString("2N8ruoh7CGSycEnSx1nhi9C2UVYdUf89T7C"),
-        value: 0.5 * 10 ** 8,
-      },
-    ],
-    feeRate: 1,
-    changeOutput: Address.fromString("2N8ruoh7CGSycEnSx1nhi9C2UVYdUf89T7C"),
-    autoUtxo: {
-      api,
-      from: new P2trAutoUtxo(p2tr),
-    },
-  });
+// commit-reveal ordinal minting
 
-  await p.build();
-
-  p.signAllInputs(p2tr.keypair);
-  p.finalizeAllInputs();
-
-  console.log({ hex: p.toHex(true) });
-}
-
-async function psbtBuilderP2sh() {
-  const lockScripts = [
-    Script.encodeNumber(1000),
-    Script.OP_ADD,
-    Script.encodeNumber(2000),
-    Script.OP_EQUAL,
-  ];
-  const unlockScripts = [Script.encodeNumber(1000)];
-
-  const p2sh = wallet.p2sh(lockScripts);
-  console.log({ address: p2sh.address });
-
-  const p = new PSBT({
-    network: "regtest",
-    inputs: [],
-    outputs: [
-      {
-        output: Address.fromString(p2sh.address),
-        value: 0.1 * 10 ** 8,
-      },
-    ],
-    feeRate: 1,
-    changeOutput: Address.fromString(p2sh.address),
-    autoUtxo: {
-      api,
-      from: new P2shAutoUtxo({
-        address: p2sh.address,
-        redeemScript: p2sh.redeemScript,
-        unlockScript: Script.compile(unlockScripts),
-      }),
-    },
-  });
-
-  await p.build();
-  p.inputs.forEach((_, i) => {
-    p.finalizeScriptInput(i, unlockScripts);
-  });
-
-  console.log({ hex: p.toHex(true) });
-}
-
-async function psbtBuilderP2wpkhOpReturn() {
-  const p2wpkh = wallet.p2wpkh(0);
-  console.log({ address: p2wpkh.address });
-
-  const opReturnOutput = new OpReturn({
-    dataScripts: [
-      Script.encodeUTF8("HELLO_MOTHER_FVCKNG_WORLD_3000000000000000000"),
-    ],
-  });
-
-  // TODO: add minimum input and output value
-  const p = new PSBT({
-    network: "regtest",
-    inputs: [],
-    outputs: [
-      {
-        output: Address.fromString("2N8ruoh7CGSycEnSx1nhi9C2UVYdUf89T7C"),
-        value: 0.5 * 10 ** 8,
-      },
-      {
-        output: opReturnOutput,
-        value: 0,
-      },
-    ],
-    feeRate: 1,
-    changeOutput: Address.fromString(p2wpkh.address),
-    autoUtxo: {
-      api,
-      from: new P2wpkhAutoUtxo(p2wpkh),
-    },
-  });
-
-  await p.build();
-  p.signAllInputs(p2wpkh.keypair);
-  p.finalizeAllInputs();
-
-  console.log({ hex: p.toHex(true) });
-}
-
-async function psbtBuilderP2trRuneCommit() {
-  const script = (internalPubkey: Buffer): P2trScript => {
-    const runeCommit = Script.compile([
-      internalPubkey,
-      Script.OP_CHECKSIG,
-      Script.OP_FALSE,
-      Script.OP_IF,
-      Buffer.from("62ef3ccef7027413e781", "hex"),
-      Script.OP_ENDIF,
-    ]);
-    const recovery = Script.compile([internalPubkey, Script.OP_CHECKSIG]);
-
-    return {
-      taptree: [
-        {
-          output: Script.compile(runeCommit),
-        },
-        {
-          output: Script.compile(recovery),
-        },
-      ],
-      redeem: {
-        output: runeCommit,
-        redeemVersion: 192,
-      },
-    };
-  };
-
+async function mintInscription(script: (internalPubkey: Buffer) => P2trScript) {
   const p2tr = wallet.p2trScript(0, script);
+  await regboxApi.getFaucet(p2tr.address, 0.000001);
+  // inscription commit address
   console.log({ address: p2tr.address });
 
   const p = new PSBT({
@@ -175,7 +46,8 @@ async function psbtBuilderP2trRuneCommit() {
     inputs: [],
     outputs: [
       {
-        output: Address.fromString("2N8ruoh7CGSycEnSx1nhi9C2UVYdUf89T7C"),
+        // this will become the owner of the insription
+        output: Address.fromString(wallet.p2wpkh(0).address),
         value: 600,
       },
     ],
@@ -191,10 +63,11 @@ async function psbtBuilderP2trRuneCommit() {
   p.signAllInputs(p2tr.keypair);
   p.finalizeAllInputs();
 
-  console.log({ hex: p.toHex(true) });
+  const txHash = await walletApi.brodcastTx(p.toHex(true));
+  console.log({ hex: p.toHex(true), txHash: txHash });
 }
 
-async function psbtBuilderP2trOrdinalInscriptionText() {
+async function mintInscriptionText() {
   const script = (internalPubkey: Buffer): P2trScript => {
     const inscription = Script.compile([
       internalPubkey,
@@ -226,36 +99,10 @@ async function psbtBuilderP2trOrdinalInscriptionText() {
     };
   };
 
-  const p2tr = wallet.p2trScript(0, script);
-  // inscription commit address
-  console.log({ address: p2tr.address });
-
-  const p = new PSBT({
-    network: "regtest",
-    inputs: [],
-    outputs: [
-      {
-        // this will become the owner of the insription
-        output: Address.fromString("2N8ruoh7CGSycEnSx1nhi9C2UVYdUf89T7C"),
-        value: 600,
-      },
-    ],
-    feeRate: 1,
-    changeOutput: Address.fromString(p2tr.address),
-    autoUtxo: {
-      api,
-      from: new P2trAutoUtxo(p2tr),
-    },
-  });
-
-  await p.build();
-  p.signAllInputs(p2tr.keypair);
-  p.finalizeAllInputs();
-
-  console.log({ hex: p.toHex(true) });
+  mintInscription(script)
 }
 
-async function psbtBuilderP2trOrdinalInscriptionImage() {
+async function mintInscriptionImage() {
   const imageBase64 =
     "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKBAMAAAB/HNKOAAAAD1BMVEVbHx6uTEHvrJjbjHrLbFynATLxAAAAIUlEQVQI12NgwASMjgJAUljJEMh0VnIEslmUQCKMxqjqADLDAcrdvFBmAAAAAElFTkSuQmCC";
 
@@ -292,42 +139,26 @@ async function psbtBuilderP2trOrdinalInscriptionImage() {
     };
   };
 
-  const p2tr = wallet.p2trScript(0, script);
-  // inscription commit address
-  console.log({ address: p2tr.address });
-
-  const p = new PSBT({
-    network: "regtest",
-    inputs: [],
-    outputs: [
-      {
-        // this will become the owner of the insription
-        output: Address.fromString("2N8ruoh7CGSycEnSx1nhi9C2UVYdUf89T7C"),
-        value: 600,
-      },
-    ],
-    feeRate: 1,
-    changeOutput: Address.fromString(p2tr.address),
-    autoUtxo: {
-      api,
-      from: new P2trAutoUtxo(p2tr),
-    },
-  });
-
-  await p.build();
-  p.signAllInputs(p2tr.keypair);
-  p.finalizeAllInputs();
-
-  console.log({ hex: p.toHex(true) });
+  mintInscription(script);
 }
 
 async function main() {
-  // psbtBuilderP2tr();
-  // psbtBuilderP2sh();
-  // psbtBuilderP2wpkhOpReturn();
-  // psbtBuilderP2trRuneCommit();
-  // psbtBuilderP2trOrdinalInscriptionText();
-  psbtBuilderP2trOrdinalInscriptionImage();
+  console.log("p2wpkh address: ", wallet.p2wpkh(0).address);
+
+  // normal ordinal
+  mintInscriptionText();
+  // mintInscriptionImage();
+
+  // cursed ordinal (unrecognized even field)
+
+
+  // parent ordinal
+
+  // delegate ordinal
+
+  // pointer ordinal (2 ordinal in one tx)
+
+  // transfer ordinal
 }
 
 main();
