@@ -196,6 +196,172 @@ async function mintInscriptionImage() {
   return mintInscription(script);
 }
 
+async function mintInscriptionCursedIncompleteField() {
+  const imageBase64 =
+    "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKBAMAAAB/HNKOAAAAD1BMVEVbHx6uTEHvrJjbjHrLbFynATLxAAAAIUlEQVQI12NgwASMjgJAUljJEMh0VnIEslmUQCKMxqjqADLDAcrdvFBmAAAAAElFTkSuQmCC";
+
+  const imageBuffer = Buffer.from(imageBase64, "base64");
+
+  const script = (internalPubkey: Buffer): P2trScript => {
+    const inscription = Script.compile([
+      internalPubkey,
+      Script.OP_CHECKSIG,
+      Script.OP_FALSE,
+      Script.OP_IF,
+      Script.encodeUTF8("ord"),
+      Script.OP_1,
+      Script.OP_0,
+      imageBuffer,
+      Script.OP_ENDIF,
+    ]);
+    const recovery = Script.compile([internalPubkey, Script.OP_CHECKSIG]);
+
+    return {
+      taptree: [
+        {
+          output: Script.compile(inscription),
+        },
+        {
+          output: Script.compile(recovery),
+        },
+      ],
+      redeem: {
+        output: inscription,
+        redeemVersion: 192,
+      },
+    };
+  };
+
+  return mintInscription(script);
+}
+
+async function mintInscriptionCursedNotAtInput0() {
+  // TODO
+}
+
+async function mintInscriptionCursedNotAtOffset0() {
+  const imageBase64 =
+    "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKBAMAAAB/HNKOAAAAD1BMVEVbHx6uTEHvrJjbjHrLbFynATLxAAAAIUlEQVQI12NgwASMjgJAUljJEMh0VnIEslmUQCKMxqjqADLDAcrdvFBmAAAAAElFTkSuQmCC";
+
+  const imageBuffer = Buffer.from(imageBase64, "base64");
+
+  const script = (internalPubkey: Buffer): P2trScript => {
+    const inscription = Script.compile([
+      internalPubkey,
+      Script.OP_CHECKSIG,
+      Script.OP_FALSE,
+      Script.OP_IF,
+      Script.encodeUTF8("ord"),
+      Script.OP_1,
+      Script.encodeUTF8("image/png"),
+      Script.OP_2,
+      Buffer.from([251]),
+      Script.OP_0,
+      imageBuffer,
+      Script.OP_ENDIF,
+    ]);
+    const recovery = Script.compile([internalPubkey, Script.OP_CHECKSIG]);
+
+    return {
+      taptree: [
+        {
+          output: Script.compile(inscription),
+        },
+        {
+          output: Script.compile(recovery),
+        },
+      ],
+      redeem: {
+        output: inscription,
+        redeemVersion: 192,
+      },
+    };
+  };
+
+  return mintInscription(script);
+}
+
+async function mintInscriptionCursedPushnum() {
+  const imageBase64 =
+    "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKBAMAAAB/HNKOAAAAD1BMVEVbHx6uTEHvrJjbjHrLbFynATLxAAAAIUlEQVQI12NgwASMjgJAUljJEMh0VnIEslmUQCKMxqjqADLDAcrdvFBmAAAAAElFTkSuQmCC";
+
+  const imageBuffer = Buffer.from(imageBase64, "base64");
+
+  const script = (internalPubkey: Buffer): P2trScript => {
+    const inscription = Script.compile([
+      internalPubkey,
+      Script.OP_CHECKSIG,
+      Script.OP_FALSE,
+      Script.OP_IF,
+      Script.encodeUTF8("ord"),
+      Script.OP_0,
+      imageBuffer,
+      Script.OP_13,
+      Script.OP_ENDIF,
+    ]);
+    const recovery = Script.compile([internalPubkey, Script.OP_CHECKSIG]);
+
+    return {
+      taptree: [
+        {
+          output: Script.compile(inscription),
+        },
+        {
+          output: Script.compile(recovery),
+        },
+      ],
+      redeem: {
+        output: inscription,
+        redeemVersion: 192,
+      },
+    };
+  };
+
+  return mintInscription(script);
+}
+
+async function mintInscriptionCursedDuplicateFields() {
+  const imageBase64 =
+    "iVBORw0KGgoAAAANSUhEUgAAAAoAAAAKBAMAAAB/HNKOAAAAD1BMVEVbHx6uTEHvrJjbjHrLbFynATLxAAAAIUlEQVQI12NgwASMjgJAUljJEMh0VnIEslmUQCKMxqjqADLDAcrdvFBmAAAAAElFTkSuQmCC";
+
+  const imageBuffer = Buffer.from(imageBase64, "base64");
+
+  const script = (internalPubkey: Buffer): P2trScript => {
+    const inscription = Script.compile([
+      internalPubkey,
+      Script.OP_CHECKSIG,
+      Script.OP_FALSE,
+      Script.OP_IF,
+      Script.encodeUTF8("ord"),
+      Script.OP_1,
+      Script.encodeUTF8("image/png"),
+      Script.OP_1,
+      Script.encodeUTF8("image/jpeg"),
+      Script.OP_0,
+      imageBuffer,
+      Script.OP_ENDIF,
+    ]);
+    const recovery = Script.compile([internalPubkey, Script.OP_CHECKSIG]);
+
+    return {
+      taptree: [
+        {
+          output: Script.compile(inscription),
+        },
+        {
+          output: Script.compile(recovery),
+        },
+      ],
+      redeem: {
+        output: inscription,
+        redeemVersion: 192,
+      },
+    };
+  };
+
+  return mintInscription(script);
+}
+
 async function mintAndTransferInscription() {
   const inscriptionTxHash = await mintInscriptionImage();
 
@@ -245,11 +411,20 @@ async function main() {
 
   // CURSED ORDINALS
   // DuplicateField - two field using the same key
+  // mintInscriptionCursedDuplicateFields()
+
   // IncompleteField - key without value
+ // mintInscriptionCursedIncompleteField()
   // NotAtOffsetZero - ins.offset != 0
+  // mintInscriptionCursedNotAtOffset0()
   // NotInFirstInput - ins.input_index != 0
+  // mintInscriptionCursedNotAtInput0()
+
   // Pointer - pointer.is_some() https://github.com/ordinals/ord/pull/2523
+  // mintInscriptionCursedNotAtOffset0()
+
   // Pushnum - using OP_PUSHNUM before jubilee will be cursed (jubilee 824544)
+  mintInscriptionCursedPushnum()
   // Reinscription - using reinscription is cursed
   // Stutter - for inscriptions which start with OP_FALSE OP_FALSE OP_IF or OP_FALSE OP_IF OP_FALSE OP_IF https://github.com/ordinals/ord/issues/2693         // UnrecognizedEvenField - check even field (i % 2 == 0), if not recognize then cursed
 
@@ -260,7 +435,7 @@ async function main() {
   // pointer ordinal (2 ordinal in one tx)
 
   // TRANSFER
-  mintAndTransferInscription()
+  // mintAndTransferInscription()
 }
 
 main();
