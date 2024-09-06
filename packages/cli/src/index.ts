@@ -23,11 +23,11 @@ function utf8ToHex(str: string) {
 }
 
 function hexToUtf8(hexStr: string) {
-    var s = ''
-    for (var i = 0; i < hexStr.length; i+=2) {
-        s += String.fromCharCode(parseInt(hexStr.substr(i, 2), 16))
-    }
-    return decodeURIComponent(escape(s))
+  var s = "";
+  for (var i = 0; i < hexStr.length; i += 2) {
+    s += String.fromCharCode(parseInt(hexStr.substr(i, 2), 16));
+  }
+  return decodeURIComponent(escape(s));
 }
 
 function main() {
@@ -45,7 +45,7 @@ function main() {
     .option(
       "-r, --rpc-url [RPC_URL]",
       "Eastchain RPC URL",
-      "https://rpc.testnet.eastlayer.io",
+      "https://rpc.testnet.eastlayer.io"
     )
     .addOption(
       new Option(
@@ -68,17 +68,14 @@ function main() {
         rpcUrl: globalOptions.rpcUrl,
       });
 
-      const result = await client.query(
-        {
-          receiver: smartIndexAddress,
-          function_name: "view_function",
-          args: [functionName, ...args]
-        }
-      )
+      const result = await client.query({
+        receiver: smartIndexAddress,
+        function_name: "view_function",
+        args: [functionName, ...args],
+      });
 
-      console.log(hexToUtf8(result.result.result))
-    })
-
+      console.log(hexToUtf8(result.result.result));
+    });
 
   program
     .command("call")
@@ -98,15 +95,13 @@ function main() {
         kind: "call",
         function_name: functionName,
         args: args,
-      }
+      };
 
-      const txId = await client.mutate(
-        {
-          signer: publicKey,
-          receiver: smartIndexAddress,
-          actions: [action]
-        }
-      )
+      const txId = await client.mutate({
+        signer: publicKey,
+        receiver: smartIndexAddress,
+        actions: [action],
+      });
 
       console.log("Broadcasted! Tx Hash:", txId);
 
@@ -118,21 +113,26 @@ function main() {
             args: [txId],
           });
           if (check.result.result) {
-            console.log("Transaction: ", JSON.parse(hexToUtf8(check.result.result)))
+            console.log(
+              "Transaction: ",
+              JSON.parse(hexToUtf8(check.result.result))
+            );
           }
         },
         {
           retries: 50,
         }
       );
-
-
     });
 
   program
     .command("deploy")
     .description("Deploy smart index")
     .argument("<file>", "WASM file to be deployed")
+    .option(
+      "--smartIndexAddress [smartIndexAddress]",
+      "Smart index address to upgrade"
+    )
     .action(async (file, opts) => {
       const client = new Client({
         network: globalOptions.network,
@@ -143,10 +143,16 @@ function main() {
 
       const publicKey = await client.requestSignIn(globalOptions.privateKey);
 
+      const args = [wasmFile];
+
+      if (opts.smartIndexAddress) {
+        args.push(opts.smartIndexAddress);
+      }
+
       const action: Action = {
         kind: "deploy",
         function_name: "",
-        args: [wasmFile],
+        args,
       };
 
       const txId = await client.mutate({
@@ -163,11 +169,16 @@ function main() {
         Buffer.from(publicKey, "hex"),
       ]);
 
-      // const hash = await sha256(Buffer.from(publicKey, "hex"));
-      const hash = await sha256(actionWithPublicKey);
-      const smartIndexAddress = bech32
-        .encode("idx", bech32.toWords(hash))
-        .slice(0, 32);
+      let smartIndexAddress: string;
+
+      if (opts.smartIndexAddress) {
+        smartIndexAddress = opts.smartIndexAddress;
+      } else {
+        const hash = await sha256(actionWithPublicKey);
+        smartIndexAddress = bech32
+          .encode("idx", bech32.toWords(hash))
+          .slice(0, 32);
+      }
 
       console.log("Broadcasted! Tx Hash:", txId);
       await retry(
