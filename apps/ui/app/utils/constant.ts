@@ -15,12 +15,18 @@ export const NETWORK_MODE_OPTIONS = [
 
 export const TX_OUTPUT_OPTIONS = [
   {
-    label: "Address",
-    value: "address",
+    label: "Standard",
+    options: [
+      { label: "Transfer", value: "address" },
+      { label: "Custom Script", value: "script_custom" },
+    ],
   },
   {
-    label: "Script",
-    value: "script",
+    label: "Eastlayer",
+    options: [
+      { label: "Issue Eastlayer Token", value: "script" },
+      { label: "Transfer Eastlayer Token", value: "script_transfer" },
+    ],
   },
 ];
 

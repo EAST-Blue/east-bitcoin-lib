@@ -1,0 +1,36 @@
+@import url("https://fonts.googleapis.com/css2?family=Fira+Mono:wght@400;500;700&family=Inter:wght@100..900&family=Urbanist:ital,wght@0,100..900;1,100..900&display=swap");
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* darker */
+    --main-color-0: 0, 0, 0;
+    --main-color-1: 27, 27, 27;
+    --main-color-2: 41, 41, 41;
+    --main-color-3: 65, 65, 65;
+    --main-color-4: 90, 90, 90;
+    --main-color-5: 113, 113, 113;
+    --main-color-6: 141, 141, 141;
+    --main-color-7: 188, 188, 188;
+    --main-color-8: 222, 222, 222;
+    --main-color-9: 255, 255, 255;
+  }
+}
+
+body {
+  @apply font-body text-main-7 font-medium;
+}
+
+code {
+  @apply font-code;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  @apply font-title font-bold text-main-9;
+}

@@ -6,8 +6,10 @@ import { useConfigContext } from "../contexts/ConfigContext";
 import { NetworkConfigType } from "../types/ConfigType";
 import ButtonCopy from "./ButtonCopy";
 import ExportPrivateKeyModal from "./ExportPrivateKeyModal";
-import { ecpair, Network, Wallet } from "@east-bitcoin-lib/sdk";
+import { ecpair, Network, Wallet, WalletParams } from "@east-bitcoin-lib/sdk";
 import { networks } from "bitcoinjs-lib";
+import { checkSecretType } from "../utils/checkSecretType";
+import { SecretEnum } from "../enums/SecretEnum";
 
 const AccountCard = ({
   index,
@@ -22,7 +24,7 @@ const AccountCard = ({
   account: AccountType;
   showOptions: AccountType | null;
   setShowOptions: (args: any) => void;
-  removeAccount: (mnemonic: string) => void;
+  removeAccount: (path: number, secret: string) => void;
   copyToClipboard: (address: string) => void;
   onFaucet: (addresses: string[]) => void;
 }) => {
@@ -44,8 +46,14 @@ const AccountCard = ({
     const dataP2wpkh = await p2wpkh.json();
     const dataP2tr = await p2tr.json();
 
-    setP2wpkhBalance(dataP2wpkh?.chain_stats?.funded_txo_sum);
-    setP2trBalance(dataP2tr?.chain_stats?.funded_txo_sum);
+    setP2wpkhBalance(
+      dataP2wpkh?.chain_stats?.funded_txo_sum -
+        dataP2wpkh?.chain_stats?.spent_txo_sum
+    );
+    setP2trBalance(
+      dataP2tr?.chain_stats?.funded_txo_sum -
+        dataP2tr?.chain_stats?.spent_txo_sum
+    );
   };
 
   const satsToBitcoin = (sats: number) => {
@@ -54,10 +62,35 @@ const AccountCard = ({
   };
 
   const getPrivateKey = (): string => {
-    const wallet = new Wallet({
-      mnemonic: account.mnemonic,
-      network: network as Network,
-    });
+    if (!account.secret) return "";
+
+    const secretType = checkSecretType(account.secret);
+    let walletParams: WalletParams;
+
+    switch (secretType) {
+      case SecretEnum.MNEMONIC:
+        walletParams = {
+          mnemonic: account.secret,
+          network: network as Network,
+        };
+        break;
+      case SecretEnum.PRIVATEKEY:
+        walletParams = {
+          privateKey: account.secret,
+          network: network as Network,
+        };
+        break;
+      case SecretEnum.WIF:
+        walletParams = {
+          wif: account.secret,
+          network: network as Network,
+        };
+        break;
+      default:
+        throw new Error("Invalid secret string provided");
+    }
+
+    const wallet = new Wallet(walletParams);
 
     let networkBuffer = undefined;
     if (network === "regtest") {
@@ -102,37 +135,41 @@ const AccountCard = ({
             >
               <i className="fa-solid fa-ellipsis"></i>
             </button>
-            {account.mnemonic === showOptions?.mnemonic && (
-              <div className="absolute right-0 mt-2 w-48 bg-[#262626] border border-gray-500 rounded shadow-lg">
-                <button
-                  onClick={() => {
-                    setIsExportModalOpen(true);
-                  }}
-                  className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500"
-                >
-                  Export Private Key
-                </button>
-                <button
-                  className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500"
-                  onClick={() => {
-                    onFaucet([account.p2wpkh, account.p2tr]);
-                  }}
-                >
-                  Faucet
-                </button>
-                <button
-                  onClick={() => removeAccount(account.mnemonic)}
-                  className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-500"
-                >
-                  Remove Account
-                </button>
-              </div>
-            )}
+            {account.secret === showOptions?.secret &&
+              account.path === showOptions.path && (
+                <div className="absolute right-0 mt-2 w-48 bg-[#262626] border border-gray-500 rounded shadow-lg">
+                  <button
+                    onClick={() => {
+                      setIsExportModalOpen(true);
+                    }}
+                    className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500"
+                  >
+                    Export Private Key
+                  </button>
+                  <button
+                    className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500"
+                    onClick={() => {
+                      onFaucet([account.p2wpkh, account.p2tr]);
+                    }}
+                  >
+                    Faucet
+                  </button>
+                  <button
+                    onClick={() => removeAccount(account.path, account.secret)}
+                    className="block w-full text-left px-4 py-2 text-red-600 hover:bg-gray-500"
+                  >
+                    Remove Account
+                  </button>
+                </div>
+              )}
           </div>
         </div>
         <div className="grid grid-cols-5 font-semibold text-white-7">
           <div className="col-span-3">
-            <p>Address</p>
+            <p>
+              Address{" "}
+              <span className="text-xs italic">(Path {account.path})</span>
+            </p>
           </div>
           <div className="col-span-1">
             <p>Type</p>

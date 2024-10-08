@@ -1,10 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useReducer, useRef, useState } from "react";
 import Leftbar from "../components/Leftbar";
-import { RegboxAPI, Wallet } from "@east-bitcoin-lib/sdk";
+import { Network, RegboxAPI, Wallet } from "@east-bitcoin-lib/sdk";
 import ImportAccountModal from "../components/ImportAccount";
-import * as bip39 from "bip39";
 import { ToastContainer, toast } from "react-toastify";
 import "react-toastify/dist/ReactToastify.css";
 import { useAccountContext } from "../contexts/AccountContext";
@@ -13,70 +12,92 @@ import NetworkSection from "../components/Network";
 import { useConfigContext } from "../contexts/ConfigContext";
 import { NetworkConfigType } from "../types/ConfigType";
 import AccountCard from "../components/AccountCard";
-import IconSign from "../icons/iconSign";
 import IconPlus from "../icons/IconPlus";
 import IconImport from "../icons/IconImport";
 import { copyToClipboard } from "../utils/copyToClipboard";
+import ImportPrivateKeyModal from "../components/ImportPrivateKeyModal";
+import { SecretEnum } from "../enums/SecretEnum";
+import ImportWifTextModal from "../components/ImportWifTextModal";
+import { generateWalletBySecretType } from "../utils/generateWalletBySecretType";
 
 const Account = () => {
-  const { accounts, fetchAccounts } = useAccountContext() as AccountContextType;
-  const { uri, regbox } = useConfigContext() as NetworkConfigType;
+  const apiURL = useRef("");
+  const { accounts, accountApiUrl, fetchAccounts } =
+    useAccountContext() as AccountContextType;
+  const { regbox, network } = useConfigContext() as NetworkConfigType;
 
-  const [isImportAccountModalOpen, setIsImportAccountModalOpen] =
-    useState(false);
+  const [isShowImportOption, setIsShowImportOptions] = useState(false);
   const [showOptions, setShowOptions] = useState<AccountType | null>(null);
+  const [showImportOptions, setShowImportOptions] = useState<SecretEnum | null>(
+    null
+  );
 
-  const toastInvalidMnemonic = () => {
-    toast.error(<p>Mnemonic Invalid</p>, { autoClose: 1500 });
-  };
   const toastOnFaucet = () => {
     toast.success(<p>Sending coin. Wait for automatic confirmation</p>, {
       autoClose: 1500,
     });
   };
 
-  const onImportAccount = async (mnemonic: string) => {
-    const isExist = accounts.find((account) => account.mnemonic === mnemonic);
-    if (isExist) return;
+  const toastOnAccountExist = (accountNumber: number) => {
+    toast.error(
+      <p>Secret and path already exist on Account {accountNumber}</p>,
+      {
+        autoClose: 1500,
+      }
+    );
+  };
 
-    const isValidMnemonic = bip39.validateMnemonic(mnemonic);
-    if (!isValidMnemonic) {
-      toastInvalidMnemonic();
+  const onImportAccount = async (index: number, secret: string) => {
+    const isExist = accounts.findIndex(
+      (account) => account.secret === secret && account.path === index
+    );
+    if (isExist !== -1) {
+      toastOnAccountExist(isExist + 1);
       return;
     }
 
-    await saveMnemonic(mnemonic);
+    // TODO : check if secret exist on another form e.g. if input is WIF, check is equivalent in HEX is exist in db
+
+    await saveSecret(index, secret);
     fetchAccounts();
   };
 
-  const saveMnemonic = async (importMnemonic?: string | undefined) => {
-    let mnemonic;
-    if (importMnemonic) {
-      mnemonic = importMnemonic;
-    } else {
-      mnemonic = Wallet.generateMnemonic();
+  const saveSecret = async (index: number, secret?: string | undefined) => {
+    try {
+      if (!secret) {
+        secret = Wallet.generateMnemonic();
+      }
+
+      let wallet = generateWalletBySecretType(secret, network);
+      if (!wallet) {
+        console.error("Error secret");
+        return;
+      }
+
+      await fetch(accountApiUrl, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          secret,
+          p2wpkh: wallet.p2wpkh(index).address,
+          p2tr: wallet.p2tr(index).address,
+          path: index,
+        }),
+      });
+
+      fetchAccounts();
+    } catch (error) {
+      throw new Error(`Error save secret : ${error}`);
     }
-    const wallet = new Wallet({ mnemonic, network: "regtest" });
-
-    await fetch("/api/account", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        mnemonic,
-        p2wpkh: wallet.p2wpkh(0).address,
-        p2tr: wallet.p2tr(0).address,
-      }),
-    });
-
-    fetchAccounts();
   };
 
-  const removeAccount = async (mnemonic: string) => {
-    await fetch("/api/account", {
+  const removeAccount = async (path: number, secret: string) => {
+    await fetch(accountApiUrl, {
       method: "DELETE",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
-        mnemonic,
+        path,
+        secret,
       }),
     });
 
@@ -112,7 +133,7 @@ const Account = () => {
           <h2 className="text-xl font-bold">Accounts</h2>
           <div className="flex justify-end space-x-4">
             <button
-              onClick={() => saveMnemonic()}
+              onClick={() => saveSecret(0)}
               type="button"
               className="flex px-4 items-center py-2 rounded-lg bg-gradient-to-b hover:from-white-1  from-white-2 to-white-1"
             >
@@ -124,7 +145,7 @@ const Account = () => {
               </p>
             </button>
             <button
-              onClick={() => setIsImportAccountModalOpen(true)}
+              onClick={() => setIsShowImportOptions(!isShowImportOption)}
               type="button"
               className="flex px-4 items-center py-2 rounded-lg bg-gradient-to-b hover:from-white-1 from-white-2 to-white-1"
             >
@@ -135,6 +156,39 @@ const Account = () => {
                 Import Account
               </p>
             </button>
+
+            {isShowImportOption && (
+              <div className="absolute z-10 right-7 top-[120px]  mt-2 w-48 bg-[#262626] border border-gray-500 rounded shadow-lg">
+                <button
+                  onClick={() => {
+                    setShowImportOptions(SecretEnum.MNEMONIC);
+                    setIsShowImportOptions(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500"
+                >
+                  Mnemonic Phrase
+                </button>
+
+                <button
+                  onClick={() => {
+                    setShowImportOptions(SecretEnum.WIF);
+                    setIsShowImportOptions(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500"
+                >
+                  WIF Text
+                </button>
+                <button
+                  onClick={() => {
+                    setShowImportOptions(SecretEnum.PRIVATEKEY);
+                    setIsShowImportOptions(false);
+                  }}
+                  className="block w-full text-left px-4 py-2 text-gray-200 hover:bg-gray-500"
+                >
+                  Private Key (hex)
+                </button>
+              </div>
+            )}
           </div>
         </div>
 
@@ -154,8 +208,18 @@ const Account = () => {
       <ToastContainer hideProgressBar={true} theme="light" />
 
       <ImportAccountModal
-        isOpen={isImportAccountModalOpen}
-        onClose={() => setIsImportAccountModalOpen(false)}
+        isOpen={showImportOptions === SecretEnum.MNEMONIC}
+        onClose={() => setShowImportOptions(null)}
+        onSave={onImportAccount}
+      />
+      <ImportPrivateKeyModal
+        isOpen={showImportOptions === SecretEnum.PRIVATEKEY}
+        onClose={() => setShowImportOptions(null)}
+        onSave={onImportAccount}
+      />
+      <ImportWifTextModal
+        isOpen={showImportOptions === SecretEnum.WIF}
+        onClose={() => setShowImportOptions(null)}
         onSave={onImportAccount}
       />
     </div>

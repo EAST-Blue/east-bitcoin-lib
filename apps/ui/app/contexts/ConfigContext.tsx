@@ -5,6 +5,7 @@ import {
   createContext,
   useContext,
   useEffect,
+  useRef,
   useState,
 } from "react";
 
@@ -15,6 +16,7 @@ export const ConfigContextProvider = ({
 }: {
   children: ReactNode;
 }) => {
+  const configApiUrl = useRef("");
   const [config, setConfig] = useState({
     network: "regtest",
     uri: "https://blockstream-electrs-api.regnet.btc.eastlayer.io",
@@ -24,7 +26,7 @@ export const ConfigContextProvider = ({
 
   const fetchConfig = async () => {
     try {
-      const response = await fetch("/api/config");
+      const response = await fetch(configApiUrl.current);
       if (!response.ok) {
         throw new Error("Failed to fetch account count");
       }
@@ -40,6 +42,18 @@ export const ConfigContextProvider = ({
 
   useEffect(() => {
     fetchConfig();
+
+    const isTauri = (window as any).__TAURI__;
+    configApiUrl.current = isTauri
+      ? "http://localhost:9090/config"
+      : "/api/config";
+
+    if (isTauri) {
+      import("@tauri-apps/api/shell").then((mod) => {
+        const command = mod.Command.sidecar("bin/server");
+        command.execute();
+      });
+    }
   }, []);
 
   return (
@@ -49,6 +63,7 @@ export const ConfigContextProvider = ({
         uri: config.uri,
         explorer: config.explorer,
         regbox: config.regbox,
+        configApiUrl: configApiUrl.current,
         fetchConfig,
       }}
     >

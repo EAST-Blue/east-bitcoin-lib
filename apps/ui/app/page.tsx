@@ -15,12 +15,10 @@ import {
   P2trUtxo,
   P2wpkhUtxo,
   PSBT,
-  RegboxAPI,
   Script,
-  Wallet,
   getAddressType,
 } from "@east-bitcoin-lib/sdk";
-import Select, { MultiValue, NonceProvider } from "react-select";
+import Select, { MultiValue } from "react-select";
 import { BitcoinUTXO } from "@east-bitcoin-lib/sdk/dist/repositories/bitcoin/types";
 import { PSBTOutput } from "./types/OutputContextType";
 import { PrismEditor, createEditor } from "prism-code-editor";
@@ -40,36 +38,20 @@ import { prettyTruncate } from "./utils/prettyTruncate";
 import IconPlus from "./icons/IconPlus";
 import SignedTxModal from "./components/SignedTxModal";
 import GenerateCodeModal from "./components/GenerateCodeModal";
-
-const formatBuffer = (buffer: any[]) => {
-  console.log(buffer);
-  return `Buffer.from([${buffer.join(", ")}])`;
-};
-
-const formatInputs = (inputs: any[]) => {
-  return inputs.map((input) => {
-    if (input.utxo && input.utxo.witness && input.utxo.witness.script) {
-      input.utxo.witness.script = formatBuffer(input.utxo.witness.script.data);
-    }
-    return input;
-  });
-};
-
-const formatOutputs = (outputs: any[]) => {
-  return outputs.map((output) => {
-    if (output.output && output.output.script) {
-      output.output.script = formatBuffer(output.output.script.data);
-    }
-    return output;
-  });
-};
+import { checkSecretType } from "./utils/checkSecretType";
+import { SecretEnum } from "./enums/SecretEnum";
+import { generateWalletBySecretType } from "./utils/generateWalletBySecretType";
 
 export default function Page(): JSX.Element {
+  const broadcastApiUrl = useRef("");
+  const transactionApiUrl = useRef("");
+
   const { accounts } = useAccountContext() as AccountContextType;
   const { network, uri } = useConfigContext() as NetworkConfigType;
 
-  const [mnemonic, setMnemonic] = useState<string>("");
+  const [secret, setSecret] = useState<string>("");
   const [address, setAddress] = useState<string>("");
+  const [path, setPath] = useState<number>(0);
   const [inputs, setInputs] = useState<BitcoinUTXO[]>([]);
   const [utxos, setUtxos] = useState<BitcoinUTXO[]>([]);
   const [outputType, setOutputType] = useState<string>("");
@@ -109,7 +91,7 @@ export default function Page(): JSX.Element {
   }, [outputType]);
 
   const getUtxoByAddress = async () => {
-    if (mnemonic === "") return;
+    if (secret === "") return;
     if (address === "") return;
     if (!uri) return;
     if (!network) return;
@@ -135,10 +117,10 @@ export default function Page(): JSX.Element {
     if (outputType === "script" && !scriptEditorRef.current?.value) return;
 
     // Load Wallet
-    const wallet = new Wallet({
-      mnemonic,
-      network: network as Network,
-    });
+    const wallet = generateWalletBySecretType(secret, network);
+    if (!wallet) {
+      throw new Error("Invalid secret string provided");
+    }
 
     // Prepare inputs
     const _psbtInputs: Input[] = [];
@@ -151,7 +133,7 @@ export default function Page(): JSX.Element {
           break;
 
         case "p2tr":
-          const p2tr = wallet.p2tr(0);
+          const p2tr = wallet.p2tr(path);
           const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
             utxo,
             p2tr.tapInternalKey
@@ -198,12 +180,12 @@ export default function Page(): JSX.Element {
     for (const [index, psbtInput] of p.inputs.entries()) {
       switch (true) {
         case psbtInput.utxo instanceof P2wpkhUtxo:
-          psbt.signInput(index, wallet.p2wpkh(0).keypair);
+          psbt.signInput(index, wallet.p2wpkh(path).keypair);
           psbt.finalizeInput(index);
           break;
 
         case psbtInput.utxo instanceof P2trUtxo:
-          psbt.signInput(index, wallet.p2tr(0).keypair);
+          psbt.signInput(index, wallet.p2tr(path).keypair);
           psbt.finalizeInput(index);
           break;
 
@@ -228,7 +210,7 @@ export default function Page(): JSX.Element {
     if (!network) return;
 
     try {
-      const response = await fetch("api/broadcast", {
+      const response = await fetch(broadcastApiUrl.current, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ uri, hex }),
@@ -239,7 +221,7 @@ export default function Page(): JSX.Element {
       const result = await response.json();
 
       // Save to db
-      const responseSaveDb = await fetch("api/transaction", {
+      const responseSaveDb = await fetch(transactionApiUrl.current, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ address, network, hex, amount, txid: result }),
@@ -262,7 +244,7 @@ export default function Page(): JSX.Element {
     if (!network) return;
 
     try {
-      const response = await fetch("api/transaction", {
+      const response = await fetch(transactionApiUrl.current, {
         method: "GET",
         headers: { "Content-Type": "application/json" },
       });
@@ -278,7 +260,7 @@ export default function Page(): JSX.Element {
   };
 
   const resetState = () => {
-    setMnemonic("");
+    setSecret("");
     setAddress("");
     setInputs([]);
     setUtxos([]);
@@ -287,6 +269,7 @@ export default function Page(): JSX.Element {
     setAmount(0);
     setHex("");
     setOutputs([]);
+    setIsBroadcastDropdown(false);
   };
 
   useEffect(() => {
@@ -294,6 +277,20 @@ export default function Page(): JSX.Element {
   }, [address]);
 
   useEffect(() => {
+    const isTauri = (window as any).__TAURI__;
+    broadcastApiUrl.current = isTauri
+      ? "http://localhost:9090/broadcast"
+      : "/api/broadcast";
+    transactionApiUrl.current = isTauri
+      ? "http://localhost:9090/transaction"
+      : "/api/transaction";
+
+    if (isTauri) {
+      import("@tauri-apps/api/shell").then((mod) => {
+        const command = mod.Command.sidecar("bin/server");
+        command.execute();
+      });
+    }
     getTransactionHistory();
   }, []);
 
@@ -311,16 +308,38 @@ export default function Page(): JSX.Element {
 
   const onSaveOutput = () => {
     if (outputType === "address" && addressOutput === "") return;
-    if (outputType === "script" && !scriptEditorRef.current?.value) return;
+    if (
+      outputType === "script" &&
+      !scriptEditorRef.current?.value &&
+      amount === 0
+    )
+      return;
+    if (
+      outputType === "script_transfer" &&
+      !scriptEditorRef.current?.value &&
+      addressOutput === "" &&
+      amount === 0
+    )
+      return;
 
     if (outputType === "address") {
       setOutputs([...outputs, ...[{ address: addressOutput, value: amount }]]);
       setAddressOutput("");
       setAmount(0);
     } else if (outputType === "script") {
+      const opReturnIssueScript = `OP_RETURN EASTi${scriptEditorRef.current?.value}_${amount}`;
+      setOutputs([...outputs, ...[{ script: opReturnIssueScript, value: 0 }]]);
+    } else if (outputType === "script_transfer") {
+      const opReturnIssueScript = `OP_RETURN EASTt${scriptEditorRef.current?.value}_${amount}`;
       setOutputs([
         ...outputs,
-        ...[{ script: scriptEditorRef.current?.value, value: 564 }],
+        ...[{ script: opReturnIssueScript, value: 0 }],
+        ...[{ address: addressOutput, value: 546 }],
+      ]);
+    } else if (outputType === "script_custom") {
+      setOutputs([
+        ...outputs,
+        ...[{ script: scriptEditorRef.current?.value, value: 0 }],
       ]);
     }
 
@@ -331,8 +350,26 @@ export default function Page(): JSX.Element {
     setOutputs((output) => output.filter((_, i) => i !== index));
   };
 
-  const onGenerateCode = () => {
-    console.log(inputs, outputs);
+  const generateWalletInitClientCode = () => {
+    if (secret === "") return;
+    const secretType = checkSecretType(secret);
+
+    switch (secretType) {
+      case SecretEnum.MNEMONIC:
+        return `mnemonic: "${secret}"`;
+        break;
+
+      case SecretEnum.PRIVATEKEY:
+        return `privateKey: "${secret}"`;
+        break;
+
+      case SecretEnum.WIF:
+        return `wif: "${secret}"`;
+        break;
+
+      default:
+        throw new Error("invalid secret type");
+    }
   };
 
   return (
@@ -355,9 +392,10 @@ export default function Page(): JSX.Element {
                   </label>
                   <Select
                     onChange={(e: any) => {
-                      const [mnemonic, address] = e.value?.split(":");
-                      setMnemonic(mnemonic);
-                      setAddress(address);
+                      const [_secret, _path, _address] = e.value?.split(":");
+                      setSecret(_secret);
+                      setAddress(_address);
+                      setPath(_path);
                     }}
                     className="cursor-pointer"
                     placeholder="Select Address"
@@ -413,11 +451,11 @@ export default function Page(): JSX.Element {
                       label: `Account ${i + 1}`,
                       options: [
                         {
-                          value: `${account.mnemonic}:${account.p2wpkh}`,
+                          value: `${account.secret}:${account.path}:${account.p2wpkh}`,
                           label: `${account.p2wpkh} (P2WPKH)`,
                         },
                         {
-                          value: `${account.mnemonic}:${account.p2tr}`,
+                          value: `${account.secret}:${account.path}:${account.p2tr}`,
                           label: `${account.p2tr} (P2TR)`,
                         },
                       ],
@@ -456,7 +494,7 @@ export default function Page(): JSX.Element {
                     isDisabled={!utxos}
                     onChange={(e: any) => setOutputType(e.value)}
                     className="cursor-pointer"
-                    placeholder="-- Address/Script --"
+                    placeholder="-- Select Output Type --"
                     isSearchable={false}
                     styles={SelectStyles}
                     options={TX_OUTPUT_OPTIONS}
@@ -469,7 +507,7 @@ export default function Page(): JSX.Element {
                       <>
                         <div>
                           <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
-                            Input Address
+                            Destination Address
                           </label>
                           <input
                             value={addressOutput}
@@ -478,9 +516,9 @@ export default function Page(): JSX.Element {
                             className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
                           />
                         </div>
-                        <div className="mt-1">
+                        <div className="mt-2">
                           <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
-                            Amount
+                            Amount (sats)
                           </label>
                           <input
                             value={amount}
@@ -494,15 +532,80 @@ export default function Page(): JSX.Element {
                       </>
                     )}
                     {outputType === "script" && (
-                      <div>
-                        <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
-                          Custom Script
-                        </label>
-                        <div
-                          ref={scriptRef}
-                          className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
-                        />
-                      </div>
+                      <>
+                        <div>
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Token Name
+                          </label>
+                          <div
+                            ref={scriptRef}
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                        <div className="mt-2">
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Token Supply
+                          </label>
+                          <input
+                            value={amount}
+                            onChange={(e) =>
+                              setAmount(parseInt(e.target.value))
+                            }
+                            type="number"
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                      </>
+                    )}
+                    {outputType === "script_transfer" && (
+                      <>
+                        <div>
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Token Name
+                          </label>
+                          <div
+                            ref={scriptRef}
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                        <div className="mt-2">
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Transfer Amount
+                          </label>
+                          <input
+                            value={amount}
+                            onChange={(e) =>
+                              setAmount(parseInt(e.target.value))
+                            }
+                            type="number"
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                        <div>
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Destination Address
+                          </label>
+                          <input
+                            value={addressOutput}
+                            onChange={(e) => setAddressOutput(e.target.value)}
+                            type="text"
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                      </>
+                    )}
+                    {outputType === "script_custom" && (
+                      <>
+                        <div>
+                          <label className="block mb-1 text-white-7 font-semibold text-sm tracking-wide">
+                            Script
+                          </label>
+                          <div
+                            ref={scriptRef}
+                            className="w-full px-3 h-[38px] border-white-1 font-medium bg-[rgba(255,255,255,0.05)] rounded-lg outline-none text-white-8 focus:outline-none focus:border-white-4 focus:ring-0 focus:ring-offset-0"
+                          />
+                        </div>
+                      </>
                     )}
                     <div className="mt-1">
                       <button
@@ -669,7 +772,7 @@ import { OpReturn } from "@east-bitcoin-lib/sdk/dist/addresses/opReturn";
 
 async function buildPSBT() {
   const wallet = new Wallet({
-    mnemonic: "${mnemonic}",
+    ${generateWalletInitClientCode()}
     network: "${network}"
   });
 
@@ -687,7 +790,7 @@ async function buildPSBT() {
         break;
 
       case "p2tr":
-        const p2tr = wallet.p2tr(0);
+        const p2tr = wallet.p2tr(${path});
         const p2trUtxo = await P2trUtxo.fromBitcoinUTXO(
           utxo,
           p2tr.tapInternalKey
@@ -734,12 +837,12 @@ async function buildPSBT() {
   for (const [index, psbtInput] of p.inputs.entries()) {
     switch (true) {
       case psbtInput.utxo instanceof P2wpkhUtxo:
-        psbt.signInput(index, wallet.p2wpkh(0).keypair);
+        psbt.signInput(index, wallet.p2wpkh(${path}).keypair);
         psbt.finalizeInput(index);
         break;
 
       case psbtInput.utxo instanceof P2trUtxo:
-        psbt.signInput(index, wallet.p2tr(0).keypair);
+        psbt.signInput(index, wallet.p2tr(${path}).keypair);
         psbt.finalizeInput(index);
         break;
 
