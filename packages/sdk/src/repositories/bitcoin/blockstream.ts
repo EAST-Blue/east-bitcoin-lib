@@ -24,6 +24,10 @@ export class BElectrsAPI extends BitcoinAPIAbstract {
 
   async getUTXOs(address: string): Promise<BitcoinUTXO[]> {
     const res = await fetch(`${this.url}/address/${address}/utxo`);
+    if (!res.ok) {
+      throw new Error(`HTTP error!: ${await res.text()}`);
+    }
+
     const scriptHash = bitcoinjs.address
       .toOutputScript(address, bitcoinJsNetwork(this.network))
       .toString("hex");
@@ -50,6 +54,10 @@ export class BElectrsAPI extends BitcoinAPIAbstract {
 
   async getTransactionHex(txid: string): Promise<string> {
     const res = await fetch(`${this.url}/tx/${txid}/hex`);
+    if (!res.ok) {
+      throw new Error(`HTTP error!: ${await res.text()}`);
+    }
+
     return await res.text();
   }
 
@@ -57,10 +65,36 @@ export class BElectrsAPI extends BitcoinAPIAbstract {
     const res = await fetch(`${this.url}/tx`, {
       method: "POST",
       headers: { "Content-Type": "text/plain" },
-      body: txHex
+      body: txHex,
     });
-    return await res.text()
+    if (!res.ok) {
+      throw new Error(`HTTP error!: ${await res.text()}`);
+    }
+
+    return await res.text();
   }
 
-  async recommendedFee(): Promise<void> {}
+  async getBlockTip(): Promise<number> {
+    const res = await fetch(`${this.url}/blocks/tip/height`, {
+      headers: { "Content-Type": "text/plain" },
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP error!: ${await res.text()}`);
+    }
+
+    return parseInt(await res.text(), 10);
+  }
+
+  async getTransactionStatus(txHash: string): Promise<{ confirmed: boolean }> {
+    const res = await fetch(`${this.url}/tx/${txHash}/status`, {
+      headers: { "Content-Type": "application/json" },
+    });
+    if (!res.ok) {
+      throw new Error(`HTTP error!: ${await res.text()}`);
+    }
+
+    return await res.json();
+  }
+
+  async recommendedFee(): Promise<void> { }
 }

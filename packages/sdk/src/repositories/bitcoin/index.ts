@@ -27,7 +27,14 @@ export abstract class BitcoinAPIAbstract {
   abstract getTransactionHex(txId: string): Promise<string>;
 
   abstract brodcastTx(txHex: string): Promise<string>;
+
   abstract recommendedFee(): Promise<void>;
+
+  abstract getBlockTip(): Promise<number>;
+
+  abstract getTransactionStatus(txHash: string): Promise<{
+    confirmed: boolean;
+  }>;
 }
 
 export * from "./mempool";
