@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { formatDateTime, prettyTruncate } from "../utils/prettyTruncate";
+import { formatDateTime, prettyTruncate } from "../helpers/prettyTruncate";
 import { useConfigContext } from "../contexts/ConfigContext";
 import { NetworkConfigType } from "../types/ConfigType";
 

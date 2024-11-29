@@ -14,11 +14,11 @@ import { NetworkConfigType } from "../types/ConfigType";
 import AccountCard from "../components/AccountCard";
 import IconPlus from "../icons/IconPlus";
 import IconImport from "../icons/IconImport";
-import { copyToClipboard } from "../utils/copyToClipboard";
+import { copyToClipboard } from "../helpers/copyToClipboard";
 import ImportPrivateKeyModal from "../components/ImportPrivateKeyModal";
 import { SecretEnum } from "../enums/SecretEnum";
 import ImportWifTextModal from "../components/ImportWifTextModal";
-import { generateWalletBySecretType } from "../utils/generateWalletBySecretType";
+import { generateWalletBySecretType } from "../helpers/generateWalletBySecretType";
 
 const Account = () => {
   const apiURL = useRef("");

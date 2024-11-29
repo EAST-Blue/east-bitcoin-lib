@@ -41,6 +41,7 @@ export class PSBT extends CoinSelect {
           hash: input.utxo.txid,
           index: input.utxo.vout,
           nonWitnessUtxo: input.utxo.transaction,
+          sighashType: input.sighashType,
         });
         break;
       case input.utxo instanceof P2shUtxo:
@@ -49,6 +50,7 @@ export class PSBT extends CoinSelect {
           index: input.utxo.vout,
           nonWitnessUtxo: input.utxo.transaction,
           redeemScript: input.utxo.redeemScript,
+          sighashType: input.sighashType,
         });
         break;
       case input.utxo instanceof P2wpkhUtxo:
@@ -56,6 +58,7 @@ export class PSBT extends CoinSelect {
           hash: input.utxo.txid,
           index: input.utxo.vout,
           witnessUtxo: input.utxo.witness,
+          sighashType: input.sighashType,
         });
         break;
       case input.utxo instanceof P2trUtxo:
@@ -64,10 +67,11 @@ export class PSBT extends CoinSelect {
           index: input.utxo.vout,
           witnessUtxo: input.utxo.witness,
           tapInternalKey: input.utxo.tapInternalKey,
+          sighashType: input.sighashType,
           ...(input.utxo.tapLeafScript
             ? {
-              tapLeafScript: input.utxo.tapLeafScript,
-            }
+                tapLeafScript: input.utxo.tapLeafScript,
+              }
             : {}),
         });
         break;
@@ -143,7 +147,7 @@ export class PSBT extends CoinSelect {
     const signedInputsInfo = this.signedInputsInfo;
     if (signedInputsInfo.notSignedIndexes.length > 0) {
       throw new Error(
-        `errors.not all inputs are signed, indexes: ${signedInputsInfo.notSignedIndexes}`,
+        `errors.not all inputs are signed, indexes: ${signedInputsInfo.notSignedIndexes}`
       );
     }
 
@@ -173,7 +177,7 @@ export class PSBT extends CoinSelect {
   }
 
   static finalScript(unlockScripts: StackScripts) {
-    return ({ } = {}, { } = {}, redeemScript: Buffer) => {
+    return ({} = {}, {} = {}, redeemScript: Buffer) => {
       const payment = payments.p2sh({
         redeem: {
           output: redeemScript,

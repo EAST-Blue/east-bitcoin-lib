@@ -7,8 +7,8 @@ import { AccountContextProvider } from "./contexts/AccountContext";
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
-  title: "EASTLayer | Transaction",
-  description: "EASTLayer Transaction Page",
+  title: "Transaction | Satsforge",
+  description: "Satsforge Transaction Page",
 };
 
 export default function RootLayout({

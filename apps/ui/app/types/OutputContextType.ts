@@ -1,6 +1,7 @@
 export type PSBTOutput = {
   address?: string;
   script?: string;
+  tapscript?: string;
   value: number;
 };
 

@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import prisma from "../../../db";
-import { isValidHttpUrl } from "../../utils/isValidHttpUrl";
+import { isValidHttpUrl } from "../../helpers/isValidHttpUrl";
 
 export async function GET(
   req: NextRequest,

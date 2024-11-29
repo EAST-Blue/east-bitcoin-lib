@@ -1,3 +1,5 @@
+import { InputTypeEnum } from "../enums/StateKeyEnum";
+
 export const NETWORK_MODE_OPTIONS = [
   {
     label: "Mainnet",
@@ -18,7 +20,7 @@ export const TX_OUTPUT_OPTIONS = [
     label: "Standard",
     options: [
       { label: "Transfer", value: "address" },
-      { label: "Custom Script", value: "script_custom" },
+      { label: "Custom Script (Script Hash)", value: "script_custom" },
     ],
   },
   {
@@ -27,6 +29,17 @@ export const TX_OUTPUT_OPTIONS = [
       { label: "Issue Eastlayer Token", value: "script" },
       { label: "Transfer Eastlayer Token", value: "script_transfer" },
     ],
+  },
+];
+
+export const TX_INPUT_OPTIONS = [
+  {
+    label: "UTXO",
+    value: InputTypeEnum.UTXO,
+  },
+  {
+    label: "Commit Address",
+    value: InputTypeEnum.COMMIT_ADDRESS,
   },
 ];
 

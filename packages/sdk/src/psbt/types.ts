@@ -13,6 +13,7 @@ export type UtxoInput = P2pkhUtxo | P2wpkhUtxo | P2trUtxo;
 export type Input = {
   utxo: UtxoInput;
   value: number;
+  sighashType?: number;
 };
 export type OutputOutput = Address | OpReturn;
 
